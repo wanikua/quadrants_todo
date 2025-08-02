@@ -4,7 +4,7 @@ This file contains configuration and context for Claude Code to better understan
 
 ## Project Overview
 
-**ItsNotAI Task Manager** is a modern web application built with Next.js that implements the Eisenhower Matrix (Importance-Urgency quadrant system) for task prioritization and management. The application provides both online database-backed functionality and offline local storage mode.
+**Quadrant Task Manager** is a modern web application built with Next.js that implements the Eisenhower Matrix (Importance-Urgency quadrant system) for task prioritization and management. The application provides both online database-backed functionality and offline local storage mode.
 
 ### Core Features
 

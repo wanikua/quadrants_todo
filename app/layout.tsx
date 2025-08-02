@@ -12,6 +12,7 @@ import {
 } from '@clerk/nextjs'
 
 import { Toaster } from "@/components/ui/toaster"
+import { ErrorBoundary } from "@/components/error-boundary"
 import "./globals.css"
 
 const geistSans = GeistSans
@@ -47,7 +48,9 @@ export default function RootLayout({
               <UserButton />
             </SignedIn>
           </header>
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </body>
       </html>
     </ClerkProvider>

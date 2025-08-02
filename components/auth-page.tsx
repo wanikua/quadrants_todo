@@ -1,12 +1,43 @@
 "use client"
 
 import { SignIn, SignUp, SignedIn, SignedOut } from "@clerk/nextjs"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+function RedirectComponent() {
+  const router = useRouter()
+  
+  useEffect(() => {
+    // Redirect to projects after successful sign-in
+    const timer = setTimeout(() => {
+      router.push("/projects")
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [router])
+  
+  return (
+    <div className="text-center">
+      <p className="text-green-600 mb-4">Successfully signed in!</p>
+      <p className="text-gray-600">Redirecting to your projects...</p>
+    </div>
+  )
+}
+
 export function AuthPage() {
   const [activeTab, setActiveTab] = useState("signin")
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+
+  if (!isMounted) {
+    return null // Prevent hydration issues
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -50,10 +81,7 @@ export function AuthPage() {
               </Tabs>
             </SignedOut>
             <SignedIn>
-              <div className="text-center">
-                <p className="text-green-600 mb-4">Successfully signed in!</p>
-                <p className="text-gray-600">Redirecting to your projects...</p>
-              </div>
+              <RedirectComponent />
             </SignedIn>
           </CardContent>
         </Card>
