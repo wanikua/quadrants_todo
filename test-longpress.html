@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Long Press Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #test-area { 
+            width: 400px; 
+            height: 300px; 
+            background: #f0f0f0; 
+            border: 2px solid #ccc; 
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: crosshair;
+        }
+        #log { 
+            background: #000; 
+            color: #0f0; 
+            padding: 10px; 
+            height: 200px; 
+            overflow-y: auto; 
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Long Press Test</h1>
+    <p>长按下面的灰色区域500ms测试功能</p>
+    
+    <div id="test-area">长按这里测试</div>
+    
+    <div id="log"></div>
+
+    <script>
+        const testArea = document.getElementById('test-area');
+        const log = document.getElementById('log');
+        
+        let longPressTimer = null;
+        let mouseDownPos = null;
+        
+        function logMessage(msg) {
+            log.textContent += new Date().toLocaleTimeString() + ': ' + msg + '\n';
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        testArea.addEventListener('mousedown', (e) => {
+            logMessage('=== MOUSE DOWN EVENT ===');
+            mouseDownPos = { x: e.clientX, y: e.clientY };
+            
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            
+            logMessage(`Starting long press at: x=${Math.round(x)}, y=${Math.round(y)}`);
+            
+            longPressTimer = setTimeout(() => {
+                logMessage('🎯 LONG PRESS TRIGGERED! 长按成功！');
+                alert(`长按成功！位置: (${Math.round(x)}, ${Math.round(y)})`);
+            }, 500);
+        });
+        
+        testArea.addEventListener('mouseup', () => {
+            logMessage('=== MOUSE UP EVENT ===');
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+                logMessage('❌ 长按被中断 - 鼠标释放');
+            }
+            mouseDownPos = null;
+        });
+        
+        testArea.addEventListener('mousemove', (e) => {
+            if (longPressTimer && mouseDownPos) {
+                const deltaX = Math.abs(e.clientX - mouseDownPos.x);
+                const deltaY = Math.abs(e.clientY - mouseDownPos.y);
+                
+                if (deltaX > 15 || deltaY > 15) {
+                    logMessage(`❌ 长按被中断 - 鼠标移动: deltaX=${deltaX}, deltaY=${deltaY}`);
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                    mouseDownPos = null;
+                }
+            }
+        });
+        
+        testArea.addEventListener('mouseleave', () => {
+            if (longPressTimer) {
+                logMessage('❌ 长按被中断 - 鼠标离开区域');
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            mouseDownPos = null;
+        });
+        
+        logMessage('长按测试页面已加载，请在灰色区域长按测试');
+    </script>
+</body>
+</html>
