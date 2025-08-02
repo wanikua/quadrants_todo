@@ -64,7 +64,7 @@ This file contains configuration and context for Claude Code to better understan
 
 ## Development Commands
 
-```bash
+\`\`\`bash
 # Install dependencies
 npm install
 
@@ -82,11 +82,11 @@ npm run lint
 
 # Type check
 npm run typecheck
-```
+\`\`\`
 
 ## Project Structure
 
-```
+\`\`\`
 app/
 ├── actions.ts              # Server actions for database operations
 ├── api/                    # API routes
@@ -116,7 +116,7 @@ lib/
 
 scripts/
 └── *.sql                  # Database schema and initialization scripts
-```
+\`\`\`
 
 ### Key Technologies
 
@@ -145,24 +145,24 @@ Based on analysis of your codebase, here are the specific issues preventing Cler
 **Problem**: The `.env.local` file doesn't exist in your project root
 
 **Solution**: Create `.env.local` in your project root:
-```bash
+\`\`\`bash
 # Create the file
 touch .env.local
 
 # Add your Clerk keys (get these from https://dashboard.clerk.com)
 echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your-actual-key-here" >> .env.local
 echo "CLERK_SECRET_KEY=sk_test_your-actual-key-here" >> .env.local
-```
+\`\`\`
 
 #### 2. Environment Variables Default to Empty Strings
 
 **Problem**: Your `lib/env.ts` defaults to empty strings when env vars are missing:
-```typescript
+\`\`\`typescript
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
-```
+\`\`\`
 
 **Solution**: Add validation to fail fast when keys are missing:
-```typescript
+\`\`\`typescript
 // lib/env.ts
 export const env = {
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
@@ -177,47 +177,47 @@ if (!env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !env.CLERK_SECRET_KEY) {
   console.error("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...")
   console.error("CLERK_SECRET_KEY=sk_test_...")
 }
-```
+\`\`\`
 
 #### 3. ClerkProvider Missing Explicit Configuration
 
 **Problem**: Your `app/layout.tsx` doesn't pass the publishable key to ClerkProvider
 
 **Current code**:
-```tsx
+\`\`\`tsx
 <ClerkProvider>
-```
+\`\`\`
 
 **Solution**: Update to explicitly pass the key:
-```tsx
+\`\`\`tsx
 <ClerkProvider 
   publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
   afterSignInUrl="/projects"
   afterSignUpUrl="/projects"
 >
-```
+\`\`\`
 
 #### 4. Version Stability Issues
 
 **Problem**: Using `"@clerk/nextjs": "latest"` can introduce breaking changes
 
 **Solution**: Pin to a stable version:
-```bash
+\`\`\`bash
 npm uninstall @clerk/nextjs
 npm install @clerk/nextjs@^5.7.1
-```
+\`\`\`
 
 ### Step-by-Step Fix Guide
 
 1. **Create .env.local**:
-   ```bash
+   \`\`\`bash
    # In your project root
    cat > .env.local << 'EOF'
    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your-key-here
    CLERK_SECRET_KEY=sk_test_your-key-here
    DATABASE_URL=your-database-url-here
    EOF
-   ```
+   \`\`\`
 
 2. **Get Your Clerk Keys**:
    - Go to https://dashboard.clerk.com
@@ -226,24 +226,24 @@ npm install @clerk/nextjs@^5.7.1
    - Replace the placeholder values in `.env.local`
 
 3. **Test Your Configuration**:
-   ```bash
+   \`\`\`bash
    # Clear cache and restart
    rm -rf .next
    npm run dev
    
    # Visit this URL to verify
    # http://localhost:3000/api/test-clerk
-   ```
+   \`\`\`
 
 4. **Update ClerkProvider** in `app/layout.tsx`:
-   ```tsx
+   \`\`\`tsx
    <ClerkProvider 
      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
      appearance={{
        variables: { colorPrimary: "#6c47ff" }
      }}
    >
-   ```
+   \`\`\`
 
 5. **Check Browser Console**:
    - Open Developer Tools (F12)
@@ -255,7 +255,7 @@ npm install @clerk/nextjs@^5.7.1
 
 ### Quick Diagnostic Commands
 
-```bash
+\`\`\`bash
 # 1. Check if .env.local exists
 ls -la .env.local
 
@@ -267,7 +267,7 @@ curl http://localhost:3000/api/test-clerk
 
 # 4. Check for TypeScript errors
 npm run typecheck
-```
+\`\`\`
 
 ### Common Mistakes to Avoid
 
@@ -295,23 +295,23 @@ npm run typecheck
    - Check if keys are active
 
 2. **Network Issues**:
-   ```bash
+   \`\`\`bash
    # Test Clerk API connectivity
    curl -I https://api.clerk.com/v1/client
-   ```
+   \`\`\`
 
 3. **Clear All Caches**:
-   ```bash
+   \`\`\`bash
    rm -rf .next node_modules/.cache
    npm install
    npm run dev
-   ```
+   \`\`\`
 
 4. **Enable Debug Mode**:
    Add to `.env.local`:
-   ```
+   \`\`\`
    CLERK_LOGGING=true
-   ```
+   \`\`\`
 
 ### Emergency Fallback
 
