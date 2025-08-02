@@ -74,7 +74,6 @@ export interface TaskWithAssignees extends Task {
   comments?: TaskComment[]
 }
 
-
 export async function getPlayers(): Promise<Player[]> {
   if (!sql) {
     console.log("Database not available, returning default players")
@@ -226,20 +225,20 @@ export async function createTask(
       RETURNING id, description, urgency, importance, created_at
     `
 
-  const task = taskResult[0] as Task
+    const task = taskResult[0] as Task
 
-  // Create assignments if any assignees are provided
-  if (assigneeIds.length > 0) {
-    for (const assigneeId of assigneeIds) {
-      await sql`
+    // Create assignments if any assignees are provided
+    if (assigneeIds.length > 0) {
+      for (const assigneeId of assigneeIds) {
+        await sql`
         INSERT INTO task_assignments (task_id, player_id)
         VALUES (${task.id}, ${assigneeId})
       `
+      }
     }
-  }
 
-  // Get the complete task with assignees
-  const completeTaskResult = await sql`
+    // Get the complete task with assignees
+    const completeTaskResult = await sql`
     SELECT 
       t.id,
       t.description,
@@ -294,22 +293,22 @@ export async function updateTask(
       WHERE id = ${taskId}
     `
 
-  // Delete existing assignments
-  await sql`DELETE FROM task_assignments WHERE task_id = ${taskId}`
+    // Delete existing assignments
+    await sql`DELETE FROM task_assignments WHERE task_id = ${taskId}`
 
-  // Create new assignments
-  if (assigneeIds.length > 0) {
-    for (const assigneeId of assigneeIds) {
-      await sql`
+    // Create new assignments
+    if (assigneeIds.length > 0) {
+      for (const assigneeId of assigneeIds) {
+        await sql`
         INSERT INTO task_assignments (task_id, player_id)
         VALUES (${taskId}, ${assigneeId})
       `
+      }
     }
-  }
 
-  // Get the updated task with assignees and comments
-  try {
-    const updatedTaskResult = await sql`
+    // Get the updated task with assignees and comments
+    try {
+      const updatedTaskResult = await sql`
       SELECT 
         t.id,
         t.description,
@@ -351,10 +350,10 @@ export async function updateTask(
       WHERE t.id = ${taskId}
       GROUP BY t.id, t.description, t.urgency, t.importance, t.created_at
     `
-    return updatedTaskResult[0] as TaskWithAssignees
-  } catch (commentsError) {
-    // Fallback without comments
-    const updatedTaskResult = await sql`
+      return updatedTaskResult[0] as TaskWithAssignees
+    } catch (commentsError) {
+      // Fallback without comments
+      const updatedTaskResult = await sql`
       SELECT 
         t.id,
         t.description,
@@ -478,8 +477,8 @@ export async function createLine(
   fromTaskId: number,
   toTaskId: number,
   style: "filled" | "open" = "filled",
-  size: number = 8,
-  color: string = "#374151"
+  size = 8,
+  color = "#374151",
 ): Promise<Line> {
   if (!sql) {
     throw new Error("Database not available")
@@ -527,7 +526,7 @@ export async function initializeDatabase(): Promise<void> {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `
-    
+
     // Create lines table if it doesn't exist
     await sql`
       CREATE TABLE IF NOT EXISTS task_lines (
@@ -541,13 +540,13 @@ export async function initializeDatabase(): Promise<void> {
           UNIQUE(from_task_id, to_task_id)
       )
     `
-    
+
     // Create indexes
     await sql`CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_task_comments_created_at ON task_comments(created_at)`
     await sql`CREATE INDEX IF NOT EXISTS idx_task_lines_from_task_id ON task_lines(from_task_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_task_lines_to_task_id ON task_lines(to_task_id)`
-    
+
     console.log("Database initialized successfully")
   } catch (error) {
     console.error("Failed to initialize database:", error)
