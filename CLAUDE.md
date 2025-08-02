@@ -64,7 +64,7 @@ This file contains configuration and context for Claude Code to better understan
 
 ## Development Commands
 
-\`\`\`bash
+```bash
 # Install dependencies
 npm install
 
@@ -82,11 +82,11 @@ npm run lint
 
 # Type check
 npm run typecheck
-\`\`\`
+```
 
 ## Project Structure
 
-\`\`\`
+```
 app/
 ├── actions.ts              # Server actions for database operations
 ├── api/                    # API routes
@@ -116,7 +116,7 @@ lib/
 
 scripts/
 └── *.sql                  # Database schema and initialization scripts
-\`\`\`
+```
 
 ### Key Technologies
 
@@ -133,6 +133,107 @@ scripts/
 - **Player**: id, name, color, created_at  
 - **Line**: id, from_task_id, to_task_id, style, size, color, created_at
 - **Comment**: id, task_id, content, author_name, created_at
+
+## Clerk Authentication Troubleshooting
+
+### Common Issues and Solutions
+
+#### 1. Clerk Not Connecting Despite .env.local
+
+**Problem**: Clerk fails to initialize even with correct environment variables in `.env.local`
+
+**Solutions**:
+
+1. **Verify Environment Variables**:
+   ```bash
+   # Check if variables are loaded
+   npm run dev
+   # Visit http://localhost:3000/api/test-clerk
+   ```
+
+2. **Check Variable Format**:
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` should start with `pk_`
+   - `CLERK_SECRET_KEY` should start with `sk_`
+   - No quotes around values in `.env.local`
+   - No trailing spaces
+
+3. **Clear Next.js Cache**:
+   ```bash
+   rm -rf .next
+   npm run dev
+   ```
+
+4. **Verify Clerk Dashboard Settings**:
+   - Allowed origins include `http://localhost:3000`
+   - Development instance is active
+   - API keys match dashboard
+
+#### 2. Version Compatibility Issues
+
+**Problem**: Using `"latest"` version can cause breaking changes
+
+**Solution**: Pin to specific version in `package.json`:
+```json
+{
+  "dependencies": {
+    "@clerk/nextjs": "^4.29.0"
+  }
+}
+```
+
+Then reinstall:
+```bash
+npm install
+```
+
+#### 3. Missing ClerkProvider Configuration
+
+**Problem**: ClerkProvider not receiving publishable key
+
+**Solution**: Update `app/layout.tsx`:
+```tsx
+<ClerkProvider 
+  publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+  appearance={{
+    variables: { colorPrimary: "#000000" }
+  }}
+>
+```
+
+#### 4. Network/Firewall Issues
+
+**Problem**: Corporate networks or firewalls blocking Clerk API
+
+**Solutions**:
+1. Check if `clerk.com` and `*.clerk.accounts.dev` are accessible
+2. Try different network
+3. Add proxy configuration if needed
+
+#### 5. Development vs Production Keys
+
+**Problem**: Using wrong environment keys
+
+**Solution**: Ensure using development keys for local development:
+- Development keys from Clerk Dashboard → Development
+- Production keys only for deployed app
+
+### Debug Checklist
+
+1. [ ] Environment variables are correctly formatted
+2. [ ] `.env.local` is in root directory
+3. [ ] No syntax errors in `.env.local`
+4. [ ] Clerk version is pinned in `package.json`
+5. [ ] Next.js cache is cleared
+6. [ ] Browser console shows no errors
+7. [ ] Network tab shows successful Clerk API calls
+8. [ ] Clerk Dashboard shows correct configuration
+
+### Emergency Fallback
+
+If Clerk continues to fail, the app has built-in offline mode:
+1. Authentication will be bypassed
+2. Data stored in localStorage
+3. Full functionality maintained locally
 
 ## Notes
 
