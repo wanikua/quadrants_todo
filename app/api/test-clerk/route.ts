@@ -2,14 +2,13 @@ import { NextResponse } from "next/server"
 
 function isValidClerkKey(key: string | undefined, prefix: string): boolean {
   return !!(
-    (
-      key &&
-      key.startsWith(prefix) &&
-      key.length > 10 &&
-      !key.includes("your-") && // Exclude template keys
-      !key.includes("test_") && // Exclude test placeholders
-      !key.includes("example")
-    ) // Exclude example keys
+    key &&
+    key.startsWith(prefix) &&
+    key.length > 10 &&
+    !key.includes("your-") && // Exclude template keys
+    !key.includes("example") && // Exclude example keys
+    !key.includes("pk_test_your-") && // Exclude template publishable keys
+    !key.includes("sk_test_your-") // Exclude template secret keys
   )
 }
 

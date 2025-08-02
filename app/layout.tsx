@@ -1,5 +1,5 @@
-import type React from "react"
 import type { Metadata } from "next"
+import React from "react"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import {
@@ -14,6 +14,9 @@ import {
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
+const geistSans = GeistSans
+const geistMono = GeistMono
+
 export const metadata: Metadata = {
   title: "Quadrant Task Manager",
   description: "Task management with priority quadrants",
@@ -22,11 +25,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-        <ClerkProvider>
+        <ClerkProvider
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        >
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <header className="flex justify-end items-center p-4 gap-4 h-16">
