@@ -424,10 +424,10 @@ export function QuadrantMatrix({ initialTasks, initialPlayers, initialLines }: Q
             task={selectedTask}
             players={players}
             isOpen={isDetailDialogOpen}
-            onClose={() => {
-              setIsDetailDialogOpen(false)
-              setSelectedTask(null)
-            }}
+            onOpenChange={setIsDetailDialogOpen}
+            isMobile={false}
+            onDeleteTask={handleDeleteTask}
+            onUpdateTask={handleUpdateTask}
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
           />

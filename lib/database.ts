@@ -515,6 +515,26 @@ export async function deleteLine(lineId: number): Promise<void> {
   }
 }
 
+export async function getLine(fromTaskId: number, toTaskId: number): Promise<Line | null> {
+  if (!sql) {
+    return null
+  }
+
+  try {
+    const result = await sql`
+      SELECT id, from_task_id, to_task_id, style, size, color, created_at
+      FROM task_lines
+      WHERE (from_task_id = ${fromTaskId} AND to_task_id = ${toTaskId})
+         OR (from_task_id = ${toTaskId} AND to_task_id = ${fromTaskId})
+      LIMIT 1
+    `
+    return result.length > 0 ? (result[0] as Line) : null
+  } catch (error) {
+    console.error("Failed to get line:", error)
+    return null
+  }
+}
+
 export async function initializeDatabase(): Promise<void> {
   if (!sql) {
     console.log("Database not available, skipping initialization")
