@@ -133,7 +133,7 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
     } else if (urgency >= 50 && importance < 50) {
       return "bg-yellow-100 text-yellow-800 border-yellow-300"
     } else {
-      return "bg-gray-100 text-gray-800 border-gray-300"
+      return "bg-muted text-muted-foreground border-border"
     }
   }
 
@@ -164,7 +164,7 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
               />
             </div>
           ) : (
-            <h3 className="text-lg font-semibold text-gray-900 break-words">{task.description}</h3>
+            <h3 className="text-lg font-semibold text-foreground break-words">{task.description}</h3>
           )}
           <div className="mt-2">
             <Badge
@@ -202,19 +202,19 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
       {/* Priority Metrics */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Clock className="w-4 h-4" />
             Urgency
           </div>
           {isEditing ? (
             <>
-              <div className="text-2xl font-bold text-gray-900">{editUrgency[0]}</div>
+              <div className="text-2xl font-bold text-foreground">{editUrgency[0]}</div>
               <Slider value={editUrgency} onValueChange={setEditUrgency} max={100} step={1} disabled={isPending} />
             </>
           ) : (
             <>
-              <div className="text-2xl font-bold text-gray-900">{task.urgency}</div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="text-2xl font-bold text-foreground">{task.urgency}</div>
+              <div className="w-full bg-muted rounded-full h-2">
                 <div
                   className="bg-orange-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${task.urgency}%` }}
@@ -225,13 +225,13 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Users className="w-4 h-4" />
             Importance
           </div>
           {isEditing ? (
             <>
-              <div className="text-2xl font-bold text-gray-900">{editImportance[0]}</div>
+              <div className="text-2xl font-bold text-foreground">{editImportance[0]}</div>
               <Slider
                 value={editImportance}
                 onValueChange={setEditImportance}
@@ -242,8 +242,8 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
             </>
           ) : (
             <>
-              <div className="text-2xl font-bold text-gray-900">{task.importance}</div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="text-2xl font-bold text-foreground">{task.importance}</div>
+              <div className="w-full bg-muted rounded-full h-2">
                 <div
                   className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${task.importance}%` }}
@@ -296,23 +296,23 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
                   </Badge>
                 ) : null
               })}
-              {editAssignees.length === 0 && <div className="text-sm text-gray-500 italic">No players assigned</div>}
+              {editAssignees.length === 0 && <div className="text-sm text-muted-foreground italic">No players assigned</div>}
             </div>
           </div>
         ) : (
           <div className="space-y-2">
             {task.assignees.length === 0 ? (
-              <div className="text-sm text-gray-500 italic p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm text-muted-foreground italic p-3 bg-muted rounded-lg">
                 No players assigned to this task
               </div>
             ) : (
               task.assignees.map((player) => (
-                <div key={player.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                <div key={player.id} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
                   <div
-                    className="w-4 h-4 rounded-full border border-gray-300"
+                    className="w-4 h-4 rounded-full border border-border"
                     style={{ backgroundColor: player.color }}
                   />
-                  <span className="text-sm font-medium text-gray-900">{player.name}</span>
+                  <span className="text-sm font-medium text-foreground">{player.name}</span>
                 </div>
               ))
             )}
@@ -321,7 +321,7 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
       </div>
 
       {/* Comments Section */}
-      <div className="space-y-3 pt-4 border-t border-gray-200">
+      <div className="space-y-3 pt-4 border-t border-border">
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <MessageCircle className="w-4 h-4" />
           Comments ({task.comments?.length || 0})
@@ -362,14 +362,14 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
           <ScrollArea className="max-h-48">
             <div className="space-y-2">
               {task.comments.map((comment) => (
-                <div key={comment.id} className="p-3 bg-gray-50 rounded-lg">
+                <div key={comment.id} className="p-3 bg-muted rounded-lg">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-gray-900">{comment.author_name}</span>
-                        <span className="text-xs text-gray-500">{formatDate(comment.created_at)}</span>
+                        <span className="text-xs font-medium text-foreground">{comment.author_name}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
                       </div>
-                      <p className="text-sm text-gray-700 break-words">{comment.content}</p>
+                      <p className="text-sm text-foreground break-words">{comment.content}</p>
                     </div>
                     <Button
                       variant="ghost"
@@ -389,12 +389,12 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
       </div>
 
       {/* Task Metadata */}
-      <div className="space-y-3 pt-4 border-t border-gray-200">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="space-y-3 pt-4 border-t border-border">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="w-4 h-4" />
           Created: {formatDate(task.created_at)}
         </div>
-        <div className="text-xs text-gray-500">Task ID: {task.id}</div>
+        <div className="text-xs text-muted-foreground">Task ID: {task.id}</div>
       </div>
 
       {/* Actions */}

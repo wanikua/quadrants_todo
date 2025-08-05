@@ -206,19 +206,19 @@ const QuadrantMatrix = React.memo(function QuadrantMatrix({
       <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6">
         <CardTitle className="text-center text-lg sm:text-xl">ItsNotAI Task Manager</CardTitle>
         {isDrawingLine && (
-          <div className="text-center text-sm text-blue-600 bg-blue-50 p-2 rounded-lg">
+          <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg">
             Click on tasks to connect them with lines
           </div>
         )}
         {isMobile && (
-          <div className="text-center text-sm text-orange-600 bg-orange-50 p-2 rounded-lg border border-orange-200">
+          <div className="text-center text-sm text-orange-600 dark:text-orange-400 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20">
             For the full functionality, please use desktop
           </div>
         )}
       </CardHeader>
       <CardContent className="px-2 sm:px-6">
         <div
-          className="relative w-full bg-white border-2 border-gray-300 rounded-lg overflow-hidden cursor-crosshair"
+          className="relative w-full bg-card border-2 border-border rounded-lg overflow-hidden cursor-crosshair"
           style={{ height: isMobile ? "400px" : "700px", touchAction: "none" }}
           onMouseDown={handleMatrixMouseDown}
           onMouseUp={handleMatrixMouseUp}
@@ -389,11 +389,11 @@ const QuadrantMatrix = React.memo(function QuadrantMatrix({
                     {!isMobile && (
                       <div className="absolute left-full top-0 ml-2 bg-black text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                         <div className="font-medium">{task.description}</div>
-                        <div className="text-gray-300">
+                        <div className="text-gray-400">
                           Urgency: {task.urgency} | Importance: {task.importance}
                         </div>
-                        <div className="text-gray-300">{task.assignees.map((p) => p.name).join(", ")}</div>
-                        <div className="text-gray-300 text-xs mt-1">
+                        <div className="text-gray-400">{task.assignees.map((p) => p.name).join(", ")}</div>
+                        <div className="text-gray-400 text-xs mt-1">
                           {isDrawingLine ? "Click to connect" : isMobile ? "Click for details" : "Click for details • Drag to move"}
                         </div>
                       </div>
@@ -401,7 +401,7 @@ const QuadrantMatrix = React.memo(function QuadrantMatrix({
                   </div>
 
                   {/* Task Description Label */}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white border border-gray-200 rounded px-2 py-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-card border border-border rounded px-2 py-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className={`text-xs font-medium text-center truncate ${isMobile ? "max-w-16" : "max-w-24"}`}>
                       {task.description}
                     </div>
@@ -413,16 +413,16 @@ const QuadrantMatrix = React.memo(function QuadrantMatrix({
 
           {/* Axis Labels */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 flex items-center justify-center px-2 sm:px-4 bg-gray-50 border-t pointer-events-none"
+            className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 flex items-center justify-center px-2 sm:px-4 bg-muted border-t pointer-events-none"
             style={{ zIndex: 2 }}
           >
-            <span className="text-xs sm:text-sm font-bold text-gray-900">IMPORTANCE</span>
+            <span className="text-xs sm:text-sm font-bold text-foreground">IMPORTANCE</span>
           </div>
 
 
           {/* Top border */}
           <div
-            className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gray-50 border-b pointer-events-none"
+            className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-muted border-b pointer-events-none"
             style={{ zIndex: 2 }}
           ></div>
 
@@ -432,16 +432,16 @@ const QuadrantMatrix = React.memo(function QuadrantMatrix({
           </div>
 
           <div
-            className="absolute top-0 bottom-0 left-0 w-6 sm:w-8 flex flex-col items-center justify-center py-2 sm:py-4 bg-gray-50 border-r pointer-events-none"
+            className="absolute top-0 bottom-0 left-0 w-6 sm:w-8 flex flex-col items-center justify-center py-2 sm:py-4 bg-muted border-r pointer-events-none"
             style={{ zIndex: 2 }}
           >
-            <span className="text-xs sm:text-sm font-bold text-gray-900 transform -rotate-90 whitespace-nowrap">
+            <span className="text-xs sm:text-sm font-bold text-foreground transform -rotate-90 whitespace-nowrap"
               URGENCY
             </span>
           </div>
 
           <div
-            className="absolute top-0 bottom-0 right-0 w-6 sm:w-8 flex flex-col items-center justify-center py-2 sm:py-4 bg-gray-50 border-l pointer-events-none"
+            className="absolute top-0 bottom-0 right-0 w-6 sm:w-8 flex flex-col items-center justify-center py-2 sm:py-4 bg-muted border-l pointer-events-none"
             style={{ zIndex: 2 }}
           ></div>
 
@@ -473,22 +473,22 @@ const QuadrantMatrix = React.memo(function QuadrantMatrix({
           <div className="space-y-4 text-sm">
             <div>
               <h4 className="font-medium mb-2">Create Task</h4>
-              <p className="text-gray-600">Currently there is bug in long pressing for creating tasks, please use settings - add task</p>
+              <p className="text-muted-foreground">Currently there is bug in long pressing for creating tasks, please use settings - add task</p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Move Task</h4>
-              <p className="text-gray-600">Drag task to new position</p>
+              <p className="text-muted-foreground">Drag task to new position</p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Task Details</h4>
-              <p className="text-gray-600">Click task to view and edit detailed information</p>
+              <p className="text-muted-foreground">Click task to view and edit detailed information</p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Connect Tasks</h4>
-              <p className="text-gray-600">Click "Add Dependency", then click two tasks to create/delete connections</p>
+              <p className="text-muted-foreground">Click "Add Dependency", then click two tasks to create/delete connections</p>
             </div>
             <div className="pt-2 border-t">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Task position represents (Urgency, Importance) coordinates
               </p>
             </div>

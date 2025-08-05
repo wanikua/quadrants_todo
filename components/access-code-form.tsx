@@ -58,16 +58,16 @@ const AccessCodeForm = React.memo(function AccessCodeForm({ onAccessGranted }: A
   }, [accessCode])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className={`w-full ${isMobile ? "max-w-sm" : "max-w-md"}`}>
         <CardHeader className="text-center">
           <div
-            className={`mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4 ${isMobile ? "w-10 h-10" : "w-12 h-12"}`}
+            className={`mx-auto bg-blue-500/10 rounded-full flex items-center justify-center mb-4 ${isMobile ? "w-10 h-10" : "w-12 h-12"}`}
           >
-            <Lock className={`text-blue-600 ${isMobile ? "w-5 h-5" : "w-6 h-6"}`} />
+            <Lock className={`text-blue-600 dark:text-blue-400 ${isMobile ? "w-5 h-5" : "w-6 h-6"}`} />
           </div>
           <CardTitle className={isMobile ? "text-xl" : "text-2xl"}>Access Required</CardTitle>
-          <p className={`text-gray-600 ${isMobile ? "text-sm" : "text-base"}`}>Enter the access code to continue</p>
+          <p className={`text-muted-foreground ${isMobile ? "text-sm" : "text-base"}`}>Enter the access code to continue</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

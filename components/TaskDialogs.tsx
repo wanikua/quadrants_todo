@@ -123,8 +123,8 @@ export const MobileTaskDialog = React.memo(function MobileTaskDialog({
             </div>
           </div>
 
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm font-medium text-blue-800">
+          <div className="p-3 bg-blue-500/10 rounded-lg">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
               Quadrant: {getQuadrantLabel(taskUrgency[0], taskImportance[0])}
             </p>
           </div>
@@ -166,7 +166,7 @@ export const MobileTaskDialog = React.memo(function MobileTaskDialog({
                 ) : null
               })}
               {taskAssignees.length === 0 && (
-                <div className="text-sm text-gray-500 italic">No players assigned (task will be unassigned)</div>
+                <div className="text-sm text-muted-foreground italic">No players assigned (task will be unassigned)</div>
               )}
             </div>
           </div>
@@ -260,8 +260,8 @@ export const DesktopTaskDialog = React.memo(function DesktopTaskDialog({
             </div>
           </div>
 
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm font-medium text-blue-800">
+          <div className="p-3 bg-blue-500/10 rounded-lg">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
               Quadrant: {getQuadrantLabel(taskUrgency[0], taskImportance[0])}
             </p>
           </div>
@@ -303,7 +303,7 @@ export const DesktopTaskDialog = React.memo(function DesktopTaskDialog({
                 ) : null
               })}
               {taskAssignees.length === 0 && (
-                <div className="text-sm text-gray-500 italic">No players assigned yet</div>
+                <div className="text-sm text-muted-foreground italic">No players assigned yet</div>
               )}
             </div>
           </div>
@@ -361,13 +361,13 @@ export const MobilePlayerDialog = React.memo(function MobilePlayerDialog({
             <Label>Current Players ({players.length})</Label>
             <div className="space-y-2">
               {players.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No players yet. Add your first player!</p>
+                <p className="text-muted-foreground text-center py-8">No players yet. Add your first player!</p>
               ) : (
                 players.map((player) => (
-                  <div key={player.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                  <div key={player.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-4 h-4 rounded-full border border-gray-300"
+                        className="w-4 h-4 rounded-full border border-border"
                         style={{ backgroundColor: player.color }}
                       />
                       <span className="font-medium">{player.name}</span>
@@ -436,13 +436,13 @@ export const DesktopPlayerDialog = React.memo(function DesktopPlayerDialog({
             <Label>Current Players ({players.length})</Label>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {players.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No players yet. Add your first player!</p>
+                <p className="text-muted-foreground text-center py-4">No players yet. Add your first player!</p>
               ) : (
                 players.map((player) => (
                   <div key={player.id} className="flex items-center justify-between p-2 border rounded-lg">
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-3 h-3 rounded-full border border-gray-300"
+                        className="w-3 h-3 rounded-full border border-border"
                         style={{ backgroundColor: player.color }}
                       />
                       <span className="text-sm font-medium">{player.name}</span>

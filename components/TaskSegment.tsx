@@ -13,7 +13,7 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40 }: TaskSeg
   if (assignedPlayers.length === 0) {
     return (
       <div
-        className="rounded-full flex items-center justify-center text-gray-500 text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-gray-300 bg-gray-100"
+        className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-border bg-muted"
         style={{
           width: size,
           height: size,
