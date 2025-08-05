@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server"
-import { revalidatePath } from "next/navigation"
+import { revalidatePath } from "next/cache"
 import * as db from "@/lib/database"
 import {
   createProject as createProjectDb,
@@ -18,7 +18,7 @@ import {
   deleteProjectLine,
   getUserProjectAccess,
   initializeProjectDatabase,
-  getProjectLines, // Declared here
+  getProjectLines,
 } from "@/lib/project-database"
 
 // Project management actions
