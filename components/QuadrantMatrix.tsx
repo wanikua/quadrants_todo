@@ -588,7 +588,7 @@ export function QuadrantMatrix({ initialTasks, initialPlayers, initialLines }: Q
             className="absolute top-0 bottom-0 left-0 w-6 sm:w-8 flex flex-col items-center justify-center py-2 sm:py-4 bg-muted border-r pointer-events-none"
             style={{ zIndex: 2 }}
           >
-            <span className="text-xs sm:text-sm font-bold text-foreground transform -rotate-90 whitespace-nowrap"
+            <span className="text-xs sm:text-sm font-bold text-foreground transform -rotate-90 whitespace-nowrap">
               URGENCY
             </span>
           </div>
