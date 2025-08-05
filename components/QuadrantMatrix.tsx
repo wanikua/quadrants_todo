@@ -354,7 +354,6 @@ export function QuadrantMatrix({ initialTasks, initialPlayers, initialLines }: Q
   }
 
   return (
-<<<<<<< HEAD
     <Card className="p-2 sm:p-6">
       <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6">
         <CardTitle className="text-center text-lg sm:text-xl">ItsNotAI Task Manager</CardTitle>
@@ -645,40 +644,6 @@ export function QuadrantMatrix({ initialTasks, initialPlayers, initialLines }: Q
                 Task position represents (Urgency, Importance) coordinates
               </p>
             </div>
-=======
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Eisenhower Matrix</h1>
-          <div className="flex gap-2">
-            <Button
-              variant={isConnecting ? "default" : "outline"}
-              onClick={() => {
-                setIsConnecting(!isConnecting)
-                setConnectionStart(null)
-              }}
-            >
-              {isConnecting ? "Cancel Connecting" : "Connect Tasks"}
-            </Button>
-            <Button onClick={() => setIsPlayerDialogOpen(true)}>
-              <Users className="mr-2 h-4 w-4" />
-              Manage Players
-            </Button>
-            <Button onClick={() => setIsTaskDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
-          </div>
-        </div>
-
-        {isConnecting && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              {connectionStart
-                ? `Click on another task to connect it with "${connectionStart.description}"`
-                : "Click on a task to start connecting"}
-            </p>
->>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
           </div>
         )}
 

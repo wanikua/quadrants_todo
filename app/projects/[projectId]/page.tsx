@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
-import { getProject, getProjectTasks, getProjectPlayers, getProjectLines } from "@/lib/project-database"
-import { ProjectTaskManager } from "@/components/project-task-manager"
+import { getProjectWithData, getUserProjectAccess } from "@/app/db/actions"
+import { QuadrantMatrix } from "@/components/QuadrantMatrix"
 
 interface ProjectPageProps {
   params: {
@@ -11,22 +11,39 @@ interface ProjectPageProps {
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { userId } = await auth()
-
+  
   if (!userId) {
     redirect("/")
   }
 
-  const project = await getProject(params.projectId, userId)
-
-  if (!project) {
+  // Check if user has access to this project
+  const hasAccess = await getUserProjectAccess(userId, params.projectId)
+  if (!hasAccess) {
     redirect("/projects")
   }
 
-  const [tasks, players, lines] = await Promise.all([
-    getProjectTasks(params.projectId),
-    getProjectPlayers(params.projectId),
-    getProjectLines(params.projectId),
-  ])
+  // Get project data
+  const projectData = await getProjectWithData(params.projectId)
+  if (!projectData) {
+    redirect("/projects")
+  }
 
-  return <ProjectTaskManager project={project} initialTasks={tasks} initialPlayers={players} initialLines={lines} />
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">{projectData.project.name}</h1>
+          <p className="text-muted-foreground">
+            {projectData.project.type === 'personal' ? 'Personal Project' : 'Team Project'}
+          </p>
+        </div>
+        
+        <QuadrantMatrix
+          initialTasks={projectData.tasks}
+          initialPlayers={projectData.players}
+          initialLines={projectData.lines}
+        />
+      </div>
+    </div>
+  )
 }

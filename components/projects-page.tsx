@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Users, UserIcon, Calendar } from "lucide-react"
-import { createProject, joinProject } from "@/app/actions"
+import { createProject, joinProject } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 
 interface Project {
@@ -53,9 +53,12 @@ export function ProjectsPage({ user, projects }: ProjectsPageProps) {
         setIsCreateDialogOpen(false)
         setProjectName("")
         router.refresh()
+      } else {
+        alert(`Failed to create project: ${result.error}`)
       }
     } catch (error) {
       console.error("Failed to create project:", error)
+      alert("Failed to create project. Please check your database configuration.")
     } finally {
       setIsLoading(false)
     }
@@ -71,9 +74,12 @@ export function ProjectsPage({ user, projects }: ProjectsPageProps) {
         setIsJoinDialogOpen(false)
         setInviteCode("")
         router.refresh()
+      } else {
+        alert(`Failed to join project: ${result.error}`)
       }
     } catch (error) {
       console.error("Failed to join project:", error)
+      alert("Failed to join project. Please check your database configuration.")
     } finally {
       setIsLoading(false)
     }

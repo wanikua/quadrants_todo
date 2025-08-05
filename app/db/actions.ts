@@ -1,0 +1,288 @@
+'use server'
+
+import { auth } from '@clerk/nextjs/server'
+import { db } from './index'
+import { projects, projectMembers, tasks, players, taskAssignments, lines, comments } from './schema'
+import { eq, and, desc } from 'drizzle-orm'
+import { revalidatePath } from 'next/cache'
+
+// Project actions
+export async function createProject(name: string, type: 'personal' | 'team') {
+  const { userId } = await auth()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  try {
+    const projectId = `proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const inviteCode = type === 'team' ? `invite_${Math.random().toString(36).substr(2, 8)}` : null
+
+    // Create project
+    await db.insert(projects).values({
+      id: projectId,
+      name,
+      type,
+      owner_id: userId,
+      invite_code: inviteCode,
+    })
+
+    // Add owner as member
+    await db.insert(projectMembers).values({
+      id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      project_id: projectId,
+      user_id: userId,
+      role: 'owner',
+    })
+
+    // Create default players
+    const defaultPlayers = [
+      { name: 'Alice', color: '#ef4444' },
+      { name: 'Bob', color: '#f97316' },
+      { name: 'Charlie', color: '#eab308' },
+    ]
+
+    await db.insert(players).values(
+      defaultPlayers.map(player => ({
+        project_id: projectId,
+        name: player.name,
+        color: player.color,
+      }))
+    )
+
+    revalidatePath('/projects')
+    return { success: true, projectId, inviteCode }
+  } catch (error) {
+    console.error('Error creating project:', error)
+    return { success: false, error: 'Failed to create project' }
+  }
+}
+
+export async function joinProject(inviteCode: string) {
+  const { userId } = await auth()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  try {
+    // Find project by invite code
+    const projectList = await db
+      .select({ id: projects.id, name: projects.name })
+      .from(projects)
+      .where(and(eq(projects.invite_code, inviteCode), eq(projects.type, 'team')))
+
+    if (projectList.length === 0) {
+      return { success: false, error: 'Invalid invite code' }
+    }
+
+    const project = projectList[0]
+
+    // Check if user is already a member
+    const existingMember = await db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.project_id, project.id), eq(projectMembers.user_id, userId)))
+
+    if (existingMember.length > 0) {
+      return { success: false, error: 'You are already a member of this project' }
+    }
+
+    // Add user as member
+    await db.insert(projectMembers).values({
+      id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      project_id: project.id,
+      user_id: userId,
+      role: 'member',
+    })
+
+    revalidatePath('/projects')
+    return { success: true, projectId: project.id, projectName: project.name }
+  } catch (error) {
+    console.error('Error joining project:', error)
+    return { success: false, error: 'Failed to join project' }
+  }
+}
+
+export async function getProjectsForUser(userId: string) {
+  try {
+    const projectsList = await db
+      .select({
+        id: projects.id,
+        name: projects.name,
+        type: projects.type,
+        role: projectMembers.role,
+        created_at: projects.created_at,
+      })
+      .from(projects)
+      .innerJoin(projectMembers, eq(projects.id, projectMembers.project_id))
+      .where(eq(projectMembers.user_id, userId))
+      .orderBy(desc(projects.created_at))
+
+    return projectsList
+  } catch (error) {
+    console.error('Error getting projects:', error)
+    return []
+  }
+}
+
+// Task actions
+export async function createTask(projectId: string, description: string, urgency: number, importance: number, assigneeIds: number[]) {
+  const { userId } = await auth()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  try {
+    // Check if user has access to project
+    const hasAccess = await getUserProjectAccess(userId, projectId)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    // Create task
+    const [task] = await db.insert(tasks).values({
+      project_id: projectId,
+      description,
+      urgency,
+      importance,
+    }).returning()
+
+    // Assign players
+    if (assigneeIds.length > 0) {
+      await db.insert(taskAssignments).values(
+        assigneeIds.map(playerId => ({
+          task_id: task.id,
+          player_id: playerId,
+        }))
+      )
+    }
+
+    revalidatePath(`/projects/${projectId}`)
+    return { success: true, task }
+  } catch (error) {
+    console.error('Error creating task:', error)
+    return { success: false, error: 'Failed to create task' }
+  }
+}
+
+export async function deleteTask(taskId: number) {
+  const { userId } = await auth()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  try {
+    // Get task to check project access
+    const taskList = await db.select({ project_id: tasks.project_id }).from(tasks).where(eq(tasks.id, taskId))
+    if (taskList.length === 0) return { success: false, error: 'Task not found' }
+
+    const hasAccess = await getUserProjectAccess(userId, taskList[0].project_id)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    await db.delete(tasks).where(eq(tasks.id, taskId))
+    revalidatePath(`/projects/${taskList[0].project_id}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting task:', error)
+    return { success: false, error: 'Failed to delete task' }
+  }
+}
+
+// Player actions
+export async function createPlayer(projectId: string, name: string, color: string) {
+  const { userId } = await auth()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  try {
+    const hasAccess = await getUserProjectAccess(userId, projectId)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    const [player] = await db.insert(players).values({
+      project_id: projectId,
+      name,
+      color,
+    }).returning()
+
+    revalidatePath(`/projects/${projectId}`)
+    return { success: true, player }
+  } catch (error) {
+    console.error('Error creating player:', error)
+    return { success: false, error: 'Failed to create player' }
+  }
+}
+
+// Helper functions
+export async function getUserProjectAccess(userId: string, projectId: string): Promise<boolean> {
+  try {
+    const members = await db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.project_id, projectId), eq(projectMembers.user_id, userId)))
+
+    return members.length > 0
+  } catch (error) {
+    console.error('Error checking project access:', error)
+    return false
+  }
+}
+
+export async function getProjectWithData(projectId: string) {
+  try {
+    // Get project
+    const projectList = await db.select().from(projects).where(eq(projects.id, projectId))
+    if (projectList.length === 0) return null
+
+    const project = projectList[0]
+
+    // Get tasks with assignments
+    const tasksWithAssignments = await db
+      .select({
+        id: tasks.id,
+        description: tasks.description,
+        urgency: tasks.urgency,
+        importance: tasks.importance,
+        created_at: tasks.created_at,
+        updated_at: tasks.updated_at,
+        player: {
+          id: players.id,
+          name: players.name,
+          color: players.color,
+        },
+      })
+      .from(tasks)
+      .leftJoin(taskAssignments, eq(tasks.id, taskAssignments.task_id))
+      .leftJoin(players, eq(taskAssignments.player_id, players.id))
+      .where(eq(tasks.project_id, projectId))
+
+    // Group tasks by ID and collect assignees
+    const tasksMap = new Map()
+    for (const row of tasksWithAssignments) {
+      if (!tasksMap.has(row.id)) {
+        tasksMap.set(row.id, {
+          id: row.id,
+          description: row.description,
+          urgency: row.urgency,
+          importance: row.importance,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          assignees: [],
+          comments: [],
+        })
+      }
+      if (row.player?.id) {
+        tasksMap.get(row.id).assignees.push(row.player)
+      }
+    }
+
+    // Get comments for tasks
+    const commentsData = await db
+      .select()
+      .from(comments)
+      .where(eq(comments.task_id, tasksWithAssignments[0]?.id || 0))
+
+    // Get players
+    const playersData = await db.select().from(players).where(eq(players.project_id, projectId))
+
+    // Get lines
+    const linesData = await db.select().from(lines).where(eq(lines.project_id, projectId))
+
+    return {
+      project,
+      tasks: Array.from(tasksMap.values()),
+      players: playersData,
+      lines: linesData,
+    }
+  } catch (error) {
+    console.error('Error getting project data:', error)
+    return null
+  }
+}
