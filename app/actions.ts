@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server"
-import { revalidatePath } from "next/navigation"
+import { revalidatePath } from "next/cache"
 import * as db from "@/lib/database"
 import {
   createProject as createProjectDb,
@@ -18,7 +18,7 @@ import {
   deleteProjectLine,
   getUserProjectAccess,
   initializeProjectDatabase,
-  getProjectLines, // Declared here
+  getProjectLines,
 } from "@/lib/project-database"
 
 // Project management actions
@@ -357,12 +357,7 @@ export async function toggleLineAction(
       }
     } else {
       // Check if line already exists
-      const lines = await db.getLines()
-      const existingLine = lines.find(
-        (line) =>
-          (line.from_task_id === fromTaskId && line.to_task_id === toTaskId) ||
-          (line.from_task_id === toTaskId && line.to_task_id === fromTaskId),
-      )
+      const existingLine = await db.getLine(fromTaskId, toTaskId)
 
       if (existingLine) {
         await db.deleteLine(existingLine.id)

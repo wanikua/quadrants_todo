@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Calendar, Clock, Users, Trash2, Edit, Save, X, MessageCircle, Send } from "lucide-react"
 import TaskSegment from "@/components/TaskSegment"
 import OptimizedInput from "@/components/OptimizedInput"
+import { Input } from "@/components/ui/input"
 import type { TaskWithAssignees, Player } from "@/lib/database"
 
 interface TaskDetailDialogProps {
@@ -28,12 +29,11 @@ interface TaskDetailDialogProps {
     importance: number,
     assigneeIds: number[],
   ) => void
-  onAddComment: (taskId: number, content: string, authorName: string) => void
-  onDeleteComment: (commentId: number) => void
-  isPending: boolean
+  onAddComment: (taskId: number, content: string, authorName: string) => Promise<void>
+  onDeleteComment: (commentId: number, taskId: number) => Promise<void>
 }
 
-const TaskDetailDialog = React.memo(function TaskDetailDialog({
+export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   task,
   isOpen,
   onOpenChange,
@@ -43,7 +43,6 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
   onUpdateTask,
   onAddComment,
   onDeleteComment,
-  isPending,
 }: TaskDetailDialogProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editDescription, setEditDescription] = useState("")
@@ -51,29 +50,14 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
   const [editImportance, setEditImportance] = useState([50])
   const [editAssignees, setEditAssignees] = useState<number[]>([])
   const [newComment, setNewComment] = useState("")
-  const [commentAuthor, setCommentAuthor] = useState("Anonymous")
+  const [authorName, setAuthorName] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    if (task && isOpen) {
-      setEditDescription(task.description)
-      setEditUrgency([task.urgency])
-      setEditImportance([task.importance])
-      setEditAssignees(task.assignees.map((p) => p.id))
-    }
-  }, [task, isOpen])
-
-  // 在任务assignees更新时，同步editAssignees状态
-  useEffect(() => {
-    if (task && isEditing) {
-      setEditAssignees(task.assignees.map((p) => p.id))
-    }
-  }, [task?.assignees, isEditing])
-
-  const handleStartEdit = useCallback(() => {
+  const handleStartEdit = () => {
     setIsEditing(true)
-  }, [])
+  }
 
-  const handleCancelEdit = useCallback(() => {
+  const handleCancelEdit = () => {
     if (task) {
       setEditDescription(task.description)
       setEditUrgency([task.urgency])
@@ -81,37 +65,56 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
       setEditAssignees(task.assignees.map((p) => p.id))
     }
     setIsEditing(false)
-  }, [task])
+  }
 
-  const handleSaveEdit = useCallback(() => {
+  const handleSaveEdit = async () => {
     if (task) {
-      onUpdateTask(task.id, editDescription.trim(), editUrgency[0], editImportance[0], editAssignees)
-      setIsEditing(false)
-    }
-  }, [task, editDescription, editUrgency, editImportance, editAssignees, onUpdateTask])
-
-  const handlePlayerSelect = useCallback(
-    (playerId: string) => {
-      const id = Number.parseInt(playerId)
-      if (!editAssignees.includes(id)) {
-        setEditAssignees((prev) => [...prev, id])
+      setIsSubmitting(true)
+      try {
+        await onUpdateTask(task.id, editDescription.trim(), editUrgency[0], editImportance[0], editAssignees)
+        setIsEditing(false)
+      } catch (error) {
+        console.error("Error updating task:", error)
+      } finally {
+        setIsSubmitting(false)
       }
-    },
-    [editAssignees],
-  )
-
-  const handlePlayerRemove = useCallback((playerId: number) => {
-    setEditAssignees((prev) => prev.filter((id) => id !== playerId))
-  }, [])
-
-  const handleAddComment = useCallback(() => {
-    if (task && newComment.trim()) {
-      onAddComment(task.id, newComment.trim(), commentAuthor.trim() || "Anonymous")
-      setNewComment("")
     }
-  }, [task, newComment, commentAuthor, onAddComment])
+  }
 
-  if (!task) return null
+  const handlePlayerSelect = (playerId: string) => {
+    const id = Number.parseInt(playerId)
+    if (!editAssignees.includes(id)) {
+      setEditAssignees((prev) => [...prev, id])
+    }
+  }
+
+  const handlePlayerRemove = (playerId: number) => {
+    setEditAssignees((prev) => prev.filter((id) => id !== playerId))
+  }
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !authorName.trim()) return
+
+    setIsSubmitting(true)
+    try {
+      await onAddComment(task.id, newComment.trim(), authorName.trim())
+      setNewComment("")
+    } catch (error) {
+      console.error("Error adding comment:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (confirm("Are you sure you want to delete this comment?")) {
+      try {
+        await onDeleteComment(commentId, task.id)
+      } catch (error) {
+        console.error("Error deleting comment:", error)
+      }
+    }
+  }
 
   const getQuadrantLabel = (urgency: number, importance: number): string => {
     if (urgency >= 50 && importance >= 50) {
@@ -159,39 +162,42 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
                 placeholder="Task description"
                 value={editDescription}
                 onChange={setEditDescription}
-                disabled={isPending}
                 className="text-lg font-semibold"
               />
             </div>
           ) : (
+<<<<<<< HEAD
             <h3 className="text-lg font-semibold text-foreground break-words">{task.description}</h3>
+=======
+            <h3 className="text-lg font-semibold text-gray-900 break-words">{task?.description}</h3>
+>>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
           )}
           <div className="mt-2">
             <Badge
               variant="outline"
               className={`${getQuadrantColor(
-                isEditing ? editUrgency[0] : task.urgency,
-                isEditing ? editImportance[0] : task.importance,
+                isEditing ? editUrgency[0] : task?.urgency,
+                isEditing ? editImportance[0] : task?.importance,
               )} text-sm`}
             >
               {getQuadrantLabel(
-                isEditing ? editUrgency[0] : task.urgency,
-                isEditing ? editImportance[0] : task.importance,
+                isEditing ? editUrgency[0] : task?.urgency,
+                isEditing ? editImportance[0] : task?.importance,
               )}
             </Badge>
           </div>
         </div>
         <div className="flex gap-2">
           {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={handleStartEdit} disabled={isPending}>
+            <Button variant="outline" size="sm" onClick={handleStartEdit}>
               <Edit className="w-4 h-4" />
             </Button>
           ) : (
             <>
-              <Button variant="outline" size="sm" onClick={handleSaveEdit} disabled={isPending}>
+              <Button variant="outline" size="sm" onClick={handleSaveEdit}>
                 <Save className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={isPending}>
+              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
                 <X className="w-4 h-4" />
               </Button>
             </>
@@ -208,6 +214,7 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
           </div>
           {isEditing ? (
             <>
+<<<<<<< HEAD
               <div className="text-2xl font-bold text-foreground">{editUrgency[0]}</div>
               <Slider value={editUrgency} onValueChange={setEditUrgency} max={100} step={1} disabled={isPending} />
             </>
@@ -215,9 +222,18 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
             <>
               <div className="text-2xl font-bold text-foreground">{task.urgency}</div>
               <div className="w-full bg-muted rounded-full h-2">
+=======
+              <div className="text-2xl font-bold text-gray-900">{editUrgency[0]}</div>
+              <Slider value={editUrgency} onValueChange={setEditUrgency} max={100} step={1} />
+            </>
+          ) : (
+            <>
+              <div className="text-2xl font-bold text-gray-900">{task?.urgency}</div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+>>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
                 <div
                   className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${task.urgency}%` }}
+                  style={{ width: `${task?.urgency}%` }}
                 />
               </div>
             </>
@@ -231,6 +247,7 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
           </div>
           {isEditing ? (
             <>
+<<<<<<< HEAD
               <div className="text-2xl font-bold text-foreground">{editImportance[0]}</div>
               <Slider
                 value={editImportance}
@@ -244,9 +261,18 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
             <>
               <div className="text-2xl font-bold text-foreground">{task.importance}</div>
               <div className="w-full bg-muted rounded-full h-2">
+=======
+              <div className="text-2xl font-bold text-gray-900">{editImportance[0]}</div>
+              <Slider value={editImportance} onValueChange={setEditImportance} max={100} step={1} />
+            </>
+          ) : (
+            <>
+              <div className="text-2xl font-bold text-gray-900">{task?.importance}</div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+>>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
                 <div
                   className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${task.importance}%` }}
+                  style={{ width: `${task?.importance}%` }}
                 />
               </div>
             </>
@@ -258,12 +284,12 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <Users className="w-4 h-4" />
-          Assigned Players ({isEditing ? editAssignees.length : task.assignees.length})
+          Assigned Players ({isEditing ? editAssignees.length : task?.assignees.length})
         </div>
 
         {isEditing ? (
           <div className="space-y-3">
-            <Select onValueChange={handlePlayerSelect} disabled={isPending}>
+            <Select onValueChange={handlePlayerSelect}>
               <SelectTrigger>
                 <SelectValue placeholder="Select players to assign" />
               </SelectTrigger>
@@ -301,6 +327,7 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
           </div>
         ) : (
           <div className="space-y-2">
+<<<<<<< HEAD
             {task.assignees.length === 0 ? (
               <div className="text-sm text-muted-foreground italic p-3 bg-muted rounded-lg">
                 No players assigned to this task
@@ -308,6 +335,15 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
             ) : (
               task.assignees.map((player) => (
                 <div key={player.id} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
+=======
+            {task?.assignees.length === 0 ? (
+              <div className="text-sm text-gray-500 italic p-3 bg-gray-50 rounded-lg">
+                No players assigned to this task
+              </div>
+            ) : (
+              task?.assignees.map((player) => (
+                <div key={player.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+>>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
                   <div
                     className="w-4 h-4 rounded-full border border-border"
                     style={{ backgroundColor: player.color }}
@@ -324,17 +360,16 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
       <div className="space-y-3 pt-4 border-t border-border">
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <MessageCircle className="w-4 h-4" />
-          Comments ({task.comments?.length || 0})
+          Comments ({task?.comments?.length || 0})
         </div>
 
         {/* Add Comment */}
         <div className="space-y-2">
           <div className="flex gap-2">
-            <OptimizedInput
+            <Input
               placeholder="Your name (optional)"
-              value={commentAuthor}
-              onChange={setCommentAuthor}
-              disabled={isPending}
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
               className="w-32"
             />
           </div>
@@ -343,12 +378,11 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
               placeholder="Add a comment..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              disabled={isPending}
               className="flex-1 min-h-[60px]"
             />
             <Button
               onClick={handleAddComment}
-              disabled={isPending || !newComment.trim()}
+              disabled={!newComment.trim() || !authorName.trim() || isSubmitting}
               size="sm"
               className="self-end"
             >
@@ -358,7 +392,7 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
         </div>
 
         {/* Comments List */}
-        {task.comments && task.comments.length > 0 && (
+        {task?.comments && task.comments.length > 0 ? (
           <ScrollArea className="max-h-48">
             <div className="space-y-2">
               {task.comments.map((comment) => (
@@ -374,9 +408,8 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDeleteComment(comment.id)}
+                      onClick={() => handleDeleteComment(comment.id)}
                       className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
-                      disabled={isPending}
                     >
                       <Trash2 className="w-3 h-3" />
                     </Button>
@@ -385,6 +418,8 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
               ))}
             </div>
           </ScrollArea>
+        ) : (
+          <p className="text-gray-500 text-center py-8">No comments yet. Be the first to comment!</p>
         )}
       </div>
 
@@ -392,9 +427,13 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
       <div className="space-y-3 pt-4 border-t border-border">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="w-4 h-4" />
-          Created: {formatDate(task.created_at)}
+          Created: {formatDate(task?.created_at)}
         </div>
+<<<<<<< HEAD
         <div className="text-xs text-muted-foreground">Task ID: {task.id}</div>
+=======
+        <div className="text-xs text-gray-500">Task ID: {task?.id}</div>
+>>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
       </div>
 
       {/* Actions */}
@@ -406,7 +445,6 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
             onDeleteTask(task.id)
             onOpenChange(false)
           }}
-          disabled={isPending}
           className="flex items-center gap-2"
         >
           <Trash2 className="w-4 h-4" />
@@ -434,9 +472,9 @@ const TaskDetailDialog = React.memo(function TaskDetailDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Task Details</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Task Details</DialogTitle>
         </DialogHeader>
         {content}
       </DialogContent>
