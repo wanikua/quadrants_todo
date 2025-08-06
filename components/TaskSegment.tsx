@@ -1,87 +1,83 @@
-import React from "react"
-import type { TaskWithAssignees } from "@/lib/database"
+'use client'
 
-interface TaskSegmentProps {
-  task: TaskWithAssignees
-  size?: number
+import React from 'react'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Edit, Trash2 } from 'lucide-react'
+
+interface Task {
+  id: string
+  title: string
+  description?: string
+  quadrant: 'urgent-important' | 'not-urgent-important' | 'urgent-not-important' | 'not-urgent-not-important'
+  priority: 'high' | 'medium' | 'low'
+  completed: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
-const TaskSegment = React.memo(function TaskSegment({ task, size = 40 }: TaskSegmentProps) {
-  const assignedPlayers = task.assignees
+interface TaskSegmentProps {
+  task: Task
+  onEdit: () => void
+  onDelete: () => void
+  onToggleComplete: (completed: boolean) => void
+}
 
-  // 如果没有分配玩家，显示灰色圆圈
-  if (assignedPlayers.length === 0) {
-    return (
-      <div
-        className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-border bg-muted"
-        style={{
-          width: size,
-          height: size,
-        }}
-        title={`${task.description} - Unassigned`}
-      >
-        <span className="drop-shadow-sm">?</span>
-      </div>
-    )
-  }
+const PRIORITY_COLORS = {
+  high: 'bg-red-100 text-red-800 border-red-200',
+  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  low: 'bg-green-100 text-green-800 border-green-200'
+}
 
-  if (assignedPlayers.length === 1) {
-    return (
-      <div
-        className="rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-white"
-        style={{
-          backgroundColor: assignedPlayers[0].color,
-          width: size,
-          height: size,
-        }}
-        title={`${task.description} - ${assignedPlayers[0].name}`}
-      >
-        <span className="drop-shadow-sm">1</span>
-      </div>
-    )
-  }
-
-  const segmentAngle = 360 / assignedPlayers.length
-
+export function TaskSegment({ task, onEdit, onDelete, onToggleComplete }: TaskSegmentProps) {
   return (
-    <div
-      className="relative rounded-full cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg"
-      style={{ width: size, height: size }}
-      title={`${task.description} - ${assignedPlayers.map((p) => p.name).join(", ")}`}
-    >
-      <svg width={size} height={size} className="absolute inset-0">
-        <circle cx={size / 2} cy={size / 2} r={size / 2 - 1} fill="white" stroke="#e5e7eb" strokeWidth="2" />
-        {assignedPlayers.map((player, index) => {
-          const startAngle = index * segmentAngle - 90
-          const endAngle = (index + 1) * segmentAngle - 90
-          const startRad = (startAngle * Math.PI) / 180
-          const endRad = (endAngle * Math.PI) / 180
-          const radius = size / 2 - 2
-          const centerX = size / 2
-          const centerY = size / 2
-
-          const x1 = centerX + radius * Math.cos(startRad)
-          const y1 = centerY + radius * Math.sin(startRad)
-          const x2 = centerX + radius * Math.cos(endRad)
-          const y2 = centerY + radius * Math.sin(endRad)
-
-          const largeArcFlag = segmentAngle > 180 ? 1 : 0
-
-          const pathData = [
-            `M ${centerX} ${centerY}`,
-            `L ${x1} ${y1}`,
-            `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-            "Z",
-          ].join(" ")
-
-          return <path key={player.id} d={pathData} fill={player.color} stroke="white" strokeWidth="1" />
-        })}
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold drop-shadow-sm">
-        {assignedPlayers.length}
+    <Card className={`p-3 transition-all hover:shadow-md ${task.completed ? 'opacity-60' : ''}`}>
+      <div className="flex items-start gap-3">
+        <Checkbox
+          checked={task.completed}
+          onCheckedChange={(checked) => onToggleComplete(!!checked)}
+          className="mt-1"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <h4 className={`font-medium text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                {task.title}
+              </h4>
+              {task.description && (
+                <p className={`text-xs text-muted-foreground mt-1 ${task.completed ? 'line-through' : ''}`}>
+                  {task.description}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className={`text-xs ${PRIORITY_COLORS[task.priority]}`}>
+                {task.priority}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                className="h-6 w-6 p-0"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </Card>
   )
-})
+}
 
 export default TaskSegment

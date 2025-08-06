@@ -1,11 +1,13 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { shouldUseClerk } from './lib/env'
 
 const isProtectedRoute = createRouteMatcher([
   '/projects(.*)',
 ])
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
+  // Only protect routes if Clerk is properly configured for this domain
+  if (shouldUseClerk() && isProtectedRoute(req)) {
     await auth.protect()
   }
 })
