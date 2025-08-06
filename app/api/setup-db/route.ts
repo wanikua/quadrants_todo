@@ -1,22 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
-
-// Check if DATABASE_URL is available
-const DATABASE_URL = process.env.DATABASE_URL
-
-let sql: any = null
-
-if (DATABASE_URL) {
-  try {
-    sql = neon(DATABASE_URL)
-  } catch (error) {
-    console.error("Failed to initialize database connection:", error)
-  }
-}
+import { sql } from "@/app/db"
 
 export async function POST(request: NextRequest) {
   if (!sql) {
-    return NextResponse.json({ success: false, error: "Database not configured" }, { status: 500 })
+    return NextResponse.json({ 
+      success: false, 
+      error: "Database not configured. Please set DATABASE_URL environment variable with format: postgresql://user:password@host.tld/dbname" 
+    }, { status: 500 })
   }
 
   try {

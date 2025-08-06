@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { getProjectWithData, getUserProjectAccess } from "@/app/db/actions"
 import { QuadrantMatrix } from "@/components/QuadrantMatrix"
+import { shouldUseClerk } from "@/lib/env"
 
 interface ProjectPageProps {
   params: {
@@ -10,15 +11,25 @@ interface ProjectPageProps {
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
-  const { userId } = await auth()
+  let userId = 'demo-user'
   
-  if (!userId) {
-    redirect("/")
+  // Only use Clerk if properly configured
+  if (shouldUseClerk()) {
+    try {
+      const { userId: clerkUserId } = await auth()
+      if (!clerkUserId) {
+        redirect("/")
+      }
+      userId = clerkUserId
+    } catch (error) {
+      console.error('Clerk auth error:', error)
+      // Continue with demo user
+    }
   }
 
   // Check if user has access to this project
   const hasAccess = await getUserProjectAccess(userId, params.projectId)
-  if (!hasAccess) {
+  if (!hasAccess && shouldUseClerk()) {
     redirect("/projects")
   }
 

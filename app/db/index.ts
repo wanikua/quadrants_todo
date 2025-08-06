@@ -5,12 +5,35 @@ import * as schema from './schema'
 
 loadEnvConfig(process.cwd())
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL must be a Neon postgres connection string')
+// Validate DATABASE_URL format
+const databaseUrl = process.env.DATABASE_URL
+
+if (!databaseUrl) {
+  console.warn('DATABASE_URL is not set')
 }
 
-const sql = neon(process.env.DATABASE_URL)
-export const db = drizzle(sql, { schema })
+let sql: any = null
+let db: any = null
+
+if (databaseUrl) {
+  try {
+    // Validate the URL format
+    if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
+      throw new Error('DATABASE_URL must start with postgresql:// or postgres://')
+    }
+    
+    sql = neon(databaseUrl)
+    db = drizzle(sql, { schema })
+  } catch (error) {
+    console.error('Failed to initialize database connection:', error)
+    // Set to null so we can handle gracefully
+    sql = null
+    db = null
+  }
+}
+
+// Export with null checks
+export { db, sql }
 
 // Export types for convenience
 export type Project = typeof schema.projects.$inferSelect
