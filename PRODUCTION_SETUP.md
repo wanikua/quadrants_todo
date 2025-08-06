@@ -28,41 +28,41 @@
 2. Navigate to **Settings** → **Environment Variables**
 3. Add these variables for **Production** environment:
 
-```
+\`\`\`
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_[your-key]
 CLERK_SECRET_KEY=sk_live_[your-key]
 DATABASE_URL=[your-neon-database-url]
-```
+\`\`\`
 
 ### Deploy Commands
-```bash
+\`\`\`bash
 # If using Vercel CLI
 vercel --prod
 
 # Or push to main branch if connected to GitHub
 git push origin main
-```
+\`\`\`
 
 ## 3. Update .env.production File
 
 Replace the placeholder values in `.env.production`:
 
-```env
+\`\`\`env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_[paste-your-actual-key]
 CLERK_SECRET_KEY=sk_live_[paste-your-actual-key]
-```
+\`\`\`
 
 ## 4. Test Production Locally
 
 To test with production keys locally:
 
-```bash
+\`\`\`bash
 # Build with production environment
 npm run build
 
 # Start production server locally
 npm run start
-```
+\`\`\`
 
 ## 5. Verify Production Setup
 
