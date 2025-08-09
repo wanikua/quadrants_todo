@@ -1,407 +1,471 @@
 'use client'
 
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
-import { Plus, HelpCircle, Users, Palette, Trash2, Edit2, Check, X } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Edit, Trash2, Users, HelpCircle, X } from 'lucide-react'
 import { TaskSegment } from './TaskSegment'
 
 interface Task {
-  id: string
-  projectId: string
+  id: number
   description: string
   urgency: number
   importance: number
-  completed: boolean
-  assignedTo: string | null
-  createdAt: Date
-  updatedAt: Date
+  assignees?: Player[]
+  created_at: Date
+  updated_at: Date
 }
 
 interface Player {
-  id: string
-  projectId: string
+  id: number
   name: string
   color: string
-  createdAt: Date
-  updatedAt: Date
 }
 
 interface Line {
-  id: string
-  projectId: string
-  startX: number
-  startY: number
-  endX: number
-  endY: number
+  id: number
+  from_task_id: number
+  to_task_id: number
+  style: string
+  size: number
   color: string
-  createdAt: Date
-  updatedAt: Date
+}
+
+interface Project {
+  id: string
+  name: string
+  type: string
+  owner_id: string
 }
 
 interface QuadrantMatrixProps {
-  initialTasks: Task[]
-  initialPlayers: Player[]
-  initialLines: Line[]
+  project: Project
+  tasks: Task[]
+  players: Player[]
+  lines: Line[]
+  onTaskCreate?: (description: string, urgency: number, importance: number, assigneeIds: number[]) => void
+  onTaskUpdate?: (taskId: number, updates: Partial<Task>) => void
+  onTaskDelete?: (taskId: number) => void
+  onPlayerCreate?: (name: string, color: string) => void
 }
 
-export function QuadrantMatrix({ initialTasks, initialPlayers, initialLines }: QuadrantMatrixProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks)
-  const [players, setPlayers] = useState<Player[]>(initialPlayers)
-  const [lines, setLines] = useState<Line[]>(initialLines)
-  const [newTaskDescription, setNewTaskDescription] = useState('')
-  const [newTaskUrgency, setNewTaskUrgency] = useState([50])
-  const [newTaskImportance, setNewTaskImportance] = useState([50])
-  const [showAddTask, setShowAddTask] = useState(false)
-  const [showAddPlayer, setShowAddPlayer] = useState(false)
+export function QuadrantMatrix({
+  project,
+  tasks = [],
+  players = [],
+  lines = [],
+  onTaskCreate,
+  onTaskUpdate,
+  onTaskDelete,
+  onPlayerCreate
+}: QuadrantMatrixProps) {
+  const [isAddingTask, setIsAddingTask] = useState(false)
+  const [isAddingPlayer, setIsAddingPlayer] = useState(false)
   const [showHelpDialog, setShowHelpDialog] = useState(false)
-  const [newPlayerName, setNewPlayerName] = useState('')
-  const [newPlayerColor, setNewPlayerColor] = useState('#3b82f6')
-  const [editingTask, setEditingTask] = useState<string | null>(null)
-  const [editingPlayer, setEditingPlayer] = useState<string | null>(null)
+  const [newTask, setNewTask] = useState({
+    description: '',
+    urgency: 50,
+    importance: 50,
+    assigneeIds: [] as number[]
+  })
+  const [newPlayer, setNewPlayer] = useState({
+    name: '',
+    color: '#3b82f6'
+  })
 
   const matrixRef = useRef<HTMLDivElement>(null)
 
-  const addTask = useCallback(() => {
-    if (newTaskDescription.trim()) {
-      const newTask: Task = {
-        id: Date.now().toString(),
-        projectId: 'demo',
-        description: newTaskDescription.trim(),
-        urgency: newTaskUrgency[0],
-        importance: newTaskImportance[0],
-        completed: false,
-        assignedTo: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      setTasks(prev => [...prev, newTask])
-      setNewTaskDescription('')
-      setNewTaskUrgency([50])
-      setNewTaskImportance([50])
-      setShowAddTask(false)
+  // Categorize tasks into quadrants
+  const getQuadrant = (urgency: number, importance: number) => {
+    if (urgency >= 50 && importance >= 50) return 'urgent-important'
+    if (urgency < 50 && importance >= 50) return 'not-urgent-important'
+    if (urgency >= 50 && importance < 50) return 'urgent-not-important'
+    return 'not-urgent-not-important'
+  }
+
+  const quadrants = {
+    'urgent-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'urgent-important'),
+    'not-urgent-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'not-urgent-important'),
+    'urgent-not-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'urgent-not-important'),
+    'not-urgent-not-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'not-urgent-not-important')
+  }
+
+  const handleCreateTask = async () => {
+    if (!newTask.description.trim()) return
+
+    if (onTaskCreate) {
+      await onTaskCreate(
+        newTask.description,
+        newTask.urgency,
+        newTask.importance,
+        newTask.assigneeIds
+      )
     }
-  }, [newTaskDescription, newTaskUrgency, newTaskImportance])
 
-  const addPlayer = useCallback(() => {
-    if (newPlayerName.trim()) {
-      const newPlayer: Player = {
-        id: Date.now().toString(),
-        projectId: 'demo',
-        name: newPlayerName.trim(),
-        color: newPlayerColor,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      setPlayers(prev => [...prev, newPlayer])
-      setNewPlayerName('')
-      setNewPlayerColor('#3b82f6')
-      setShowAddPlayer(false)
+    setNewTask({
+      description: '',
+      urgency: 50,
+      importance: 50,
+      assigneeIds: []
+    })
+    setIsAddingTask(false)
+  }
+
+  const handleCreatePlayer = async () => {
+    if (!newPlayer.name.trim()) return
+
+    if (onPlayerCreate) {
+      await onPlayerCreate(newPlayer.name, newPlayer.color)
     }
-  }, [newPlayerName, newPlayerColor])
 
-  const updateTask = useCallback((taskId: string, updates: Partial<Task>) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, ...updates, updatedAt: new Date() } : task
-    ))
-  }, [])
-
-  const deleteTask = useCallback((taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId))
-  }, [])
-
-  const updatePlayer = useCallback((playerId: string, updates: Partial<Player>) => {
-    setPlayers(prev => prev.map(player => 
-      player.id === playerId ? { ...player, ...updates, updatedAt: new Date() } : player
-    ))
-  }, [])
-
-  const deletePlayer = useCallback((playerId: string) => {
-    setPlayers(prev => prev.filter(player => player.id !== playerId))
-    // Unassign tasks from deleted player
-    setTasks(prev => prev.map(task => 
-      task.assignedTo === playerId ? { ...task, assignedTo: null, updatedAt: new Date() } : task
-    ))
-  }, [])
-
-  const getQuadrantTasks = useCallback((urgencyMin: number, urgencyMax: number, importanceMin: number, importanceMax: number) => {
-    return tasks.filter(task => 
-      task.urgency >= urgencyMin && task.urgency < urgencyMax &&
-      task.importance >= importanceMin && task.importance < importanceMax
-    )
-  }, [tasks])
-
-  const getQuadrantTitle = (urgency: 'high' | 'low', importance: 'high' | 'low') => {
-    if (urgency === 'high' && importance === 'high') return 'Do First (Urgent & Important)'
-    if (urgency === 'high' && importance === 'low') return 'Delegate (Urgent & Not Important)'
-    if (urgency === 'low' && importance === 'high') return 'Schedule (Not Urgent & Important)'
-    return 'Eliminate (Not Urgent & Not Important)'
+    setNewPlayer({
+      name: '',
+      color: '#3b82f6'
+    })
+    setIsAddingPlayer(false)
   }
 
-  const getQuadrantColor = (urgency: 'high' | 'low', importance: 'high' | 'low') => {
-    if (urgency === 'high' && importance === 'high') return 'bg-red-50 border-red-200'
-    if (urgency === 'high' && importance === 'low') return 'bg-yellow-50 border-yellow-200'
-    if (urgency === 'low' && importance === 'high') return 'bg-green-50 border-green-200'
-    return 'bg-gray-50 border-gray-200'
-  }
-
-  const renderQuadrant = (urgency: 'high' | 'low', importance: 'high' | 'low') => {
-    const urgencyMin = urgency === 'high' ? 50 : 0
-    const urgencyMax = urgency === 'high' ? 100 : 50
-    const importanceMin = importance === 'high' ? 50 : 0
-    const importanceMax = importance === 'high' ? 100 : 50
-    
-    const quadrantTasks = getQuadrantTasks(urgencyMin, urgencyMax, importanceMin, importanceMax)
-
-    return (
-      <Card key={`${urgency}-${importance}`} className={`${getQuadrantColor(urgency, importance)} min-h-[300px]`}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">
-            {getQuadrantTitle(urgency, importance)}
-          </CardTitle>
-          <Badge variant="outline" className="w-fit">
-            {quadrantTasks.length} tasks
-          </Badge>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {quadrantTasks.map(task => (
-            <TaskSegment
-              key={task.id}
-              task={task}
-              players={players}
-              onUpdate={updateTask}
-              onDelete={deleteTask}
-              isEditing={editingTask === task.id}
-              onStartEdit={() => setEditingTask(task.id)}
-              onStopEdit={() => setEditingTask(null)}
-            />
-          ))}
-        </CardContent>
-      </Card>
-    )
-  }
+  const colors = [
+    '#ef4444', '#f97316', '#eab308', '#22c55e',
+    '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
+  ]
 
   return (
-    <Card className="p-2 sm:p-6">
-      <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6">
-        <CardTitle className="text-center text-lg sm:text-xl">ItsNotAI Task Manager</CardTitle>
-        
-        <div className="flex flex-wrap justify-center gap-2 mt-4">
-          <Dialog open={showAddTask} onOpenChange={setShowAddTask}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Add Task
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Task</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="task-description">Description</Label>
-                  <Textarea
-                    id="task-description"
-                    value={newTaskDescription}
-                    onChange={(e) => setNewTaskDescription(e.target.value)}
-                    placeholder="Enter task description..."
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Urgency: {newTaskUrgency[0]}</Label>
-                  <Slider
-                    value={newTaskUrgency}
-                    onValueChange={setNewTaskUrgency}
-                    max={100}
-                    step={1}
-                    className="mt-2"
-                  />
-                </div>
-                <div>
-                  <Label>Importance: {newTaskImportance[0]}</Label>
-                  <Slider
-                    value={newTaskImportance}
-                    onValueChange={setNewTaskImportance}
-                    max={100}
-                    step={1}
-                    className="mt-2"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={addTask} className="flex-1">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Task
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowAddTask(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showAddPlayer} onOpenChange={setShowAddPlayer}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Add Player
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Player</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="player-name">Name</Label>
-                  <Input
-                    id="player-name"
-                    value={newPlayerName}
-                    onChange={(e) => setNewPlayerName(e.target.value)}
-                    placeholder="Enter player name..."
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="player-color">Color</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="color"
-                      id="player-color"
-                      value={newPlayerColor}
-                      onChange={(e) => setNewPlayerColor(e.target.value)}
-                      className="w-12 h-8 rounded border"
-                    />
-                    <Input
-                      value={newPlayerColor}
-                      onChange={(e) => setNewPlayerColor(e.target.value)}
-                      placeholder="#3b82f6"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={addPlayer} className="flex-1">
-                    <Users className="w-4 h-4 mr-2" />
-                    Add Player
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowAddPlayer(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <HelpCircle className="w-4 h-4" />
+    <div className="w-full h-full p-4 bg-gray-50">
+      <Card className="mb-6">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">{project.name}</CardTitle>
+              <p className="text-gray-600 mt-1">Eisenhower Matrix - Task Prioritization</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowHelpDialog(true)}
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
                 Help
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Eisenhower Matrix Guide</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-red-50 border border-red-200 rounded">
-                    <h4 className="font-semibold text-red-800">Do First</h4>
-                    <p className="text-sm text-red-600">Urgent & Important</p>
-                    <p className="text-xs mt-1">Crisis, emergencies, deadline-driven projects</p>
-                  </div>
-                  <div className="p-3 bg-green-50 border border-green-200 rounded">
-                    <h4 className="font-semibold text-green-800">Schedule</h4>
-                    <p className="text-sm text-green-600">Not Urgent & Important</p>
-                    <p className="text-xs mt-1">Long-term development, strategic planning</p>
-                  </div>
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-                    <h4 className="font-semibold text-yellow-800">Delegate</h4>
-                    <p className="text-sm text-yellow-600">Urgent & Not Important</p>
-                    <p className="text-xs mt-1">Interruptions, some emails, some meetings</p>
-                  </div>
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-                    <h4 className="font-semibold text-gray-800">Eliminate</h4>
-                    <p className="text-sm text-gray-600">Not Urgent & Not Important</p>
-                    <p className="text-xs mt-1">Time wasters, excessive social media</p>
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {players.length > 0 && (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium mb-2">Team Members</h3>
-            <div className="flex flex-wrap gap-2">
-              {players.map(player => (
-                <div key={player.id} className="flex items-center gap-2">
-                  {editingPlayer === player.id ? (
-                    <div className="flex items-center gap-1">
-                      <Input
-                        value={player.name}
-                        onChange={(e) => updatePlayer(player.id, { name: e.target.value })}
-                        className="h-6 text-xs w-20"
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0"
-                        onClick={() => setEditingPlayer(null)}
-                      >
-                        <Check className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      style={{ backgroundColor: player.color + '20', borderColor: player.color }}
-                      className="flex items-center gap-1 cursor-pointer"
-                      onClick={() => setEditingPlayer(player.id)}
-                    >
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: player.color }}
-                      />
-                      {player.name}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-4 w-4 p-0 ml-1"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          deletePlayer(player.id)
-                        }}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </Badge>
-                  )}
-                </div>
-              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddingPlayer(true)}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Add Player
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsAddingTask(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Task
+              </Button>
             </div>
           </div>
-        )}
-      </CardHeader>
+        </CardHeader>
+      </Card>
 
-      <CardContent className="px-2 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" ref={matrixRef}>
-          {renderQuadrant('high', 'high')}
-          {renderQuadrant('low', 'high')}
-          {renderQuadrant('high', 'low')}
-          {renderQuadrant('low', 'low')}
-        </div>
-      </CardContent>
-    </Card>
+      {/* Players Section */}
+      {players.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Team Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {players.map((player) => (
+                <Badge
+                  key={player.id}
+                  variant="secondary"
+                  className="px-3 py-1"
+                  style={{ backgroundColor: player.color + '20', color: player.color }}
+                >
+                  {player.name}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Matrix Grid */}
+      <div ref={matrixRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
+        {/* Quadrant 1: Urgent & Important */}
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-red-800 flex items-center justify-between">
+              Do First
+              <Badge variant="destructive" className="text-xs">
+                Urgent & Important
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+            {quadrants['urgent-important'].map((task) => (
+              <TaskSegment
+                key={task.id}
+                task={task}
+                players={players}
+                onUpdate={onTaskUpdate}
+                onDelete={onTaskDelete}
+              />
+            ))}
+            {quadrants['urgent-important'].length === 0 && (
+              <p className="text-gray-500 text-sm italic">No urgent and important tasks</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quadrant 2: Not Urgent & Important */}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-blue-800 flex items-center justify-between">
+              Schedule
+              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                Not Urgent & Important
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+            {quadrants['not-urgent-important'].map((task) => (
+              <TaskSegment
+                key={task.id}
+                task={task}
+                players={players}
+                onUpdate={onTaskUpdate}
+                onDelete={onTaskDelete}
+              />
+            ))}
+            {quadrants['not-urgent-important'].length === 0 && (
+              <p className="text-gray-500 text-sm italic">No important but not urgent tasks</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quadrant 3: Urgent & Not Important */}
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-yellow-800 flex items-center justify-between">
+              Delegate
+              <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                Urgent & Not Important
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+            {quadrants['urgent-not-important'].map((task) => (
+              <TaskSegment
+                key={task.id}
+                task={task}
+                players={players}
+                onUpdate={onTaskUpdate}
+                onDelete={onTaskDelete}
+              />
+            ))}
+            {quadrants['urgent-not-important'].length === 0 && (
+              <p className="text-gray-500 text-sm italic">No urgent but not important tasks</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quadrant 4: Not Urgent & Not Important */}
+        <Card className="border-gray-200 bg-gray-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-gray-800 flex items-center justify-between">
+              Eliminate
+              <Badge variant="outline" className="text-xs">
+                Not Urgent & Not Important
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+            {quadrants['not-urgent-not-important'].map((task) => (
+              <TaskSegment
+                key={task.id}
+                task={task}
+                players={players}
+                onUpdate={onTaskUpdate}
+                onDelete={onTaskDelete}
+              />
+            ))}
+            {quadrants['not-urgent-not-important'].length === 0 && (
+              <p className="text-gray-500 text-sm italic">No low priority tasks</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Add Task Dialog */}
+      <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="description">Task Description</Label>
+              <Textarea
+                id="description"
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                placeholder="Enter task description..."
+                className="mt-1"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="urgency">Urgency: {newTask.urgency}%</Label>
+                <Input
+                  id="urgency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={newTask.urgency}
+                  onChange={(e) => setNewTask({ ...newTask, urgency: parseInt(e.target.value) })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="importance">Importance: {newTask.importance}%</Label>
+                <Input
+                  id="importance"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={newTask.importance}
+                  onChange={(e) => setNewTask({ ...newTask, importance: parseInt(e.target.value) })}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            {players.length > 0 && (
+              <div>
+                <Label>Assign to Players</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {players.map((player) => (
+                    <Badge
+                      key={player.id}
+                      variant={newTask.assigneeIds.includes(player.id) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      style={newTask.assigneeIds.includes(player.id) ? { backgroundColor: player.color } : {}}
+                      onClick={() => {
+                        const isSelected = newTask.assigneeIds.includes(player.id)
+                        setNewTask({
+                          ...newTask,
+                          assigneeIds: isSelected
+                            ? newTask.assigneeIds.filter(id => id !== player.id)
+                            : [...newTask.assigneeIds, player.id]
+                        })
+                      }}
+                    >
+                      {player.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddingTask(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateTask} disabled={!newTask.description.trim()}>
+                Add Task
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Player Dialog */}
+      <Dialog open={isAddingPlayer} onOpenChange={setIsAddingPlayer}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Player</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="playerName">Player Name</Label>
+              <Input
+                id="playerName"
+                value={newPlayer.name}
+                onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
+                placeholder="Enter player name..."
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label>Color</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    className={`w-8 h-8 rounded-full border-2 ${
+                      newPlayer.color === color ? 'border-gray-800' : 'border-gray-300'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setNewPlayer({ ...newPlayer, color })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddingPlayer(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreatePlayer} disabled={!newPlayer.name.trim()}>
+                Add Player
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Help Dialog */}
+      <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Eisenhower Matrix Guide</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 border border-red-200 bg-red-50 rounded">
+                <h4 className="font-semibold text-red-800 mb-2">Do First</h4>
+                <p className="text-sm text-red-700">Urgent & Important tasks that need immediate attention</p>
+              </div>
+              <div className="p-3 border border-blue-200 bg-blue-50 rounded">
+                <h4 className="font-semibold text-blue-800 mb-2">Schedule</h4>
+                <p className="text-sm text-blue-700">Important but not urgent tasks to plan for</p>
+              </div>
+              <div className="p-3 border border-yellow-200 bg-yellow-50 rounded">
+                <h4 className="font-semibold text-yellow-800 mb-2">Delegate</h4>
+                <p className="text-sm text-yellow-700">Urgent but not important tasks to assign to others</p>
+              </div>
+              <div className="p-3 border border-gray-200 bg-gray-50 rounded">
+                <h4 className="font-semibold text-gray-800 mb-2">Eliminate</h4>
+                <p className="text-sm text-gray-700">Neither urgent nor important tasks to remove</p>
+              </div>
+            </div>
+            <div className="text-sm text-gray-600">
+              <p>Use the urgency and importance sliders when creating tasks to automatically place them in the correct quadrant.</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
 

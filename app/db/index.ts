@@ -1,9 +1,6 @@
-import { loadEnvConfig } from '@next/env'
 import { neon } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-http'
 import * as schema from './schema'
-
-loadEnvConfig(process.cwd())
 
 // Validate DATABASE_URL format
 const databaseUrl = process.env.DATABASE_URL

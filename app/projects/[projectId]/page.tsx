@@ -1,8 +1,8 @@
-import { auth } from "@clerk/nextjs/server"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
+import { ProjectTaskManager } from "@/components/project-task-manager"
+import { DatabaseConfigWarning } from "@/components/database-config-warning"
 import { getProjectWithData, getUserProjectAccess } from "@/app/db/actions"
-import { QuadrantMatrix } from "@/components/QuadrantMatrix"
-import { shouldUseClerk } from "@/lib/env"
 
 interface ProjectPageProps {
   params: {
@@ -11,50 +11,47 @@ interface ProjectPageProps {
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
-  let userId = 'demo-user'
-  
-  // Only use Clerk if properly configured
-  if (shouldUseClerk()) {
-    try {
-      const { userId: clerkUserId } = await auth()
-      if (!clerkUserId) {
-        redirect("/")
-      }
-      userId = clerkUserId
-    } catch (error) {
-      console.error('Clerk auth error:', error)
-      // Continue with demo user
+  const { userId } = await auth()
+  const user = await currentUser()
+
+  if (!userId || !user) {
+    redirect("/")
+  }
+
+  // Check if database is configured
+  const DATABASE_URL = process.env.DATABASE_URL
+  if (!DATABASE_URL) {
+    return <DatabaseConfigWarning />
+  }
+
+  try {
+    // Check if user has access to this project
+    const hasAccess = await getUserProjectAccess(userId, params.projectId)
+    if (!hasAccess) {
+      redirect("/projects")
     }
-  }
 
-  // Check if user has access to this project
-  const hasAccess = await getUserProjectAccess(userId, params.projectId)
-  if (!hasAccess && shouldUseClerk()) {
-    redirect("/projects")
-  }
+    // Get project data
+    const projectData = await getProjectWithData(params.projectId)
+    if (!projectData) {
+      redirect("/projects")
+    }
 
-  // Get project data
-  const projectData = await getProjectWithData(params.projectId)
-  if (!projectData) {
-    redirect("/projects")
+    return (
+      <ProjectTaskManager
+        user={{
+          id: userId,
+          name: user.firstName + " " + user.lastName,
+          email: user.emailAddresses[0]?.emailAddress || "",
+        }}
+        project={projectData.project}
+        tasks={projectData.tasks}
+        players={projectData.players}
+        lines={projectData.lines}
+      />
+    )
+  } catch (error) {
+    console.error("Failed to load project:", error)
+    return <DatabaseConfigWarning />
   }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">{projectData.project.name}</h1>
-          <p className="text-muted-foreground">
-            {projectData.project.type === 'personal' ? 'Personal Project' : 'Team Project'}
-          </p>
-        </div>
-        
-        <QuadrantMatrix
-          initialTasks={projectData.tasks}
-          initialPlayers={projectData.players}
-          initialLines={projectData.lines}
-        />
-      </div>
-    </div>
-  )
 }

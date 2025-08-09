@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +28,7 @@ interface TaskDetailDialogProps {
     urgency: number,
     importance: number,
     assigneeIds: number[],
-  ) => void
+  ) => Promise<void> | void
   onAddComment: (taskId: number, content: string, authorName: string) => Promise<void>
   onDeleteComment: (commentId: number, taskId: number) => Promise<void>
 }
@@ -44,48 +44,62 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   onAddComment,
   onDeleteComment,
 }: TaskDetailDialogProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editDescription, setEditDescription] = useState("")
-  const [editUrgency, setEditUrgency] = useState([50])
-  const [editImportance, setEditImportance] = useState([50])
-  const [editAssignees, setEditAssignees] = useState<number[]>([])
-  const [newComment, setNewComment] = useState("")
-  const [authorName, setAuthorName] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isEditing, setIsEditing] = React.useState(false)
+  const [editDescription, setEditDescription] = React.useState("")
+  const [editUrgency, setEditUrgency] = React.useState<number[]>([50])
+  const [editImportance, setEditImportance] = React.useState<number[]>([50])
+  const [editAssignees, setEditAssignees] = React.useState<number[]>([])
+  const [newComment, setNewComment] = React.useState("")
+  const [authorName, setAuthorName] = React.useState("")
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-  const handleStartEdit = () => {
-    setIsEditing(true)
+  // Initialize edit fields when task opens or changes
+  React.useEffect(() => {
+    if (task) {
+      setEditDescription(task.description ?? "")
+      setEditUrgency([task.urgency ?? 50])
+      setEditImportance([task.importance ?? 50])
+      setEditAssignees(task.assignees?.map((p) => p.id) ?? [])
+    } else {
+      setIsEditing(false)
+      setEditDescription("")
+      setEditUrgency([50])
+      setEditImportance([50])
+      setEditAssignees([])
+    }
+  }, [task, isOpen])
+
+  if (!task) {
+    // Nothing to render if task is null; keep container closed by parent
+    return null
   }
 
+  const handleStartEdit = () => setIsEditing(true)
+
   const handleCancelEdit = () => {
-    if (task) {
-      setEditDescription(task.description)
-      setEditUrgency([task.urgency])
-      setEditImportance([task.importance])
-      setEditAssignees(task.assignees.map((p) => p.id))
-    }
+    // Reset to the current task values and exit edit mode
+    setEditDescription(task.description ?? "")
+    setEditUrgency([task.urgency ?? 50])
+    setEditImportance([task.importance ?? 50])
+    setEditAssignees(task.assignees?.map((p) => p.id) ?? [])
     setIsEditing(false)
   }
 
   const handleSaveEdit = async () => {
-    if (task) {
-      setIsSubmitting(true)
-      try {
-        await onUpdateTask(task.id, editDescription.trim(), editUrgency[0], editImportance[0], editAssignees)
-        setIsEditing(false)
-      } catch (error) {
-        console.error("Error updating task:", error)
-      } finally {
-        setIsSubmitting(false)
-      }
+    setIsSubmitting(true)
+    try {
+      await onUpdateTask(task.id, editDescription.trim(), editUrgency[0], editImportance[0], editAssignees)
+      setIsEditing(false)
+    } catch (error) {
+      console.error("Error updating task:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handlePlayerSelect = (playerId: string) => {
-    const id = Number.parseInt(playerId)
-    if (!editAssignees.includes(id)) {
-      setEditAssignees((prev) => [...prev, id])
-    }
+    const id = Number.parseInt(playerId, 10)
+    setEditAssignees((prev) => (prev.includes(id) ? prev : [...prev, id]))
   }
 
   const handlePlayerRemove = (playerId: number) => {
@@ -93,12 +107,14 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   }
 
   const handleAddComment = async () => {
-    if (!newComment.trim() || !authorName.trim()) return
-
+    const content = newComment.trim()
+    const author = authorName.trim()
+    if (!content || !author) return
     setIsSubmitting(true)
     try {
-      await onAddComment(task.id, newComment.trim(), authorName.trim())
+      await onAddComment(task.id, content, author)
       setNewComment("")
+      // authorName remains to make adding multiple comments easier
     } catch (error) {
       console.error("Error adding comment:", error)
     } finally {
@@ -107,6 +123,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   }
 
   const handleDeleteComment = async (commentId: number) => {
+    // eslint-disable-next-line no-alert
     if (confirm("Are you sure you want to delete this comment?")) {
       try {
         await onDeleteComment(commentId, task.id)
@@ -117,37 +134,32 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   }
 
   const getQuadrantLabel = (urgency: number, importance: number): string => {
-    if (urgency >= 50 && importance >= 50) {
-      return "Important & Urgent"
-    } else if (urgency < 50 && importance >= 50) {
-      return "Important & Not Urgent"
-    } else if (urgency >= 50 && importance < 50) {
-      return "Not Important & Urgent"
-    } else {
-      return "Not Important & Not Urgent"
-    }
+    if (urgency >= 50 && importance >= 50) return "Important & Urgent"
+    if (urgency < 50 && importance >= 50) return "Important & Not Urgent"
+    if (urgency >= 50 && importance < 50) return "Not Important & Urgent"
+    return "Not Important & Not Urgent"
   }
 
   const getQuadrantColor = (urgency: number, importance: number): string => {
-    if (urgency >= 50 && importance >= 50) {
-      return "bg-red-100 text-red-800 border-red-300"
-    } else if (urgency < 50 && importance >= 50) {
-      return "bg-blue-100 text-blue-800 border-blue-300"
-    } else if (urgency >= 50 && importance < 50) {
-      return "bg-yellow-100 text-yellow-800 border-yellow-300"
-    } else {
-      return "bg-muted text-muted-foreground border-border"
-    }
+    if (urgency >= 50 && importance >= 50) return "bg-red-100 text-red-800 border-red-300"
+    if (urgency < 50 && importance >= 50) return "bg-blue-100 text-blue-800 border-blue-300"
+    if (urgency >= 50 && importance < 50) return "bg-yellow-100 text-yellow-800 border-yellow-300"
+    return "bg-muted text-muted-foreground border-border"
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return ""
+    try {
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch {
+      return dateString
+    }
   }
 
   const content = (
@@ -166,23 +178,19 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
               />
             </div>
           ) : (
-<<<<<<< HEAD
             <h3 className="text-lg font-semibold text-foreground break-words">{task.description}</h3>
-=======
-            <h3 className="text-lg font-semibold text-gray-900 break-words">{task?.description}</h3>
->>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
           )}
           <div className="mt-2">
             <Badge
               variant="outline"
               className={`${getQuadrantColor(
-                isEditing ? editUrgency[0] : task?.urgency,
-                isEditing ? editImportance[0] : task?.importance,
+                isEditing ? editUrgency[0] : task.urgency,
+                isEditing ? editImportance[0] : task.importance,
               )} text-sm`}
             >
               {getQuadrantLabel(
-                isEditing ? editUrgency[0] : task?.urgency,
-                isEditing ? editImportance[0] : task?.importance,
+                isEditing ? editUrgency[0] : task.urgency,
+                isEditing ? editImportance[0] : task.importance,
               )}
             </Badge>
           </div>
@@ -194,10 +202,10 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
             </Button>
           ) : (
             <>
-              <Button variant="outline" size="sm" onClick={handleSaveEdit}>
+              <Button variant="outline" size="sm" onClick={handleSaveEdit} disabled={isSubmitting}>
                 <Save className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={isSubmitting}>
                 <X className="w-4 h-4" />
               </Button>
             </>
@@ -214,26 +222,16 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
           </div>
           {isEditing ? (
             <>
-<<<<<<< HEAD
               <div className="text-2xl font-bold text-foreground">{editUrgency[0]}</div>
-              <Slider value={editUrgency} onValueChange={setEditUrgency} max={100} step={1} disabled={isPending} />
+              <Slider value={editUrgency} onValueChange={setEditUrgency} max={100} step={1} disabled={isSubmitting} />
             </>
           ) : (
             <>
               <div className="text-2xl font-bold text-foreground">{task.urgency}</div>
               <div className="w-full bg-muted rounded-full h-2">
-=======
-              <div className="text-2xl font-bold text-gray-900">{editUrgency[0]}</div>
-              <Slider value={editUrgency} onValueChange={setEditUrgency} max={100} step={1} />
-            </>
-          ) : (
-            <>
-              <div className="text-2xl font-bold text-gray-900">{task?.urgency}</div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
->>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
                 <div
                   className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${task?.urgency}%` }}
+                  style={{ width: `${task.urgency}%` }}
                 />
               </div>
             </>
@@ -247,32 +245,22 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
           </div>
           {isEditing ? (
             <>
-<<<<<<< HEAD
               <div className="text-2xl font-bold text-foreground">{editImportance[0]}</div>
               <Slider
                 value={editImportance}
                 onValueChange={setEditImportance}
                 max={100}
                 step={1}
-                disabled={isPending}
+                disabled={isSubmitting}
               />
             </>
           ) : (
             <>
               <div className="text-2xl font-bold text-foreground">{task.importance}</div>
               <div className="w-full bg-muted rounded-full h-2">
-=======
-              <div className="text-2xl font-bold text-gray-900">{editImportance[0]}</div>
-              <Slider value={editImportance} onValueChange={setEditImportance} max={100} step={1} />
-            </>
-          ) : (
-            <>
-              <div className="text-2xl font-bold text-gray-900">{task?.importance}</div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
->>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
                 <div
                   className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${task?.importance}%` }}
+                  style={{ width: `${task.importance}%` }}
                 />
               </div>
             </>
@@ -282,9 +270,9 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
 
       {/* Assigned Players */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Users className="w-4 h-4" />
-          Assigned Players ({isEditing ? editAssignees.length : task?.assignees.length})
+          Assigned Players ({isEditing ? editAssignees.length : task.assignees.length})
         </div>
 
         {isEditing ? (
@@ -322,12 +310,13 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
                   </Badge>
                 ) : null
               })}
-              {editAssignees.length === 0 && <div className="text-sm text-muted-foreground italic">No players assigned</div>}
+              {editAssignees.length === 0 && (
+                <div className="text-sm text-muted-foreground italic">No players assigned</div>
+              )}
             </div>
           </div>
         ) : (
           <div className="space-y-2">
-<<<<<<< HEAD
             {task.assignees.length === 0 ? (
               <div className="text-sm text-muted-foreground italic p-3 bg-muted rounded-lg">
                 No players assigned to this task
@@ -335,15 +324,6 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
             ) : (
               task.assignees.map((player) => (
                 <div key={player.id} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
-=======
-            {task?.assignees.length === 0 ? (
-              <div className="text-sm text-gray-500 italic p-3 bg-gray-50 rounded-lg">
-                No players assigned to this task
-              </div>
-            ) : (
-              task?.assignees.map((player) => (
-                <div key={player.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
->>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
                   <div
                     className="w-4 h-4 rounded-full border border-border"
                     style={{ backgroundColor: player.color }}
@@ -358,19 +338,19 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
 
       {/* Comments Section */}
       <div className="space-y-3 pt-4 border-t border-border">
-        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <MessageCircle className="w-4 h-4" />
-          Comments ({task?.comments?.length || 0})
+          Comments ({task.comments?.length ?? 0})
         </div>
 
         {/* Add Comment */}
         <div className="space-y-2">
           <div className="flex gap-2">
             <Input
-              placeholder="Your name (optional)"
+              placeholder="Your name"
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
-              className="w-32"
+              className="w-40"
             />
           </div>
           <div className="flex gap-2">
@@ -392,7 +372,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
         </div>
 
         {/* Comments List */}
-        {task?.comments && task.comments.length > 0 ? (
+        {task.comments && task.comments.length > 0 ? (
           <ScrollArea className="max-h-48">
             <div className="space-y-2">
               {task.comments.map((comment) => (
@@ -410,6 +390,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
                       size="sm"
                       onClick={() => handleDeleteComment(comment.id)}
                       className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
+                      aria-label="Delete comment"
                     >
                       <Trash2 className="w-3 h-3" />
                     </Button>
@@ -419,7 +400,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
             </div>
           </ScrollArea>
         ) : (
-          <p className="text-gray-500 text-center py-8">No comments yet. Be the first to comment!</p>
+          <p className="text-muted-foreground text-center py-8">No comments yet. Be the first to comment!</p>
         )}
       </div>
 
@@ -427,17 +408,13 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
       <div className="space-y-3 pt-4 border-t border-border">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="w-4 h-4" />
-          Created: {formatDate(task?.created_at)}
+          <span>Created: {formatDate(task.created_at)}</span>
         </div>
-<<<<<<< HEAD
         <div className="text-xs text-muted-foreground">Task ID: {task.id}</div>
-=======
-        <div className="text-xs text-gray-500">Task ID: {task?.id}</div>
->>>>>>> ff6bcd1c287f152cbff654c035ffffce6ed3b1c2
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 pt-4 border-t border-gray-200">
+      <div className="flex gap-2 pt-4 border-t border-border">
         <Button
           variant="destructive"
           size="sm"
