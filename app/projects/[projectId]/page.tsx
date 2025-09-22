@@ -39,15 +39,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
     return (
       <ProjectTaskManager
-        user={{
-          id: userId,
-          name: user.firstName + " " + user.lastName,
-          email: user.emailAddresses[0]?.emailAddress || "",
-        }}
         project={projectData.project}
-        tasks={projectData.tasks}
-        players={projectData.players}
-        lines={projectData.lines}
+        initialTasks={projectData.tasks}
+        initialPlayers={projectData.players}
+        initialLines={projectData.lines}
       />
     )
   } catch (error) {

@@ -79,6 +79,10 @@ export async function createProject(name: string, type: 'personal' | 'team') {
       role: 'owner',
     })
 
+    // Initialize project database with RLS
+    const { initializeProjectDatabase } = await import('@/lib/db-optimized')
+    await initializeProjectDatabase(projectId, userId)
+
     // Create default players
     const defaultPlayers = [
       { name: 'Alice', color: '#ef4444' },

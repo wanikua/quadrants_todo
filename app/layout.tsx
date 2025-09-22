@@ -16,8 +16,9 @@ export const metadata: Metadata = {
   generator: "v0.dev",
 }
 
-function Providers({ children }: { children: React.ReactNode }) {
-  const host = headers().get("host")
+async function Providers({ children }: { children: React.ReactNode }) {
+  const headersList = await headers()
+  const host = headersList.get("host")
   const clerk = getClerkProviderConfig(host)
 
   if (clerk.enabled && clerk.publishableKey) {

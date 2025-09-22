@@ -55,8 +55,9 @@ export async function deleteProjectAction(projectId: string) {
     revalidatePath("/projects")
     return { success: true }
   } catch (error) {
-    console.error("Failed to delete project:", error)
-    return { success: false, error: "Failed to delete project" }
+    const { handleError } = await import('@/lib/error-handler')
+    const errorInfo = handleError(error, 'deleteProject')
+    return { success: false, error: errorInfo.message }
   }
 }
 
@@ -341,7 +342,7 @@ export async function toggleLineAction(
 
       const lines = await getProjectLines(projectId)
       const existingLine = lines.find(
-        (line) =>
+        (line: any) =>
           (line.from_task_id === fromTaskId && line.to_task_id === toTaskId) ||
           (line.from_task_id === toTaskId && line.to_task_id === fromTaskId),
       )

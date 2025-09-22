@@ -159,7 +159,7 @@ export async function getProjectsForUser(userId: string) {
       ORDER BY p.created_at DESC
     `
 
-    return projects.map((project) => ({
+    return projects.map((project: any) => ({
       id: project.id,
       name: project.name,
       type: project.type as "personal" | "team",

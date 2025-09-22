@@ -23,7 +23,7 @@ export default function QuadrantTodoClient({
   }
 
   // Example for createTaskAction call
-  const createTask = async (description: string, urgency: number, importance: number, assigneeIds: string[]) => {
+  const createTask = async (description: string, urgency: number, importance: number, assigneeIds: number[]) => {
     const result = await createTaskAction(description, urgency, importance, assigneeIds, projectId)
     // Handle result
   }
