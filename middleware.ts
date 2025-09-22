@@ -1,21 +1,36 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
-import { isClerkEnabledForHost } from "./lib/env"
 
-const isProtectedRoute = createRouteMatcher(["/projects(.*)"])
+const isProtectedRoute = createRouteMatcher([
+  "/projects(.*)",
+  "/api/setup-rls",
+  "/api/setup-db",
+])
+
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/api/test-db",
+  "/api/test-clerk",
+])
 
 export default clerkMiddleware(async (auth, req) => {
-  const host = req.headers.get("host")
-  // Only protect routes if Clerk is properly configured for this domain
-  if (isClerkEnabledForHost(host) && isProtectedRoute(req)) {
+  // Protect routes that require authentication
+  if (isProtectedRoute(req)) {
     await auth.protect()
   }
+  // Public routes don't require auth
 })
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

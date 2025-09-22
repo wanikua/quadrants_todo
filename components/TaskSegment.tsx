@@ -27,12 +27,13 @@ interface Player {
 
 interface TaskSegmentProps {
   task: Task
-  players: Player[]
+  players?: Player[]
   onUpdate?: (taskId: number, updates: Partial<Task>) => void
   onDelete?: (taskId: number) => void
+  size?: number
 }
 
-export function TaskSegment({ task, players, onUpdate, onDelete }: TaskSegmentProps) {
+export function TaskSegment({ task, players = [], onUpdate, onDelete, size = 64 }: TaskSegmentProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTask, setEditedTask] = useState({
     description: task.description,
