@@ -67,6 +67,8 @@
     "fs": "latest",
     "geist": "latest",
     "gel": "latest",
+    "http": "latest",
+    "https": "latest",
     "input-otp": "latest",
     "knex": "latest",
     "kysely": "latest",
