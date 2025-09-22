@@ -6,14 +6,6 @@ import path from 'path'
 
 export async function POST() {
   try {
-    // Check authentication
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
 
     // Connect to database
     const sql = neon(process.env.DATABASE_URL!)
