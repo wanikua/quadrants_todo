@@ -13,8 +13,8 @@ import { Task, Player } from '@/app/types'
 interface TaskSegmentProps {
   task: Task
   players?: Player[]
-  onUpdate?: (taskId: number, updates: Partial<Task>) => void
-  onDelete?: (taskId: number) => void
+  onUpdate?: (taskId: string, updates: Partial<Task>) => void
+  onDelete?: (taskId: string) => void
   size?: number
 }
 
@@ -94,7 +94,7 @@ export function TaskSegment({ task, players = [], onUpdate, onDelete, size = 64 
               )}
 
               <p className="text-xs text-gray-500">
-                Created {new Date(task.created_at).toLocaleDateString()}
+                Created {task.created_at ? new Date(task.created_at).toLocaleDateString() : 'Unknown'}
               </p>
             </div>
 

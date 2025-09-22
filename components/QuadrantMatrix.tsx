@@ -18,9 +18,9 @@ interface QuadrantMatrixProps {
   tasks: Task[]
   players: Player[]
   lines: Line[]
-  onTaskCreate?: (description: string, urgency: number, importance: number, assigneeIds: number[]) => void
-  onTaskUpdate?: (taskId: number, updates: Partial<Task>) => void
-  onTaskDelete?: (taskId: number) => void
+  onTaskCreate?: (description: string, urgency: number, importance: number, assigneeIds: string[]) => void
+  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void
+  onTaskDelete?: (taskId: string) => void
   onPlayerCreate?: (name: string, color: string) => void
 }
 
@@ -41,7 +41,7 @@ export function QuadrantMatrix({
     description: '',
     urgency: 50,
     importance: 50,
-    assigneeIds: [] as number[]
+    assigneeIds: [] as string[]
   })
   const [newPlayer, setNewPlayer] = useState({
     name: '',

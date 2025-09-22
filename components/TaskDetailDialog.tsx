@@ -13,7 +13,7 @@ import { Calendar, Clock, Users, Trash2, Edit, Save, X, MessageCircle, Send } fr
 import TaskSegment from "@/components/TaskSegment"
 import OptimizedInput from "@/components/OptimizedInput"
 import { Input } from "@/components/ui/input"
-import type { TaskWithAssignees, Player } from "@/lib/database"
+import type { TaskWithAssignees, Player } from "@/app/types"
 
 interface TaskDetailDialogProps {
   task: TaskWithAssignees | null
@@ -21,16 +21,16 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void
   isMobile: boolean
   players: Player[]
-  onDeleteTask: (taskId: number) => void
+  onDeleteTask: (taskId: string) => void
   onUpdateTask: (
-    taskId: number,
+    taskId: string,
     description: string,
     urgency: number,
     importance: number,
-    assigneeIds: number[],
+    assigneeIds: string[],
   ) => Promise<void> | void
-  onAddComment: (taskId: number, content: string, authorName: string) => Promise<void>
-  onDeleteComment: (commentId: number, taskId: number) => Promise<void>
+  onAddComment: (taskId: string, content: string, authorName: string) => Promise<void>
+  onDeleteComment: (commentId: string, taskId: string) => Promise<void>
 }
 
 export const TaskDetailDialog = React.memo(function TaskDetailDialog({
@@ -48,7 +48,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   const [editDescription, setEditDescription] = React.useState("")
   const [editUrgency, setEditUrgency] = React.useState<number[]>([50])
   const [editImportance, setEditImportance] = React.useState<number[]>([50])
-  const [editAssignees, setEditAssignees] = React.useState<number[]>([])
+  const [editAssignees, setEditAssignees] = React.useState<string[]>([])
   const [newComment, setNewComment] = React.useState("")
   const [authorName, setAuthorName] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -98,11 +98,10 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   }
 
   const handlePlayerSelect = (playerId: string) => {
-    const id = Number.parseInt(playerId, 10)
-    setEditAssignees((prev) => (prev.includes(id) ? prev : [...prev, id]))
+    setEditAssignees((prev) => (prev.includes(playerId) ? prev : [...prev, playerId]))
   }
 
-  const handlePlayerRemove = (playerId: number) => {
+  const handlePlayerRemove = (playerId: string) => {
     setEditAssignees((prev) => prev.filter((id) => id !== playerId))
   }
 
@@ -122,7 +121,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
     }
   }
 
-  const handleDeleteComment = async (commentId: number) => {
+  const handleDeleteComment = async (commentId: string) => {
     // eslint-disable-next-line no-alert
     if (confirm("Are you sure you want to delete this comment?")) {
       try {
@@ -147,10 +146,10 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
     return "bg-muted text-muted-foreground border-border"
   }
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return ""
+  const formatDate = (date?: string | Date) => {
+    if (!date) return ""
     try {
-      return new Date(dateString).toLocaleDateString("en-US", {
+      return new Date(date).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -158,7 +157,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
         minute: "2-digit",
       })
     } catch {
-      return dateString
+      return date?.toString() || ""
     }
   }
 
@@ -285,7 +284,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
                 {players
                   .filter((player) => !editAssignees.includes(player.id))
                   .map((player) => (
-                    <SelectItem key={player.id} value={player.id.toString()}>
+                    <SelectItem key={player.id} value={player.id}>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
                         {player.name}

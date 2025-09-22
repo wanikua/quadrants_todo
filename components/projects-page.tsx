@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Users, UserIcon, Calendar } from "lucide-react"
-import { createProject, joinProject } from "@/app/db/actions"
+import { createProjectAction, joinProjectAction } from "@/app/actions-simple"
 import { useRouter } from "next/navigation"
 
 interface Project {
@@ -48,7 +48,7 @@ export function ProjectsPage({ user, projects }: ProjectsPageProps) {
 
     setIsLoading(true)
     try {
-      const result = await createProject(projectName, projectType)
+      const result = await createProjectAction(projectName, projectType)
       if (result.success) {
         setIsCreateDialogOpen(false)
         setProjectName("")
@@ -69,7 +69,7 @@ export function ProjectsPage({ user, projects }: ProjectsPageProps) {
 
     setIsLoading(true)
     try {
-      const result = await joinProject(inviteCode)
+      const result = await joinProjectAction(inviteCode)
       if (result.success) {
         setIsJoinDialogOpen(false)
         setInviteCode("")
