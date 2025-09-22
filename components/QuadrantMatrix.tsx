@@ -11,38 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Edit, Trash2, Users, HelpCircle, X } from 'lucide-react'
 import { TaskSegment } from './TaskSegment'
-
-interface Task {
-  id: number
-  description: string
-  urgency: number
-  importance: number
-  assignees?: Player[]
-  created_at: Date
-  updated_at: Date
-}
-
-interface Player {
-  id: number
-  name: string
-  color: string
-}
-
-interface Line {
-  id: number
-  from_task_id: number
-  to_task_id: number
-  style: string
-  size: number
-  color: string
-}
-
-interface Project {
-  id: string
-  name: string
-  type: string
-  owner_id: string
-}
+import { Task, Player, TaskWithAssignees, Line, Project } from '@/app/types'
 
 interface QuadrantMatrixProps {
   project: Project

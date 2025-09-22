@@ -18,14 +18,14 @@ export interface Task {
   description: string
   urgency: number
   importance: number
-  created_at?: string
-  updated_at?: string
-  assignees?: (string | number)[]
+  created_at?: string | Date
+  updated_at?: string | Date
+  assignees?: Player[]
   comments?: Comment[]
 }
 
 export interface TaskWithAssignees extends Task {
-  assignees: (string | number)[]
+  assignees: Player[]
   comments?: Comment[]
 }
 

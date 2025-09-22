@@ -8,22 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Edit, Trash2, User } from 'lucide-react'
-
-interface Task {
-  id: number
-  description: string
-  urgency: number
-  importance: number
-  assignees?: Player[]
-  created_at: string | Date
-  updated_at?: string | Date
-}
-
-interface Player {
-  id: number
-  name: string
-  color: string
-}
+import { Task, Player } from '@/app/types'
 
 interface TaskSegmentProps {
   task: Task
