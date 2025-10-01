@@ -1,38 +1,17 @@
-import { auth, currentUser } from "@clerk/nextjs/server"
+import { stackServerApp } from "@/stack"
 import { redirect } from "next/navigation"
-import { ProjectsPage } from "@/components/projects-page"
-import { DatabaseConfigWarning } from "@/components/database-config-warning"
-import { getProjectsForUser } from "@/app/db/actions"
+import ProjectsPageClient from "@/components/projects-page-client"
+import { sql } from "@/lib/db"
 
-export default async function Projects() {
-  const { userId } = await auth()
-  const user = await currentUser()
-
-  if (!userId || !user) {
-    redirect("/")
+export default async function ProjectsPage() {
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    redirect("/auth/signin")
   }
 
-  // Check if database is configured
-  const DATABASE_URL = process.env.DATABASE_URL
-  if (!DATABASE_URL) {
-    return <DatabaseConfigWarning />
-  }
+  const projects = await sql`
+    SELECT * FROM projects WHERE user_id = ${user.id} ORDER BY created_at DESC
+  `
 
-  try {
-    const projects = await getProjectsForUser(userId)
-
-    return (
-      <ProjectsPage
-        user={{
-          id: userId,
-          name: user.firstName + " " + user.lastName,
-          email: user.emailAddresses[0]?.emailAddress || "",
-        }}
-        projects={projects}
-      />
-    )
-  } catch (error) {
-    console.error("Failed to load projects:", error)
-    return <DatabaseConfigWarning />
-  }
+  return <ProjectsPageClient initialProjects={projects} user={user} />
 }

@@ -1,416 +1,286 @@
 "use server"
 
-import { auth } from "@clerk/nextjs/server"
+import { sql } from "@vercel/postgres"
 import { revalidatePath } from "next/cache"
-import * as db from "@/lib/database"
-import {
-  createProject as createProjectDb,
-  joinProject as joinProjectDb,
-  deleteProject as deleteProjectDb,
-  createProjectPlayer,
-  createProjectTask,
-  updateProjectTask,
-  deleteProjectTask,
-  deleteProjectPlayer,
-  addProjectTaskComment,
-  deleteProjectTaskComment,
-  createProjectLine,
-  deleteProjectLine,
-  getUserProjectAccess,
-  initializeProjectDatabase,
-  getProjectLines,
-} from "@/lib/project-database"
+import { getUserId } from "@/lib/auth"
 
-// Project management actions
-export async function createProject(name: string, type: "personal" | "team") {
-  const { userId } = await auth()
+export async function getProjects() {
+  try {
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
+    }
 
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
+    const { rows } = await sql`
+      SELECT * FROM projects 
+      WHERE user_id = ${userId} 
+      ORDER BY created_at DESC
+    `
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description || "",
+      userId: row.user_id,
+      createdAt: row.created_at.toISOString(),
+      updatedAt: row.updated_at.toISOString(),
+    }))
+  } catch (error) {
+    console.error("Error fetching projects:", error)
+    return []
   }
+}
 
-  const result = await createProjectDb(name, type, userId)
+export async function createProject(formData: FormData) {
+  try {
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
+    }
 
-  if (result.success) {
+    const name = formData.get("name") as string
+    const description = formData.get("description") as string
+
+    if (!name) {
+      throw new Error("Project name is required")
+    }
+
+    const { rows } = await sql`
+      INSERT INTO projects (name, description, user_id)
+      VALUES (${name}, ${description}, ${userId})
+      RETURNING *
+    `
+
     revalidatePath("/projects")
-  }
 
-  return result
+    return {
+      success: true,
+      project: {
+        id: rows[0].id,
+        name: rows[0].name,
+        description: rows[0].description || "",
+        userId: rows[0].user_id,
+        createdAt: rows[0].created_at.toISOString(),
+        updatedAt: rows[0].updated_at.toISOString(),
+      },
+    }
+  } catch (error) {
+    console.error("Error creating project:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create project",
+    }
+  }
 }
 
-export async function deleteProjectAction(projectId: string) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
+export async function deleteProject(projectId: string) {
   try {
-    const hasAccess = await getUserProjectAccess(userId, projectId)
-    if (!hasAccess) {
-      return { success: false, error: "Access denied" }
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
     }
 
-    await deleteProjectDb(projectId, userId)
+    // Delete all tasks in the project first
+    await sql`
+      DELETE FROM tasks 
+      WHERE project_id = ${projectId} 
+      AND user_id = ${userId}
+    `
+
+    // Then delete the project
+    await sql`
+      DELETE FROM projects 
+      WHERE id = ${projectId} 
+      AND user_id = ${userId}
+    `
+
     revalidatePath("/projects")
+
     return { success: true }
   } catch (error) {
-    const { handleError } = await import('@/lib/error-handler')
-    const errorInfo = handleError(error, 'deleteProject')
-    return { success: false, error: errorInfo.message }
+    console.error("Error deleting project:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete project",
+    }
   }
 }
 
-export async function joinProject(inviteCode: string) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  const result = await joinProjectDb(inviteCode, userId)
-
-  if (result.success) {
-    revalidatePath("/projects")
-  }
-
-  return result
-}
-
-// Task management actions (project-specific)
-export async function createPlayerAction(name: string, color: string, projectId?: string) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
+export async function getTasks(projectId: string) {
   try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
+    }
 
-      const player = await createProjectPlayer(projectId, name, color)
-      revalidatePath(`/projects/${projectId}`)
-      return { success: true, player }
-    } else {
-      const player = await db.createPlayer(name, color)
-      revalidatePath("/")
-      return { success: true, player }
+    const { rows } = await sql`
+      SELECT * FROM tasks 
+      WHERE project_id = ${projectId} 
+      AND user_id = ${userId}
+      ORDER BY created_at DESC
+    `
+
+    return rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description || "",
+      quadrant: row.quadrant,
+      projectId: row.project_id,
+      userId: row.user_id,
+      completed: row.completed || false,
+      createdAt: row.created_at.toISOString(),
+      updatedAt: row.updated_at.toISOString(),
+    }))
+  } catch (error) {
+    console.error("Error fetching tasks:", error)
+    return []
+  }
+}
+
+export async function createTask(data: {
+  title: string
+  description?: string
+  quadrant: number
+  projectId: string
+}) {
+  try {
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
+    }
+
+    const { rows } = await sql`
+      INSERT INTO tasks (title, description, quadrant, project_id, user_id, completed)
+      VALUES (${data.title}, ${data.description || ""}, ${data.quadrant}, ${data.projectId}, ${userId}, false)
+      RETURNING *
+    `
+
+    revalidatePath(`/projects/${data.projectId}`)
+
+    return {
+      success: true,
+      task: {
+        id: rows[0].id,
+        title: rows[0].title,
+        description: rows[0].description || "",
+        quadrant: rows[0].quadrant,
+        projectId: rows[0].project_id,
+        userId: rows[0].user_id,
+        completed: rows[0].completed || false,
+        createdAt: rows[0].created_at.toISOString(),
+        updatedAt: rows[0].updated_at.toISOString(),
+      },
     }
   } catch (error) {
-    console.error("Failed to create player:", error)
-    return { success: false, error: "Failed to create player" }
+    console.error("Error creating task:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create task",
+    }
   }
 }
 
-export async function createTaskAction(
-  description: string,
-  urgency: number,
-  importance: number,
-  assigneeIds: number[],
-  projectId?: string,
+export async function updateTask(
+  taskId: string,
+  data: {
+    title?: string
+    description?: string
+    quadrant?: number
+    completed?: boolean
+  },
 ) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
   try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
+    }
 
-      const task = await createProjectTask(projectId, description, urgency, importance, assigneeIds)
-      revalidatePath(`/projects/${projectId}`)
-      return { success: true, task }
-    } else {
-      const task = await db.createTask(description, urgency, importance, assigneeIds)
-      revalidatePath("/")
-      return { success: true, task }
+    const updates: string[] = []
+    const values: any[] = []
+    let paramCount = 1
+
+    if (data.title !== undefined) {
+      updates.push(`title = $${paramCount++}`)
+      values.push(data.title)
+    }
+    if (data.description !== undefined) {
+      updates.push(`description = $${paramCount++}`)
+      values.push(data.description)
+    }
+    if (data.quadrant !== undefined) {
+      updates.push(`quadrant = $${paramCount++}`)
+      values.push(data.quadrant)
+    }
+    if (data.completed !== undefined) {
+      updates.push(`completed = $${paramCount++}`)
+      values.push(data.completed)
+    }
+
+    updates.push(`updated_at = NOW()`)
+    values.push(taskId, userId)
+
+    const query = `
+      UPDATE tasks 
+      SET ${updates.join(", ")}
+      WHERE id = $${paramCount++} AND user_id = $${paramCount}
+      RETURNING *
+    `
+
+    const { rows } = await sql.query(query, values)
+
+    if (rows.length === 0) {
+      throw new Error("Task not found or unauthorized")
+    }
+
+    revalidatePath(`/projects/${rows[0].project_id}`)
+
+    return {
+      success: true,
+      task: {
+        id: rows[0].id,
+        title: rows[0].title,
+        description: rows[0].description || "",
+        quadrant: rows[0].quadrant,
+        projectId: rows[0].project_id,
+        userId: rows[0].user_id,
+        completed: rows[0].completed || false,
+        createdAt: rows[0].created_at.toISOString(),
+        updatedAt: rows[0].updated_at.toISOString(),
+      },
     }
   } catch (error) {
-    console.error("Failed to create task:", error)
-    return { success: false, error: "Failed to create task" }
+    console.error("Error updating task:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update task",
+    }
   }
 }
 
-export async function updateTaskAction(
-  taskId: number,
-  description: string,
-  urgency: number,
-  importance: number,
-  assigneeIds: number[],
-  projectId?: string,
-) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
+export async function deleteTask(taskId: string) {
   try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      const task = await updateProjectTask(projectId, taskId, description, urgency, importance, assigneeIds)
-      revalidatePath(`/projects/${projectId}`)
-      return { success: true, task }
-    } else {
-      const task = await db.updateTask(taskId, description, urgency, importance, assigneeIds)
-      revalidatePath("/")
-      return { success: true, task }
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
     }
-  } catch (error) {
-    console.error("Failed to update task:", error)
-    return { success: false, error: "Failed to update task" }
-  }
-}
 
-export async function deleteTaskAction(taskId: number, projectId?: string) {
-  const { userId } = await auth()
+    const { rows } = await sql`
+      DELETE FROM tasks 
+      WHERE id = ${taskId} 
+      AND user_id = ${userId}
+      RETURNING project_id
+    `
 
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      await deleteProjectTask(projectId, taskId)
-      revalidatePath(`/projects/${projectId}`)
-    } else {
-      await db.deleteTask(taskId)
-      revalidatePath("/")
+    if (rows.length > 0) {
+      revalidatePath(`/projects/${rows[0].project_id}`)
     }
+
     return { success: true }
   } catch (error) {
-    console.error("Failed to delete task:", error)
-    return { success: false, error: "Failed to delete task" }
-  }
-}
-
-export async function deletePlayerAction(playerId: number, projectId?: string) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      await deleteProjectPlayer(projectId, playerId)
-      revalidatePath(`/projects/${projectId}`)
-    } else {
-      await db.deletePlayer(playerId)
-      revalidatePath("/")
+    console.error("Error deleting task:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete task",
     }
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to delete player:", error)
-    return { success: false, error: "Failed to delete player" }
-  }
-}
-
-export async function addTaskCommentAction(taskId: number, content: string, authorName: string, projectId?: string) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      const comment = await addProjectTaskComment(projectId, taskId, content, authorName)
-      revalidatePath(`/projects/${projectId}`)
-      return { success: true, comment }
-    } else {
-      const comment = await db.addTaskComment(taskId, content, authorName)
-      revalidatePath("/")
-      return { success: true, comment }
-    }
-  } catch (error) {
-    console.error("Failed to add comment:", error)
-    return { success: false, error: "Failed to add comment" }
-  }
-}
-
-export async function deleteTaskCommentAction(commentId: number, projectId?: string) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      await deleteProjectTaskComment(projectId, commentId)
-      revalidatePath(`/projects/${projectId}`)
-    } else {
-      await db.deleteTaskComment(commentId)
-      revalidatePath("/")
-    }
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to delete comment:", error)
-    return { success: false, error: "Failed to delete comment" }
-  }
-}
-
-export async function createLineAction(
-  fromTaskId: number,
-  toTaskId: number,
-  style?: "filled" | "open",
-  size?: number,
-  color?: string,
-  projectId?: string,
-) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      const line = await createProjectLine(projectId, fromTaskId, toTaskId, style, size, color)
-      revalidatePath(`/projects/${projectId}`)
-      return { success: true, line }
-    } else {
-      const line = await db.createLine(fromTaskId, toTaskId, style, size, color)
-      revalidatePath("/")
-      return { success: true, line }
-    }
-  } catch (error) {
-    console.error("Failed to create line:", error)
-    return { success: false, error: "Failed to create line" }
-  }
-}
-
-export async function toggleLineAction(
-  fromTaskId: number,
-  toTaskId: number,
-  style?: "filled" | "open",
-  size?: number,
-  color?: string,
-  projectId?: string,
-) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      const lines = await getProjectLines(projectId)
-      const existingLine = lines.find(
-        (line: any) =>
-          (line.from_task_id === fromTaskId && line.to_task_id === toTaskId) ||
-          (line.from_task_id === toTaskId && line.to_task_id === fromTaskId),
-      )
-
-      if (existingLine) {
-        await deleteProjectLine(projectId, existingLine.id)
-        revalidatePath(`/projects/${projectId}`)
-        return { success: true, action: "deleted", lineId: existingLine.id }
-      } else {
-        const line = await createProjectLine(projectId, fromTaskId, toTaskId, style, size, color)
-        revalidatePath(`/projects/${projectId}`)
-        return { success: true, action: "created", line }
-      }
-    } else {
-      // Check if line already exists
-      const existingLine = await db.getLine(fromTaskId, toTaskId)
-
-      if (existingLine) {
-        await db.deleteLine(existingLine.id)
-        revalidatePath("/")
-        return { success: true, action: "deleted", lineId: existingLine.id }
-      } else {
-        const line = await db.createLine(fromTaskId, toTaskId, style, size, color)
-        revalidatePath("/")
-        return { success: true, action: "created", line }
-      }
-    }
-  } catch (error) {
-    console.error("Failed to toggle line:", error)
-    return { success: false, error: "Failed to toggle line" }
-  }
-}
-
-export async function deleteLineAction(lineId: number, projectId?: string) {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    if (projectId) {
-      const hasAccess = await getUserProjectAccess(userId, projectId)
-      if (!hasAccess) {
-        return { success: false, error: "Access denied" }
-      }
-
-      await deleteProjectLine(projectId, lineId)
-      revalidatePath(`/projects/${projectId}`)
-    } else {
-      await db.deleteLine(lineId)
-      revalidatePath("/")
-    }
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to delete line:", error)
-    return { success: false, error: "Failed to delete line" }
-  }
-}
-
-export async function initializeDatabaseAction() {
-  try {
-    await db.initializeDatabase()
-    await initializeProjectDatabase()
-    revalidatePath("/")
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to initialize database:", error)
-    return { success: false, error: "Failed to initialize database" }
   }
 }

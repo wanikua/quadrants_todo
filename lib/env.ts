@@ -2,7 +2,7 @@
 
 // Centralized, typed environment access and helpers for Clerk and Upstash.
 // Note: These functions are used on the server (layouts, middleware, API routes).
-// On Vercel, environment variables are injected by environment (Preview/Prod) [^3].
+// On Vercel, environment variables are injected by environment (Preview/Prod).
 
 type Env = {
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string
@@ -38,6 +38,7 @@ function isAllowedProdHost(host: string) {
 export function isProdClerkKey(): boolean {
   return env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_live_")
 }
+
 export function isTestClerkKey(): boolean {
   return env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_test_")
 }
@@ -76,17 +77,21 @@ export function getClerkProviderConfig(hostHeader: string | null): {
   signUpUrl?: string
 } {
   const enabled = isClerkEnabledForHost(hostHeader)
-  if (!enabled) return { enabled }
 
-  // For most setups, only publishableKey is required.
-  // If you use a reverse proxy or multi-domain, you can optionally set `proxyUrl`.
-  // Example (uncomment if you have a working HTTPS proxy for Clerk):
-  // const proxyUrl = process.env.NEXT_PUBLIC_CLERK_PROXY_URL
+  if (!enabled) {
+    return { enabled: false }
+  }
+
+  // Ensure we have a valid publishable key
+  if (!env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    console.warn("Clerk publishable key is missing")
+    return { enabled: false }
+  }
 
   return {
-    enabled,
+    enabled: true,
     publishableKey: env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    // proxyUrl,
+    // proxyUrl: process.env.NEXT_PUBLIC_CLERK_PROXY_URL, // uncomment if you have a proxy
     signInUrl: "/sign-in",
     signUpUrl: "/sign-up",
   }
