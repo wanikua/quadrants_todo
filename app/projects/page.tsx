@@ -1,17 +1,12 @@
-import { stackServerApp } from "@/stack"
-import { redirect } from "next/navigation"
+import { requireAuth } from "@/lib/auth"
 import ProjectsPageClient from "@/components/projects-page-client"
-import { sql } from "@/lib/db"
+import { getUserProjects } from "@/lib/db-queries"
 
 export default async function ProjectsPage() {
-  const user = await stackServerApp.getUser()
-  if (!user) {
-    redirect("/auth/signin")
-  }
+  const user = await requireAuth()
 
-  const projects = await sql`
-    SELECT * FROM projects WHERE user_id = ${user.id} ORDER BY created_at DESC
-  `
+  // 使用优化的查询函数，获取用户拥有的和参与的所有项目
+  const projects = await getUserProjects(user.id)
 
   return <ProjectsPageClient initialProjects={projects} user={user} />
 }
