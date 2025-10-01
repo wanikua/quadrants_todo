@@ -2,7 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Toaster } from "sonner"
-import { StackProvider } from "@/lib/stack-client"
+// Temporarily disabled Stack Auth due to compatibility issues
+// import { StackProvider } from "@/lib/stack-client"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -21,10 +22,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <StackProvider>
-          {children}
-          <Toaster />
-        </StackProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   )
