@@ -57,7 +57,7 @@
 ## 🚀 立即可用的功能
 
 ### 1. 促销码兑换
-```
+\`\`\`
 访问：http://localhost:3000/promo
 
 测试步骤：
@@ -65,31 +65,31 @@
 2. 输入用户ID：test-user-001
 3. 点击 "Redeem Code"
 4. 订阅自动升级！
-```
+\`\`\`
 
 ### 2. 用户注册（如果 auth 页面可用）
-```
+\`\`\`
 访问：http://localhost:3000/auth/signup
 
 注册后用户自动创建在 users 表
-```
+\`\`\`
 
 ### 3. 数据隔离测试
-```bash
+\`\`\`bash
 # 创建用户1并添加数据
 # 创建用户2
 # 验证用户2看不到用户1的数据
-```
+\`\`\`
 
 ## 🔧 环境变量配置
 
 ### 必需的（已配置） ✅
-```bash
+\`\`\`bash
 DATABASE_URL=postgresql://...
-```
+\`\`\`
 
 ### 可选的（待配置） ⏳
-```bash
+\`\`\`bash
 # Stripe（如需付费订阅）
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
@@ -99,7 +99,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 NEXT_PUBLIC_STACK_PROJECT_ID=...
 NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=...
 STACK_SECRET_SERVER_KEY=...
-```
+\`\`\`
 
 ## 📝 SQL 脚本清单
 
@@ -115,28 +115,28 @@ STACK_SECRET_SERVER_KEY=...
 ## 🎯 使用场景
 
 ### 场景1：免费用户升级
-```
+\`\`\`
 用户访问 /promo
 输入 FREEPRO
 获得永久Pro权限
 无需支付！
-```
+\`\`\`
 
 ### 场景2：限时促销
-```
+\`\`\`
 创建促销码：NEWYEAR
 限制：100次使用
 期限：3个月
 自动过期
-```
+\`\`\`
 
 ### 场景3：团队协作
-```
+\`\`\`
 用户A创建项目
 邀请用户B
 RLS确保数据隔离
 共享项目可访问
-```
+\`\`\`
 
 ## 📚 文档索引
 
