@@ -1,22 +1,16 @@
 "use client"
 
-import type React from "react"
-
-import { StackProvider as StackProviderBase, StackTheme as StackThemeBase } from "@stackframe/stack"
+import { StackProvider as StackProviderSDK, StackTheme } from "@stackframe/stack"
 
 export function StackProvider({ children }: { children: React.ReactNode }) {
   return (
-    <StackProviderBase
+    <StackProviderSDK
       app={{
-        projectId: process.env.NEXT_PUBLIC_STACK_PROJECT_ID!,
-        publishableClientKey: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY!,
+        projectId: process.env.NEXT_PUBLIC_STACK_PROJECT_ID || "",
+        publishableClientKey: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY || "",
       }}
     >
-      {children}
-    </StackProviderBase>
+      <StackTheme>{children}</StackTheme>
+    </StackProviderSDK>
   )
-}
-
-export function StackTheme({ children }: { children: React.ReactNode }) {
-  return <StackThemeBase>{children}</StackThemeBase>
 }

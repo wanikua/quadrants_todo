@@ -1,51 +1,40 @@
-require('dotenv').config({ path: '.env.local' });
 const { neon } = require('@neondatabase/serverless');
 
 async function checkTables() {
-  const sql = neon(process.env.DATABASE_URL);
-  
+  const DATABASE_URL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_3XQ4ghEceCoD@ep-shiny-shadow-agd4ewqa-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require";
+
+  const sql = neon(DATABASE_URL);
+
+  console.log('📊 Checking existing tables...\n');
+
   try {
-    console.log('🔍 Checking existing tables...');
-    
     const tables = await sql`
-      SELECT table_name 
-      FROM information_schema.tables 
+      SELECT table_name
+      FROM information_schema.tables
       WHERE table_schema = 'public'
-      ORDER BY table_name;
+      ORDER BY table_name
     `;
-    
-    console.log('📋 Found tables:', tables.map(t => t.table_name));
-    
-    if (tables.length === 0) {
-      console.log('⚠️  No tables found. Creating basic structure...');
-      
-      // Create projects table
-      await sql`
-        CREATE TABLE IF NOT EXISTS projects (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          name TEXT NOT NULL,
-          description TEXT,
-          owner_id TEXT NOT NULL,
-          invite_code TEXT UNIQUE,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-        )
-      `;
-      
-      // Create project_members table
-      await sql`
-        CREATE TABLE IF NOT EXISTS project_members (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-          user_id TEXT NOT NULL,
-          role TEXT DEFAULT 'member',
-          joined_at TIMESTAMP DEFAULT NOW()
-        )
-      `;
-      
-      console.log('✅ Basic tables created');
-    }
-    
+
+    console.log('✅ Existing tables:');
+    tables.forEach(t => console.log(`   - ${t.table_name}`));
+
+    console.log('\n🔍 Checking for RLS status...\n');
+
+    const rlsStatus = await sql`
+      SELECT
+        tablename,
+        rowsecurity AS rls_enabled
+      FROM pg_tables
+      WHERE schemaname = 'public'
+      ORDER BY tablename
+    `;
+
+    console.log('📋 RLS Status:');
+    rlsStatus.forEach(t => {
+      const status = t.rls_enabled ? '✅ Enabled' : '❌ Disabled';
+      console.log(`   ${status} - ${t.tablename}`);
+    });
+
   } catch (error) {
     console.error('❌ Error:', error.message);
   }
