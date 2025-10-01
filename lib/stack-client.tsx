@@ -1,13 +1,14 @@
 "use client"
 
 import { StackProvider as StackProviderSDK, StackTheme } from "@stackframe/stack"
+import { STACK_CONFIG } from "./stack-config"
 
 export function StackProvider({ children }: { children: React.ReactNode }) {
   return (
     <StackProviderSDK
       app={{
-        projectId: process.env.NEXT_PUBLIC_STACK_PROJECT_ID || "",
-        publishableClientKey: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY || "",
+        projectId: STACK_CONFIG.projectId,
+        publishableClientKey: STACK_CONFIG.publishableClientKey,
       }}
     >
       <StackTheme>{children}</StackTheme>
