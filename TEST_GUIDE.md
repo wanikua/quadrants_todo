@@ -25,10 +25,10 @@
 
 访问以下 URL：
 
-```
+\`\`\`
 http://localhost:3000/handler/sign-up   # 注册页面
 http://localhost:3000/handler/sign-in   # 登录页面
-```
+\`\`\`
 
 **预期结果**：
 - 看到 Stack Auth 的注册/登录界面
@@ -56,9 +56,9 @@ http://localhost:3000/handler/sign-in   # 登录页面
 ### 4. 测试订阅（需要先配置 Stripe）
 
 访问：
-```
+\`\`\`
 http://localhost:3000/pricing
-```
+\`\`\`
 
 ## 🔧 配置 Stripe（可选）
 
@@ -69,10 +69,10 @@ http://localhost:3000/pricing
 3. 创建产品和价格
 4. 更新 `.env.local` 中的 Stripe 环境变量
 5. 安装 Stripe CLI：
-   ```bash
+   \`\`\`bash
    brew install stripe/stripe-cli/stripe
    stripe listen --forward-to localhost:3000/api/stripe/webhook
-   ```
+   \`\`\`
 
 ## 🐛 故障排查
 
@@ -83,9 +83,9 @@ http://localhost:3000/pricing
 ### 如果 RLS 不工作
 - 检查数据库连接
 - 运行验证脚本：
-  ```bash
+  \`\`\`bash
   node scripts/verify-rls.js
-  ```
+  \`\`\`
 
 ### 如果 Stack Auth 不工作
 - 检查 Neon 项目是否启用了 Auth
@@ -94,7 +94,7 @@ http://localhost:3000/pricing
 
 ## 📊 验证命令
 
-```bash
+\`\`\`bash
 # 检查数据库表
 node scripts/check-tables.js
 
@@ -103,7 +103,7 @@ node scripts/verify-rls.js
 
 # 启动开发服务器
 npm run dev
-```
+\`\`\`
 
 ## 🎯 下一步
 

@@ -21,9 +21,9 @@
 
 ### 1. 访问促销码页面
 
-```
+\`\`\`
 http://localhost:3000/promo
-```
+\`\`\`
 
 ### 2. 兑换促销码
 
@@ -48,7 +48,7 @@ http://localhost:3000/promo
 ## 📋 数据库结构
 
 ### promo_codes 表
-```sql
+\`\`\`sql
 - id: 主键
 - code: 促销码（唯一）
 - plan: 'pro' 或 'team'
@@ -57,29 +57,29 @@ http://localhost:3000/promo
 - current_uses: 当前使用次数
 - is_active: 是否激活
 - expires_at: 过期时间
-```
+\`\`\`
 
 ### promo_code_redemptions 表
-```sql
+\`\`\`sql
 - id: 主键
 - promo_code_id: 促销码ID
 - user_id: 用户ID
 - redeemed_at: 兑换时间
 - expires_at: 此次兑换的过期时间
-```
+\`\`\`
 
 ## 🔧 创建新促销码
 
 ### 方法 1: 直接插入数据库
 
-```sql
+\`\`\`sql
 INSERT INTO promo_codes (code, plan, duration_months, max_uses, is_active)
 VALUES ('NEWYEAR2025', 'pro', 12, 100, true);
-```
+\`\`\`
 
 ### 方法 2: 使用 Node.js 脚本
 
-```javascript
+\`\`\`javascript
 const { neon } = require('@neondatabase/serverless');
 const sql = neon(process.env.DATABASE_URL);
 
@@ -87,37 +87,37 @@ await sql`
   INSERT INTO promo_codes (code, plan, duration_months, max_uses)
   VALUES ('CUSTOM', 'team', NULL, 50)
 `;
-```
+\`\`\`
 
 ## 🎯 促销码类型示例
 
 ### 1. 限时促销
-```sql
+\`\`\`sql
 INSERT INTO promo_codes (code, plan, duration_months, max_uses, expires_at)
 VALUES ('SUMMER2024', 'pro', 3, NULL, '2024-09-01'::timestamp);
-```
+\`\`\`
 
 ### 2. 限量促销
-```sql
+\`\`\`sql
 INSERT INTO promo_codes (code, plan, duration_months, max_uses)
 VALUES ('FIRST100', 'team', 12, 100);
-```
+\`\`\`
 
 ### 3. 永久会员
-```sql
+\`\`\`sql
 INSERT INTO promo_codes (code, plan, duration_months, max_uses)
 VALUES ('VIP', 'team', NULL, 10);
-```
+\`\`\`
 
 ### 4. 免费试用
-```sql
+\`\`\`sql
 INSERT INTO promo_codes (code, plan, duration_months, max_uses)
 VALUES ('TRIAL', 'pro', 1, NULL);
-```
+\`\`\`
 
 ## 📊 查看促销码使用情况
 
-```sql
+\`\`\`sql
 -- 查看所有促销码及使用情况
 SELECT
   code,
@@ -131,7 +131,7 @@ SELECT
 FROM promo_codes
 WHERE is_active = true
 ORDER BY current_uses DESC;
-```
+\`\`\`
 
 ## 🔒 安全特性
 
@@ -152,7 +152,7 @@ ORDER BY current_uses DESC;
 
 ### 在定价页面添加促销码输入
 
-```typescript
+\`\`\`typescript
 // 在 app/pricing/page.tsx 中添加
 const [promoCode, setPromoCode] = useState("")
 
@@ -165,12 +165,12 @@ const [promoCode, setPromoCode] = useState("")
 <Button onClick={handleRedeemPromo}>
   Apply Code
 </Button>
-```
+\`\`\`
 
 ## 📈 统计和分析
 
 ### 查看最受欢迎的促销码
-```sql
+\`\`\`sql
 SELECT
   c.code,
   c.plan,
@@ -180,10 +180,10 @@ FROM promo_codes c
 LEFT JOIN promo_code_redemptions r ON c.id = r.promo_code_id
 GROUP BY c.id, c.code, c.plan, c.max_uses
 ORDER BY total_redemptions DESC;
-```
+\`\`\`
 
 ### 查看用户兑换历史
-```sql
+\`\`\`sql
 SELECT
   r.user_id,
   c.code,
@@ -193,37 +193,37 @@ SELECT
 FROM promo_code_redemptions r
 JOIN promo_codes c ON r.promo_code_id = c.id
 ORDER BY r.redeemed_at DESC;
-```
+\`\`\`
 
 ## 🛠️ 管理操作
 
 ### 停用促销码
-```sql
+\`\`\`sql
 UPDATE promo_codes
 SET is_active = false
 WHERE code = 'OLDCODE';
-```
+\`\`\`
 
 ### 延长促销码有效期
-```sql
+\`\`\`sql
 UPDATE promo_codes
 SET expires_at = '2025-12-31'::timestamp
 WHERE code = 'EXTEND';
-```
+\`\`\`
 
 ### 增加使用次数
-```sql
+\`\`\`sql
 UPDATE promo_codes
 SET max_uses = max_uses + 100
 WHERE code = 'POPULAR';
-```
+\`\`\`
 
 ## 🎉 测试步骤
 
 1. **访问页面**
-   ```
+   \`\`\`
    http://localhost:3000/promo
-   ```
+   \`\`\`
 
 2. **测试兑换**
    - 输入 `FREEPRO`
@@ -232,10 +232,10 @@ WHERE code = 'POPULAR';
    - 点击 Redeem Code
 
 3. **验证结果**
-   ```sql
+   \`\`\`sql
    SELECT * FROM users WHERE id = 'test-001';
    -- 应该看到 subscription_status = 'pro'
-   ```
+   \`\`\`
 
 4. **测试重复兑换**
    - 再次尝试用相同用户兑换相同码

@@ -10,9 +10,9 @@
 - ✅ 完整的数据隔离机制
 
 **验证命令**:
-```bash
+\`\`\`bash
 node scripts/verify-rls.js
-```
+\`\`\`
 
 ### 2. Stripe 订阅系统 (80% 完成) ⚠️
 - ✅ Stripe SDK 集成
@@ -45,9 +45,9 @@ node scripts/verify-rls.js
 **待解决**:
 1. 等待 Stack 官方修复 Next.js 15 兼容性
 2. 或使用 Stack CLI 初始化工具：
-   ```bash
+   \`\`\`bash
    npx @stackframe/init-stack@latest
-   ```
+   \`\`\`
 3. 或考虑降级到 Next.js 14
 
 ## 🚀 当前可用功能
@@ -69,9 +69,9 @@ node scripts/verify-rls.js
 ### 选项 A: 修复 Stack Auth（推荐）
 
 1. **运行 Stack 官方初始化工具**:
-   ```bash
+   \`\`\`bash
    npx @stackframe/init-stack@latest
-   ```
+   \`\`\`
 
 2. **按照向导配置**:
    - 选择现有项目 ID: `27c182ee-834e-40b7-9320-b050927a1f44`
@@ -99,7 +99,7 @@ node scripts/verify-rls.js
 1. 访问 https://dashboard.stripe.com
 2. 创建产品和价格
 3. 更新 `.env.local`:
-   ```bash
+   \`\`\`bash
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
    STRIPE_SECRET_KEY=sk_test_...
    STRIPE_WEBHOOK_SECRET=whsec_...
@@ -107,13 +107,13 @@ node scripts/verify-rls.js
    STRIPE_PRICE_ID_PRO_YEARLY=price_...
    STRIPE_PRICE_ID_TEAM_MONTHLY=price_...
    STRIPE_PRICE_ID_TEAM_YEARLY=price_...
-   ```
+   \`\`\`
 
 4. 本地测试 Webhook:
-   ```bash
+   \`\`\`bash
    brew install stripe/stripe-cli/stripe
    stripe listen --forward-to localhost:3000/api/stripe/webhook
-   ```
+   \`\`\`
 
 ## 📊 项目统计
 
@@ -128,16 +128,16 @@ node scripts/verify-rls.js
 ### 立即可以做的：
 
 1. **测试应用基础功能**
-   ```bash
+   \`\`\`bash
    npm run dev
    # 访问 http://localhost:3000
-   ```
+   \`\`\`
 
 2. **验证数据库连接**
-   ```bash
+   \`\`\`bash
    node scripts/check-tables.js
    node scripts/verify-rls.js
-   ```
+   \`\`\`
 
 3. **开发业务逻辑**
    - RLS 已配置好
@@ -162,16 +162,16 @@ node scripts/verify-rls.js
 ### 如果遇到其他错误：
 
 1. **清理并重新安装**:
-   ```bash
+   \`\`\`bash
    rm -rf node_modules .next
    npm install
    npm run dev
-   ```
+   \`\`\`
 
 2. **检查环境变量**:
-   ```bash
+   \`\`\`bash
    cat .env.local
-   ```
+   \`\`\`
 
 3. **查看日志**:
    - 浏览器控制台

@@ -94,7 +94,7 @@
 - `lib/env.ts` - 环境变量类型定义
 
 **配置项:**
-```bash
+\`\`\`bash
 DATABASE_URL                              # Neon 数据库连接
 NEXT_PUBLIC_STACK_PROJECT_ID              # Stack Auth 项目 ID
 NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY  # Stack Auth 公钥
@@ -106,11 +106,11 @@ STRIPE_PRICE_ID_PRO_MONTHLY               # Pro 月付价格 ID
 STRIPE_PRICE_ID_PRO_YEARLY                # Pro 年付价格 ID
 STRIPE_PRICE_ID_TEAM_MONTHLY              # Team 月付价格 ID
 STRIPE_PRICE_ID_TEAM_YEARLY               # Team 年付价格 ID
-```
+\`\`\`
 
 ## 📁 新增文件列表
 
-```
+\`\`\`
 lib/
 ├── stack-server.ts          # Stack Auth 服务端
 ├── stack-client.tsx         # Stack Auth 客户端
@@ -138,44 +138,44 @@ scripts/
 middleware.ts                # 路由保护（已更新）
 SETUP.md                     # 完整设置指南
 IMPLEMENTATION_SUMMARY.md    # 本文件
-```
+\`\`\`
 
 ## 🔧 下一步操作
 
 ### 必须完成的步骤（按顺序）:
 
 1. **创建 Neon 项目并启用 Auth**
-   ```bash
+   \`\`\`bash
    # 访问 https://pg.new
    # 启用 Neon Auth
    # 获取所有必需的环境变量
-   ```
+   \`\`\`
 
 2. **执行数据库迁移**
-   ```bash
+   \`\`\`bash
    psql $DATABASE_URL < scripts/enable-rls.sql
-   ```
+   \`\`\`
 
 3. **配置 Stripe**
-   ```bash
+   \`\`\`bash
    # 创建产品和价格
    # 配置 Webhook
    # 获取所有 API 密钥
-   ```
+   \`\`\`
 
 4. **更新 `.env.local`**
-   ```bash
+   \`\`\`bash
    # 填入所有实际的环境变量值
-   ```
+   \`\`\`
 
 5. **本地测试**
-   ```bash
+   \`\`\`bash
    npm install
    npm run dev
 
    # 在另一个终端
    stripe listen --forward-to localhost:3000/api/stripe/webhook
-   ```
+   \`\`\`
 
 6. **测试流程**
    - 注册新用户
@@ -186,7 +186,7 @@ IMPLEMENTATION_SUMMARY.md    # 本文件
 
 ## 🎨 系统架构
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────────────────┐
 │                        用户浏览器                             │
 │                                                               │
@@ -216,7 +216,7 @@ IMPLEMENTATION_SUMMARY.md    # 本文件
                     │ - 订阅状态         │
                     │ - 项目权限         │
                     └───────────────────┘
-```
+\`\`\`
 
 ## 🔒 安全特性
 
@@ -231,23 +231,23 @@ IMPLEMENTATION_SUMMARY.md    # 本文件
 ## 📊 数据流
 
 ### 1. 用户注册流程
-```
+\`\`\`
 用户 → /handler/sign-up → Stack Auth → users 表 → 完成
-```
+\`\`\`
 
 ### 2. 订阅流程
-```
+\`\`\`
 用户 → /pricing → 选择计划 → Stripe Checkout →
 → 支付成功 → Webhook → 更新 users.subscription_status → 完成
-```
+\`\`\`
 
 ### 3. 数据访问流程
-```
+\`\`\`
 请求 → Middleware (验证登录) →
 → 设置 app.current_user_id →
 → RLS 策略过滤 →
 → 返回仅用户有权访问的数据
-```
+\`\`\`
 
 ## 🐛 已知问题和待优化
 

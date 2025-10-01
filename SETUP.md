@@ -24,13 +24,13 @@
 
 在 Neon SQL Editor 中执行以下 SQL 脚本：
 
-```bash
+\`\`\`bash
 # 1. 首先运行基础表创建（如果还没有）
 psql $DATABASE_URL < scripts/init-db.sql
 
 # 2. 然后运行 RLS 配置脚本
 psql $DATABASE_URL < scripts/enable-rls.sql
-```
+\`\`\`
 
 或者在 Neon Dashboard 的 SQL Editor 中直接粘贴并执行 `scripts/enable-rls.sql` 的内容。
 
@@ -81,7 +81,7 @@ psql $DATABASE_URL < scripts/enable-rls.sql
 
 编辑 `.env.local` 文件，填入你的实际值：
 
-```bash
+\`\`\`bash
 # Neon Database
 DATABASE_URL=postgresql://...
 
@@ -103,13 +103,13 @@ STRIPE_PRICE_ID_TEAM_YEARLY=price_...
 
 # App URL (生产环境)
 NEXT_PUBLIC_APP_URL=https://your-domain.com
-```
+\`\`\`
 
 ## 🧪 步骤 4: 本地开发测试
 
 ### 4.1 安装 Stripe CLI (用于本地 webhook 测试)
 
-```bash
+\`\`\`bash
 # macOS
 brew install stripe/stripe-cli/stripe
 
@@ -119,11 +119,11 @@ scoop install stripe
 # Linux
 wget https://github.com/stripe/stripe-cli/releases/download/vX.XX.X/stripe_X.XX.X_linux_x86_64.tar.gz
 tar -xvf stripe_X.XX.X_linux_x86_64.tar.gz
-```
+\`\`\`
 
 ### 4.2 启动开发服务器
 
-```bash
+\`\`\`bash
 # 安装依赖
 npm install
 
@@ -134,7 +134,7 @@ npm run dev
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 # 复制 webhook signing secret 到 .env.local 中的 STRIPE_WEBHOOK_SECRET
-```
+\`\`\`
 
 ### 4.3 测试流程
 
@@ -150,7 +150,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 ### 5.1 测试数据隔离
 
-```sql
+\`\`\`sql
 -- 在 Neon SQL Editor 中测试
 
 -- 1. 设置当前用户上下文
@@ -164,20 +164,20 @@ SELECT set_current_user_id('another_user_id');
 
 -- 4. 应该看到不同的项目
 SELECT * FROM projects;
-```
+\`\`\`
 
 ### 5.2 检查权限
 
-```sql
+\`\`\`sql
 -- 验证用户只能访问自己的数据
 SELECT * FROM tasks WHERE project_id = 999; -- 应该返回空（如果不是你的项目）
-```
+\`\`\`
 
 ## 📦 步骤 6: 部署到生产环境
 
 ### 6.1 Vercel 部署
 
-```bash
+\`\`\`bash
 # 安装 Vercel CLI
 npm i -g vercel
 
@@ -186,7 +186,7 @@ vercel
 
 # 在 Vercel Dashboard 中设置环境变量
 # 使用生产环境的 Stripe 密钥（pk_live_ 和 sk_live_）
-```
+\`\`\`
 
 ### 6.2 更新 Stripe Webhook
 
@@ -235,26 +235,26 @@ vercel
 
 ### 认证问题
 
-```bash
+\`\`\`bash
 # 检查 Stack Auth 配置
 curl http://localhost:3000/handler/sign-in
 
 # 应该看到登录页面
-```
+\`\`\`
 
 ### Stripe 支付失败
 
-```bash
+\`\`\`bash
 # 检查 webhook 日志
 stripe listen --print-secret
 
 # 查看 Next.js 日志
 npm run dev -- --verbose
-```
+\`\`\`
 
 ### RLS 策略问题
 
-```sql
+\`\`\`sql
 -- 检查 RLS 是否启用
 SELECT tablename, rowsecurity
 FROM pg_tables
@@ -262,7 +262,7 @@ WHERE schemaname = 'public';
 
 -- 查看策略
 SELECT * FROM pg_policies WHERE schemaname = 'public';
-```
+\`\`\`
 
 ## 📚 参考文档
 
