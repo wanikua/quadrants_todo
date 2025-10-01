@@ -19,7 +19,7 @@ const JWT_SECRET = new TextEncoder().encode(
 interface User {
   id: string
   email: string
-  name: string | null
+  display_name: string | null
 }
 
 interface JWTPayload {
@@ -55,7 +55,7 @@ export async function getCurrentUser(): Promise<User | null> {
     if (!payload) return null
 
     const result = await sql`
-      SELECT id, email, name
+      SELECT id, email, display_name
       FROM users
       WHERE id = ${payload.userId}
     `
@@ -73,7 +73,7 @@ export async function requireAuth(): Promise<User> {
   return user
 }
 
-export async function signUp(email: string, password: string, name?: string) {
+export async function signUp(email: string, password: string, displayName?: string) {
   try {
     const existing = await sql`SELECT id FROM users WHERE email = ${email}`
     if (existing.length > 0) return { error: "User already exists" }
@@ -82,8 +82,8 @@ export async function signUp(email: string, password: string, name?: string) {
     const userId = crypto.randomUUID()
 
     await sql`
-      INSERT INTO users (id, email, password_hash, name, created_at)
-      VALUES (${userId}, ${email}, ${passwordHash}, ${name || null}, NOW())
+      INSERT INTO users (id, email, password_hash, display_name, created_at)
+      VALUES (${userId}, ${email}, ${passwordHash}, ${displayName || null}, NOW())
     `
 
     const token = await createToken({ userId, email })
