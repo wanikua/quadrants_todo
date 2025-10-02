@@ -5,13 +5,14 @@ import { getProjectWithData, getUserProjectAccess } from "@/app/db/actions"
 import { requireAuth } from "@/lib/auth"
 
 interface ProjectPageProps {
-  params: {
+  params: Promise<{
     projectId: string
-  }
+  }>
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const userId = await requireAuth()
+  const { projectId } = await params
 
   if (!userId) {
     redirect("/auth/signin")
@@ -25,13 +26,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   try {
     // Check if user has access to this project
-    const hasAccess = await getUserProjectAccess(userId, params.projectId)
+    const hasAccess = await getUserProjectAccess(userId, projectId)
     if (!hasAccess) {
       redirect("/projects")
     }
 
     // Get project data
-    const projectData = await getProjectWithData(params.projectId)
+    const projectData = await getProjectWithData(projectId)
     if (!projectData) {
       redirect("/projects")
     }
