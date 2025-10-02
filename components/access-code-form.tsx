@@ -28,10 +28,10 @@ const AccessCodeForm = React.memo(function AccessCodeForm({ onAccessGranted }: A
     setAccessCode(value)
   }, [])
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!accessCode.trim()) return
-    
+
     setIsLoading(true)
     setError("")
 
@@ -51,11 +51,11 @@ const AccessCodeForm = React.memo(function AccessCodeForm({ onAccessGranted }: A
       setError("An error occurred. Please try again.")
       setIsLoading(false)
     }
-  }
+  }, [accessCode, onAccessGranted])
 
   const handleButtonClick = useCallback(() => {
     handleSubmit()
-  }, [accessCode])
+  }, [handleSubmit])
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
