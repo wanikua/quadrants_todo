@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { signIn } from "@/lib/auth"
+import { signIn } from "@/app/auth/actions"
 
 export default function SignInPage() {
   const router = useRouter()

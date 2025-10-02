@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Plus, LogOut, Trash2 } from "lucide-react"
-import { signOut } from "@/lib/auth"
+import { signOut } from "@/app/auth/actions"
 
 interface User {
   id: string

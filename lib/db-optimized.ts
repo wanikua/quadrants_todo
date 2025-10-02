@@ -1,5 +1,4 @@
 import { neon, Pool } from '@neondatabase/serverless'
-import { auth } from '@clerk/nextjs/server'
 
 // 创建连接池以优化性能
 const pool = new Pool({ 
