@@ -1,30 +1,69 @@
-# Quadrant to-do system
+# Quadrant Task Manager
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A task management application using the Eisenhower Matrix (Urgent/Important quadrants) built with Next.js 15, Neon PostgreSQL, and custom JWT authentication.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/wlk760541031-6862s-projects/v0-quadrant-to-do-system)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/xgyHkkIoUZ3)
+## Features
 
-## Overview
+- 🔐 Custom JWT authentication with bcrypt password hashing
+- 📊 Eisenhower Matrix task organization (4 quadrants)
+- 🗂️ Project-based task management
+- 💳 Stripe subscription integration
+- 🎨 Modern UI with Tailwind CSS and shadcn/ui
+- 🔒 Row Level Security (RLS) with Neon PostgreSQL
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Tech Stack
 
-## Deployment
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript
+- **Database**: Neon PostgreSQL with RLS
+- **Authentication**: Custom JWT with jose library
+- **Payments**: Stripe
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Deployment**: Vercel
 
-Your project is live at:
+## Getting Started
 
-**[https://vercel.com/wlk760541031-6862s-projects/v0-quadrant-to-do-system](https://vercel.com/wlk760541031-6862s-projects/v0-quadrant-to-do-system)**
+### Prerequisites
 
-## Build your app
+- Node.js 18+
+- Neon PostgreSQL database
+- Stripe account (for payments)
 
-Continue building your app on:
+### Installation
 
-**[https://v0.dev/chat/projects/xgyHkkIoUZ3](https://v0.dev/chat/projects/xgyHkkIoUZ3)**
+1. Clone the repository
+2. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
 
-## How It Works
+3. Set up environment variables (see `.env.example`)
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+4. Run database migrations:
+   \`\`\`bash
+   npm run db:setup
+   \`\`\`
+
+5. Start the development server:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
+
+## Authentication
+
+This app uses custom JWT authentication:
+- Passwords are hashed with bcrypt
+- JWTs are signed with jose library
+- Tokens stored in HTTP-only cookies
+- 30-day token expiration
+
+## Database Schema
+
+Key tables:
+- `users` - User accounts with password hashes
+- `projects` - User projects
+- `tasks` - Tasks with quadrant assignment
+- `promo_codes` - Promotional codes for subscriptions
+
+## License
+
+MIT

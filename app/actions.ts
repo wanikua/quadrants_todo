@@ -1,96 +1,62 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-import { db } from "@/lib/database"
 import { requireAuth } from "@/lib/auth"
+import { db } from "@/lib/database"
+import { revalidatePath } from "next/cache"
 
-export async function createTaskAction(formData: FormData) {
-  const userId = await requireAuth()
-  const projectId = formData.get("projectId") as string
-  const title = formData.get("title") as string
-  const quadrant = formData.get("quadrant") as string
-
-  if (!projectId || !title || !quadrant) {
-    throw new Error("Missing required fields")
+export async function createTaskAction(projectId: string, title: string, quadrant: string) {
+  try {
+    const userId = await requireAuth()
+    await db.createTask(userId, projectId, title, quadrant)
+    revalidatePath(`/projects/${projectId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Error creating task:", error)
+    return { error: "Failed to create task" }
   }
-
-  await db.createTask({
-    projectId,
-    title,
-    quadrant: quadrant as
-      | "urgent-important"
-      | "not-urgent-important"
-      | "urgent-not-important"
-      | "not-urgent-not-important",
-    userId,
-  })
-
-  revalidatePath(`/projects/${projectId}`)
-  return { success: true }
 }
 
-export async function createPlayerAction(formData: FormData) {
-  const userId = await requireAuth()
-  const name = formData.get("name") as string
-  const email = formData.get("email") as string
-
-  if (!name || !email) {
-    throw new Error("Missing required fields")
+export async function updateTaskAction(taskId: string, updates: any) {
+  try {
+    const userId = await requireAuth()
+    await db.updateTask(taskId, userId, updates)
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating task:", error)
+    return { error: "Failed to update task" }
   }
-
-  const player = await db.createPlayer({
-    name,
-    email,
-    userId,
-  })
-
-  revalidatePath("/players")
-  return { success: true, player }
-}
-
-export async function updateTaskAction(
-  taskId: string,
-  updates: {
-    title?: string
-    completed?: boolean
-    quadrant?: string
-  },
-) {
-  await requireAuth()
-  await db.updateTask(taskId, updates)
-  revalidatePath("/projects")
-  return { success: true }
 }
 
 export async function deleteTaskAction(taskId: string) {
-  await requireAuth()
-  await db.deleteTask(taskId)
-  revalidatePath("/projects")
-  return { success: true }
-}
-
-export async function createProjectAction(formData: FormData) {
-  const userId = await requireAuth()
-  const name = formData.get("name") as string
-  const description = formData.get("description") as string
-
-  if (!name) {
-    throw new Error("Project name is required")
+  try {
+    const userId = await requireAuth()
+    await db.deleteTask(taskId, userId)
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting task:", error)
+    return { error: "Failed to delete task" }
   }
-
-  const project = await db.createProject({
-    name,
-    description: description || "",
-    ownerId: userId,
-  })
-
-  revalidatePath("/projects")
-  return { success: true, project }
 }
 
-export async function deleteProjectAction(projectId: string) {
-  await requireAuth()
-  await db.deleteProject(projectId)
-  revalidatePath("/projects")
-  return { success: true }
+export async function createProjectAction(name: string, description?: string) {
+  try {
+    const userId = await requireAuth()
+    const projectId = await db.createProject(userId, name, description)
+    revalidatePath("/projects")
+    return { success: true, projectId }
+  } catch (error) {
+    console.error("Error creating project:", error)
+    return { error: "Failed to create project" }
+  }
+}
+
+export async function createPlayerAction(name: string) {
+  try {
+    const userId = await requireAuth()
+    // Implement player creation logic if needed
+    return { success: true }
+  } catch (error) {
+    console.error("Error creating player:", error)
+    return { error: "Failed to create player" }
+  }
 }

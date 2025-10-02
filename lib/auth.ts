@@ -5,7 +5,6 @@ import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
 import { redirect } from "next/navigation"
-import "server-only"
 
 const DATABASE_URL = process.env.DATABASE_URL
 if (!DATABASE_URL) {
@@ -106,24 +105,32 @@ export async function getUser() {
 
 export async function signUp(email: string, password: string, displayName?: string) {
   try {
+    // Check if user exists
     const existing = await sql`SELECT id FROM users WHERE email = ${email}`
-    if (existing.length > 0) return { error: "User already exists" }
+    if (existing.length > 0) {
+      return { error: "User already exists" }
+    }
 
+    // Hash password
     const passwordHash = await bcrypt.hash(password, 10)
+
+    // Generate UUID using Web Crypto API
     const userId = crypto.randomUUID()
 
+    // Create user
     await sql`
       INSERT INTO users (id, email, password_hash, display_name, created_at)
       VALUES (${userId}, ${email}, ${passwordHash}, ${displayName || null}, NOW())
     `
 
+    // Create session token
     const token = await createToken({ userId, email })
     const cookieStore = await cookies()
     cookieStore.set("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: 60 * 60 * 24 * 30, // 30 days
       path: "/",
     })
 
@@ -136,25 +143,33 @@ export async function signUp(email: string, password: string, displayName?: stri
 
 export async function signIn(email: string, password: string) {
   try {
+    // Get user
     const result = await sql`
       SELECT id, email, password_hash
       FROM users
       WHERE email = ${email}
     `
 
-    if (result.length === 0) return { error: "Invalid email or password" }
+    if (result.length === 0) {
+      return { error: "Invalid email or password" }
+    }
 
     const user = result[0]
-    const validPassword = await bcrypt.compare(password, user.password_hash)
-    if (!validPassword) return { error: "Invalid email or password" }
 
+    // Verify password
+    const validPassword = await bcrypt.compare(password, user.password_hash)
+    if (!validPassword) {
+      return { error: "Invalid email or password" }
+    }
+
+    // Create session token
     const token = await createToken({ userId: user.id, email: user.email })
     const cookieStore = await cookies()
     cookieStore.set("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: 60 * 60 * 24 * 30, // 30 days
       path: "/",
     })
 

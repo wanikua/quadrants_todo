@@ -1,14 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createCheckoutSession } from "@/lib/stripe"
-import { requireAuth } from "@/lib/auth"
-import { stackServerApp } from "@/stack"
+import { requireAuth, getCurrentUser } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAuth()
-    const user = await stackServerApp.getUser()
+    const user = await getCurrentUser()
 
-    if (!user?.primaryEmail) {
+    if (!user?.email) {
       return NextResponse.json({ error: "User email not found" }, { status: 400 })
     }
 
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 })
     }
 
-    const url = await createCheckoutSession(userId, user.primaryEmail, priceId)
+    const url = await createCheckoutSession(userId, user.email, priceId)
 
     return NextResponse.json({ url })
   } catch (error) {

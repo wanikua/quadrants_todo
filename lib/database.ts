@@ -1,26 +1,29 @@
 import { neon } from "@neondatabase/serverless"
+import { crypto } from "crypto"
 
-// Check if DATABASE_URL is available
 const DATABASE_URL = process.env.DATABASE_URL
+if (!DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is not set")
+}
 
-let sql: any = null
+export const sql = neon(DATABASE_URL)
 
-if (DATABASE_URL) {
-  try {
-    sql = neon(DATABASE_URL)
-  } catch (error) {
-    console.error("Failed to initialize database connection:", error)
-  }
+let sqlClient: any = null
+
+try {
+  sqlClient = neon(DATABASE_URL)
+} catch (error) {
+  console.error("Failed to initialize database connection:", error)
 }
 
 export async function testConnection() {
-  if (!sql) {
+  if (!sqlClient) {
     console.log("Database not configured")
     return false
   }
 
   try {
-    await sql`SELECT 1`
+    await sqlClient`SELECT 1`
     console.log("Database connection successful")
     return true
   } catch (error) {
@@ -44,16 +47,19 @@ export interface Player {
 }
 
 export interface Task {
-  id: number
-  description: string
-  urgency: number
-  importance: number
+  id: string
+  project_id: string
+  user_id: string
+  title: string
+  quadrant: string
+  completed: boolean
   created_at: string
+  updated_at: string
 }
 
 export interface TaskComment {
   id: number
-  task_id: number
+  task_id: string
   content: string
   author_name: string
   created_at: string
@@ -61,8 +67,8 @@ export interface TaskComment {
 
 export interface Line {
   id: number
-  from_task_id: number
-  to_task_id: number
+  from_task_id: string
+  to_task_id: string
   style: "filled" | "open"
   size: number
   color: string
@@ -84,13 +90,13 @@ export interface Project {
 }
 
 export async function getPlayers(): Promise<Player[]> {
-  if (!sql) {
+  if (!sqlClient) {
     console.log("Database not available, returning default players")
     return DEFAULT_PLAYERS
   }
 
   try {
-    const players = await sql`
+    const players = await sqlClient`
       SELECT id, name, color, created_at
       FROM players
       ORDER BY created_at ASC
@@ -103,8 +109,8 @@ export async function getPlayers(): Promise<Player[]> {
   }
 }
 
-export async function getTasks(): Promise<TaskWithAssignees[]> {
-  if (!sql) {
+export async function getTasks(userId: string, projectId: string): Promise<TaskWithAssignees[]> {
+  if (!sqlClient) {
     console.log("Database not available, returning empty tasks")
     return []
   }
@@ -113,13 +119,16 @@ export async function getTasks(): Promise<TaskWithAssignees[]> {
     // First, try to get tasks with comments (if table exists)
     let tasks: TaskWithAssignees[]
     try {
-      const tasksResult = await sql`
+      const tasksResult = await sqlClient`
         SELECT 
           t.id,
-          t.description,
-          t.urgency,
-          t.importance,
+          t.project_id,
+          t.user_id,
+          t.title,
+          t.quadrant,
+          t.completed,
           t.created_at,
+          t.updated_at,
           COALESCE(
             JSON_AGG(
               CASE WHEN p.id IS NOT NULL THEN
@@ -152,7 +161,8 @@ export async function getTasks(): Promise<TaskWithAssignees[]> {
         LEFT JOIN task_assignments ta ON t.id = ta.task_id
         LEFT JOIN players p ON ta.player_id = p.id
         LEFT JOIN task_comments c ON t.id = c.task_id
-        GROUP BY t.id, t.description, t.urgency, t.importance, t.created_at
+        WHERE t.user_id = ${userId} AND t.project_id = ${projectId}
+        GROUP BY t.id, t.project_id, t.user_id, t.title, t.quadrant, t.completed, t.created_at, t.updated_at
         ORDER BY t.created_at DESC
       `
       tasks = tasksResult as TaskWithAssignees[]
@@ -160,13 +170,16 @@ export async function getTasks(): Promise<TaskWithAssignees[]> {
       console.log("Comments table not found, falling back to tasks without comments")
       // Fallback query without comments
       try {
-        const tasksResult = await sql`
+        const tasksResult = await sqlClient`
           SELECT 
             t.id,
-            t.description,
-            t.urgency,
-            t.importance,
+            t.project_id,
+            t.user_id,
+            t.title,
+            t.quadrant,
+            t.completed,
             t.created_at,
+            t.updated_at,
             COALESCE(
               JSON_AGG(
                 CASE WHEN p.id IS NOT NULL THEN
@@ -183,7 +196,8 @@ export async function getTasks(): Promise<TaskWithAssignees[]> {
           FROM tasks t
           LEFT JOIN task_assignments ta ON t.id = ta.task_id
           LEFT JOIN players p ON ta.player_id = p.id
-          GROUP BY t.id, t.description, t.urgency, t.importance, t.created_at
+          WHERE t.user_id = ${userId} AND t.project_id = ${projectId}
+          GROUP BY t.id, t.project_id, t.user_id, t.title, t.quadrant, t.completed, t.created_at, t.updated_at
           ORDER BY t.created_at DESC
         `
         tasks = (tasksResult as any[]).map((task) => ({
@@ -204,12 +218,12 @@ export async function getTasks(): Promise<TaskWithAssignees[]> {
 }
 
 export async function createPlayer(name: string, color: string): Promise<Player> {
-  if (!sql) {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    const result = await sql`
+    const result = await sqlClient`
       INSERT INTO players (name, color)
       VALUES (${name}, ${color})
       RETURNING id, name, color, created_at
@@ -221,230 +235,123 @@ export async function createPlayer(name: string, color: string): Promise<Player>
   }
 }
 
-export async function createTask(
-  description: string,
-  urgency: number,
-  importance: number,
-  assigneeIds: number[],
-): Promise<TaskWithAssignees> {
-  if (!sql) {
+export async function createTask(userId: string, projectId: string, title: string, quadrant: string): Promise<string> {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    // Create the task
-    const taskResult = await sql`
-      INSERT INTO tasks (description, urgency, importance)
-      VALUES (${description}, ${urgency}, ${importance})
-      RETURNING id, description, urgency, importance, created_at
+    const taskId = crypto.randomUUID()
+    await sqlClient`
+      INSERT INTO tasks (id, project_id, user_id, title, quadrant, created_at)
+      VALUES (${taskId}, ${projectId}, ${userId}, ${title}, ${quadrant}, NOW())
     `
-
-    const task = taskResult[0] as Task
-
-    // Create assignments if any assignees are provided
-    if (assigneeIds.length > 0) {
-      for (const assigneeId of assigneeIds) {
-        await sql`
-          INSERT INTO task_assignments (task_id, player_id)
-          VALUES (${task.id}, ${assigneeId})
-        `
-      }
-    }
-
-    // Get the complete task with assignees
-    const completeTaskResult = await sql`
-      SELECT 
-        t.id,
-        t.description,
-        t.urgency,
-        t.importance,
-        t.created_at,
-        COALESCE(
-          JSON_AGG(
-            CASE WHEN p.id IS NOT NULL THEN
-              JSON_BUILD_OBJECT(
-                'id', p.id,
-                'name', p.name,
-                'color', p.color,
-                'created_at', p.created_at
-              )
-            END
-          ) FILTER (WHERE p.id IS NOT NULL), 
-          '[]'
-        ) as assignees
-      FROM tasks t
-      LEFT JOIN task_assignments ta ON t.id = ta.task_id
-      LEFT JOIN players p ON ta.player_id = p.id
-      WHERE t.id = ${task.id}
-      GROUP BY t.id, t.description, t.urgency, t.importance, t.created_at
-    `
-
-    const completeTask = completeTaskResult[0] as TaskWithAssignees
-    completeTask.comments = []
-    return completeTask
+    return taskId
   } catch (error) {
     console.error("Failed to create task:", error)
     throw error
   }
 }
 
-export async function updateTask(
-  taskId: number,
-  description: string,
-  urgency: number,
-  importance: number,
-  assigneeIds: number[],
-): Promise<TaskWithAssignees> {
-  if (!sql) {
+export async function updateTask(taskId: string, userId: string, updates: any): Promise<void> {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    // Update the task
-    await sql`
-      UPDATE tasks 
-      SET description = ${description}, urgency = ${urgency}, importance = ${importance}
-      WHERE id = ${taskId}
+    const { title, quadrant, completed } = updates
+    await sqlClient`
+      UPDATE tasks
+      SET 
+        title = COALESCE(${title}, title),
+        quadrant = COALESCE(${quadrant}, quadrant),
+        completed = COALESCE(${completed}, completed),
+        updated_at = NOW()
+      WHERE id = ${taskId} AND user_id = ${userId}
     `
-
-    // Delete existing assignments
-    await sql`DELETE FROM task_assignments WHERE task_id = ${taskId}`
-
-    // Create new assignments
-    if (assigneeIds.length > 0) {
-      for (const assigneeId of assigneeIds) {
-        await sql`
-          INSERT INTO task_assignments (task_id, player_id)
-          VALUES (${taskId}, ${assigneeId})
-        `
-      }
-    }
-
-    // Get the updated task with assignees and comments
-    try {
-      const updatedTaskResult = await sql`
-        SELECT 
-          t.id,
-          t.description,
-          t.urgency,
-          t.importance,
-          t.created_at,
-          COALESCE(
-            JSON_AGG(
-              CASE WHEN p.id IS NOT NULL THEN
-                JSON_BUILD_OBJECT(
-                  'id', p.id,
-                  'name', p.name,
-                  'color', p.color,
-                  'created_at', p.created_at
-                )
-              END
-            ) FILTER (WHERE p.id IS NOT NULL), 
-            '[]'
-          ) as assignees,
-          COALESCE(
-            JSON_AGG(
-              CASE WHEN c.id IS NOT NULL THEN
-                JSON_BUILD_OBJECT(
-                  'id', c.id,
-                  'task_id', c.task_id,
-                  'content', c.content,
-                  'author_name', c.author_name,
-                  'created_at', c.created_at
-                )
-              END
-              ORDER BY c.created_at DESC
-            ) FILTER (WHERE c.id IS NOT NULL),
-            '[]'
-          ) as comments
-        FROM tasks t
-        LEFT JOIN task_assignments ta ON t.id = ta.task_id
-        LEFT JOIN players p ON ta.player_id = p.id
-        LEFT JOIN task_comments c ON t.id = c.task_id
-        WHERE t.id = ${taskId}
-        GROUP BY t.id, t.description, t.urgency, t.importance, t.created_at
-      `
-      return updatedTaskResult[0] as TaskWithAssignees
-    } catch (commentsError) {
-      // Fallback without comments
-      const updatedTaskResult = await sql`
-        SELECT 
-          t.id,
-          t.description,
-          t.urgency,
-          t.importance,
-          t.created_at,
-          COALESCE(
-            JSON_AGG(
-              CASE WHEN p.id IS NOT NULL THEN
-                JSON_BUILD_OBJECT(
-                  'id', p.id,
-                  'name', p.name,
-                  'color', p.color,
-                  'created_at', p.created_at
-                )
-              END
-            ) FILTER (WHERE p.id IS NOT NULL), 
-            '[]'
-          ) as assignees
-        FROM tasks t
-        LEFT JOIN task_assignments ta ON t.id = ta.task_id
-        LEFT JOIN players p ON ta.player_id = p.id
-        WHERE t.id = ${taskId}
-        GROUP BY t.id, t.description, t.urgency, t.importance, t.created_at
-      `
-      const task = updatedTaskResult[0] as TaskWithAssignees
-      task.comments = []
-      return task
-    }
   } catch (error) {
     console.error("Failed to update task:", error)
     throw error
   }
 }
 
-export async function deleteTask(taskId: number): Promise<void> {
-  if (!sql) {
+export async function deleteTask(taskId: string, userId: string): Promise<void> {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    await sql`DELETE FROM tasks WHERE id = ${taskId}`
+    await sqlClient`
+      DELETE FROM tasks
+      WHERE id = ${taskId} AND user_id = ${userId}
+    `
   } catch (error) {
     console.error("Failed to delete task:", error)
     throw error
   }
 }
 
-export async function deletePlayer(playerId: number): Promise<void> {
-  if (!sql) {
+export async function createProject(userId: string, name: string, description?: string): Promise<string> {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    // Delete player (cascade will handle task_assignments)
-    await sql`DELETE FROM players WHERE id = ${playerId}`
-
-    // Delete tasks that have no remaining assignees
-    await sql`
-      DELETE FROM tasks 
-      WHERE id NOT IN (
-        SELECT DISTINCT task_id FROM task_assignments
-      )
+    const projectId = crypto.randomUUID()
+    await sqlClient`
+      INSERT INTO projects (id, user_id, name, description, created_at, updated_at)
+      VALUES (${projectId}, ${userId}, ${name}, ${description || null}, NOW(), NOW())
     `
+    return projectId
   } catch (error) {
-    console.error("Failed to delete player:", error)
+    console.error("Failed to create project:", error)
     throw error
   }
 }
 
-export async function addTaskComment(taskId: number, content: string, authorName: string): Promise<TaskComment> {
-  if (!sql) {
+export async function getProjects(userId: string): Promise<Project[]> {
+  if (!sqlClient) {
+    console.log("Database not available, returning empty projects")
+    return []
+  }
+
+  try {
+    const projects = await sqlClient`
+      SELECT * FROM projects
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `
+    console.log("Projects loaded from database:", projects.length)
+    return projects as Project[]
+  } catch (error) {
+    console.error("Database query failed, returning empty projects:", error)
+    return []
+  }
+}
+
+export async function deleteProject(projectId: string, userId: string): Promise<void> {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    const result = await sql`
+    // Delete tasks first
+    await sqlClient`DELETE FROM tasks WHERE project_id = ${projectId}`
+    // Then delete project
+    await sqlClient`DELETE FROM projects WHERE id = ${projectId} AND user_id = ${userId}`
+  } catch (error) {
+    console.error("Failed to delete project:", error)
+    throw error
+  }
+}
+
+export async function addTaskComment(taskId: string, content: string, authorName: string): Promise<TaskComment> {
+  if (!sqlClient) {
+    throw new Error("Database not available")
+  }
+
+  try {
+    const result = await sqlClient`
       INSERT INTO task_comments (task_id, content, author_name)
       VALUES (${taskId}, ${content}, ${authorName})
       RETURNING id, task_id, content, author_name, created_at
@@ -457,12 +364,12 @@ export async function addTaskComment(taskId: number, content: string, authorName
 }
 
 export async function deleteTaskComment(commentId: number): Promise<void> {
-  if (!sql) {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    await sql`DELETE FROM task_comments WHERE id = ${commentId}`
+    await sqlClient`DELETE FROM task_comments WHERE id = ${commentId}`
   } catch (error) {
     console.error("Failed to delete comment:", error)
     throw error
@@ -470,12 +377,12 @@ export async function deleteTaskComment(commentId: number): Promise<void> {
 }
 
 export async function getLines(): Promise<Line[]> {
-  if (!sql) {
+  if (!sqlClient) {
     return []
   }
 
   try {
-    const lines = await sql`
+    const lines = await sqlClient`
       SELECT id, from_task_id, to_task_id, style, size, color, created_at
       FROM task_lines
       ORDER BY created_at ASC
@@ -488,18 +395,18 @@ export async function getLines(): Promise<Line[]> {
 }
 
 export async function createLine(
-  fromTaskId: number,
-  toTaskId: number,
+  fromTaskId: string,
+  toTaskId: string,
   style: "filled" | "open" = "filled",
   size = 8,
   color = "#374151",
 ): Promise<Line> {
-  if (!sql) {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    const result = await sql`
+    const result = await sqlClient`
       INSERT INTO task_lines (from_task_id, to_task_id, style, size, color)
       VALUES (${fromTaskId}, ${toTaskId}, ${style}, ${size}, ${color})
       RETURNING id, from_task_id, to_task_id, style, size, color, created_at
@@ -512,25 +419,25 @@ export async function createLine(
 }
 
 export async function deleteLine(lineId: number): Promise<void> {
-  if (!sql) {
+  if (!sqlClient) {
     throw new Error("Database not available")
   }
 
   try {
-    await sql`DELETE FROM task_lines WHERE id = ${lineId}`
+    await sqlClient`DELETE FROM task_lines WHERE id = ${lineId}`
   } catch (error) {
     console.error("Failed to delete line:", error)
     throw error
   }
 }
 
-export async function getLine(fromTaskId: number, toTaskId: number): Promise<Line | null> {
-  if (!sql) {
+export async function getLine(fromTaskId: string, toTaskId: string): Promise<Line | null> {
+  if (!sqlClient) {
     return null
   }
 
   try {
-    const result = await sql`
+    const result = await sqlClient`
       SELECT id, from_task_id, to_task_id, style, size, color, created_at
       FROM task_lines
       WHERE (from_task_id = ${fromTaskId} AND to_task_id = ${toTaskId})
@@ -545,17 +452,17 @@ export async function getLine(fromTaskId: number, toTaskId: number): Promise<Lin
 }
 
 export async function initializeDatabase(): Promise<void> {
-  if (!sql) {
+  if (!sqlClient) {
     console.log("Database not available, skipping initialization")
     return
   }
 
   try {
     // Create comments table if it doesn't exist
-    await sql`
+    await sqlClient`
       CREATE TABLE IF NOT EXISTS task_comments (
           id SERIAL PRIMARY KEY,
-          task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          task_id VARCHAR(255) NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
           content TEXT NOT NULL,
           author_name VARCHAR(255) NOT NULL DEFAULT 'Anonymous',
           created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -563,11 +470,11 @@ export async function initializeDatabase(): Promise<void> {
     `
 
     // Create lines table if it doesn't exist
-    await sql`
+    await sqlClient`
       CREATE TABLE IF NOT EXISTS task_lines (
           id SERIAL PRIMARY KEY,
-          from_task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-          to_task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          from_task_id VARCHAR(255) NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          to_task_id VARCHAR(255) NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
           style VARCHAR(10) NOT NULL DEFAULT 'filled' CHECK (style IN ('filled', 'open')),
           size INTEGER NOT NULL DEFAULT 8 CHECK (size > 0),
           color VARCHAR(7) NOT NULL DEFAULT '#374151',
@@ -577,10 +484,10 @@ export async function initializeDatabase(): Promise<void> {
     `
 
     // Create indexes
-    await sql`CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_task_comments_created_at ON task_comments(created_at)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_task_lines_from_task_id ON task_lines(from_task_id)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_task_lines_to_task_id ON task_lines(to_task_id)`
+    await sqlClient`CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id)`
+    await sqlClient`CREATE INDEX IF NOT EXISTS idx_task_comments_created_at ON task_comments(created_at)`
+    await sqlClient`CREATE INDEX IF NOT EXISTS idx_task_lines_from_task_id ON task_lines(from_task_id)`
+    await sqlClient`CREATE INDEX IF NOT EXISTS idx_task_lines_to_task_id ON task_lines(to_task_id)`
 
     console.log("Database initialized successfully")
   } catch (error) {
@@ -590,88 +497,67 @@ export async function initializeDatabase(): Promise<void> {
 }
 
 // Database helper functions
-export const db = {
-  async createTask(data: {
-    projectId: string
-    title: string
-    quadrant: string
-    userId: string
-  }) {
-    if (!sql) throw new Error("Database not configured")
-
-    const result = await sql`
-      INSERT INTO tasks (project_id, title, quadrant, user_id, completed, created_at, updated_at)
-      VALUES (${data.projectId}, ${data.title}, ${data.quadrant}, ${data.userId}, false, NOW(), NOW())
-      RETURNING *
+export const dbHelper = {
+  async createTask(userId: string, projectId: string, title: string, quadrant: string) {
+    const taskId = crypto.randomUUID()
+    await sqlClient`
+      INSERT INTO tasks (id, project_id, user_id, title, quadrant, created_at)
+      VALUES (${taskId}, ${projectId}, ${userId}, ${title}, ${quadrant}, NOW())
     `
-    return result[0]
+    return taskId
   },
 
-  async updateTask(taskId: string, updates: any) {
-    if (!sql) throw new Error("Database not configured")
-
-    const setClauses = []
-    const values = []
-    let paramCount = 1
-
-    if (updates.title !== undefined) {
-      setClauses.push(`title = $${paramCount++}`)
-      values.push(updates.title)
-    }
-    if (updates.completed !== undefined) {
-      setClauses.push(`completed = $${paramCount++}`)
-      values.push(updates.completed)
-    }
-    if (updates.quadrant !== undefined) {
-      setClauses.push(`quadrant = $${paramCount++}`)
-      values.push(updates.quadrant)
-    }
-
-    setClauses.push("updated_at = NOW()")
-    values.push(taskId)
-
-    const result = await sql.query(
-      `UPDATE tasks SET ${setClauses.join(", ")} WHERE id = $${paramCount} RETURNING *`,
-      values,
-    )
-    return result.rows[0]
-  },
-
-  async deleteTask(taskId: string) {
-    if (!sql) throw new Error("Database not configured")
-    await sql`DELETE FROM tasks WHERE id = ${taskId}`
-  },
-
-  async createPlayer(data: { name: string; email: string; userId: string }) {
-    if (!sql) throw new Error("Database not configured")
-
-    const result = await sql`
-      INSERT INTO players (name, email, user_id, created_at)
-      VALUES (${data.name}, ${data.email}, ${data.userId}, NOW())
-      RETURNING *
+  async updateTask(taskId: string, userId: string, updates: any) {
+    const { title, quadrant, completed } = updates
+    await sqlClient`
+      UPDATE tasks
+      SET 
+        title = COALESCE(${title}, title),
+        quadrant = COALESCE(${quadrant}, quadrant),
+        completed = COALESCE(${completed}, completed),
+        updated_at = NOW()
+      WHERE id = ${taskId} AND user_id = ${userId}
     `
-    return result[0]
   },
 
-  async createProject(data: { name: string; description: string; ownerId: string }) {
-    if (!sql) throw new Error("Database not configured")
-
-    const result = await sql`
-      INSERT INTO projects (name, description, user_id, created_at, updated_at)
-      VALUES (${data.name}, ${data.description}, ${data.ownerId}, NOW(), NOW())
-      RETURNING *
+  async deleteTask(taskId: string, userId: string) {
+    await sqlClient`
+      DELETE FROM tasks
+      WHERE id = ${taskId} AND user_id = ${userId}
     `
-    return result[0]
   },
 
-  async deleteProject(projectId: string) {
-    if (!sql) throw new Error("Database not configured")
+  async getTasks(userId: string, projectId: string) {
+    return await sqlClient`
+      SELECT * FROM tasks
+      WHERE user_id = ${userId} AND project_id = ${projectId}
+      ORDER BY created_at DESC
+    `
+  },
 
-    // Delete tasks first
-    await sql`DELETE FROM tasks WHERE project_id = ${projectId}`
-    // Then delete project
-    await sql`DELETE FROM projects WHERE id = ${projectId}`
+  async createProject(userId: string, name: string, description?: string) {
+    const projectId = crypto.randomUUID()
+    await sqlClient`
+      INSERT INTO projects (id, user_id, name, description, created_at, updated_at)
+      VALUES (${projectId}, ${userId}, ${name}, ${description || null}, NOW(), NOW())
+    `
+    return projectId
+  },
+
+  async getProjects(userId: string) {
+    return await sqlClient`
+      SELECT * FROM projects
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `
+  },
+
+  async deleteProject(projectId: string, userId: string) {
+    await sqlClient`
+      DELETE FROM tasks WHERE project_id = ${projectId}
+    `
+    await sqlClient`
+      DELETE FROM projects WHERE id = ${projectId} AND user_id = ${userId}
+    `
   },
 }
-
-export { sql }
