@@ -1,187 +1,168 @@
-"use server"
-
-import { cookies } from "next/headers"
-import { neon } from "@neondatabase/serverless"
-import bcrypt from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
-import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
+import bcrypt from "bcryptjs"
+import { sql } from "./database"
 
-const DATABASE_URL = process.env.DATABASE_URL
-if (!DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
-}
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-change-this-in-production")
 
-const sql = neon(DATABASE_URL)
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "change-this-to-a-secure-secret-key-at-least-32-characters-long",
-)
+const COOKIE_NAME = "auth-token"
 
-interface User {
+export interface User {
   id: string
   email: string
-  display_name: string | null
+  name: string
+  created_at: string
 }
 
-interface JWTPayload {
-  userId: string
-  email: string
-  [key: string]: any
+export interface AuthSession {
+  user: User
+  token: string
 }
 
-async function createToken(payload: JWTPayload): Promise<string> {
-  return await new SignJWT(payload)
+function generateUUID(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === "x" ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10)
+}
+
+export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  return bcrypt.compare(password, hashedPassword)
+}
+
+export async function createToken(userId: string): Promise<string> {
+  const token = await new SignJWT({ userId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime("7d")
     .sign(JWT_SECRET)
+
+  return token
 }
 
-async function verifyToken(token: string): Promise<JWTPayload | null> {
+export async function verifyToken(token: string): Promise<{ userId: string } | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    return payload as unknown as JWTPayload
+    const verified = await jwtVerify(token, JWT_SECRET)
+    return verified.payload as { userId: string }
   } catch {
     return null
   }
 }
 
+export async function setAuthCookie(token: string) {
+  const cookieStore = await cookies()
+  cookieStore.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    path: "/",
+  })
+}
+
+export async function getAuthCookie(): Promise<string | null> {
+  const cookieStore = await cookies()
+  const cookie = cookieStore.get(COOKIE_NAME)
+  return cookie?.value || null
+}
+
+export async function removeAuthCookie() {
+  const cookieStore = await cookies()
+  cookieStore.delete(COOKIE_NAME)
+}
+
 export async function getCurrentUser(): Promise<User | null> {
+  const token = await getAuthCookie()
+  if (!token) return null
+
+  const payload = await verifyToken(token)
+  if (!payload) return null
+
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get("auth_token")?.value
-
-    if (!token) return null
-
-    const payload = await verifyToken(token)
-    if (!payload) return null
-
     const result = await sql`
-      SELECT id, email, display_name
+      SELECT id, email, name, created_at
       FROM users
       WHERE id = ${payload.userId}
+      LIMIT 1
     `
 
-    return result.length > 0 ? (result[0] as User) : null
+    if (result.length === 0) return null
+
+    return result[0] as User
   } catch (error) {
-    console.error("Error getting user:", error)
+    console.error("Failed to get current user:", error)
     return null
   }
 }
 
-export async function getUserId(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get("auth_token")?.value
+export async function signUp(email: string, password: string, name: string): Promise<AuthSession> {
+  const existingUser = await sql`
+    SELECT id FROM users WHERE email = ${email} LIMIT 1
+  `
 
-    if (!token) return null
-
-    const payload = await verifyToken(token)
-    if (!payload) return null
-
-    return payload.userId
-  } catch (error) {
-    console.error("Error getting user:", error)
-    return null
+  if (existingUser.length > 0) {
+    throw new Error("User already exists")
   }
+
+  const hashedPassword = await hashPassword(password)
+  const userId = generateUUID()
+
+  await sql`
+    INSERT INTO users (id, email, password, name, created_at)
+    VALUES (${userId}, ${email}, ${hashedPassword}, ${name}, NOW())
+  `
+
+  const token = await createToken(userId)
+  await setAuthCookie(token)
+
+  const user: User = {
+    id: userId,
+    email,
+    name,
+    created_at: new Date().toISOString(),
+  }
+
+  return { user, token }
 }
 
-export async function requireAuth(): Promise<string> {
-  const userId = await getUserId()
-  if (!userId) {
-    throw new Error("Unauthorized - Please sign in")
+export async function signIn(email: string, password: string): Promise<AuthSession> {
+  const result = await sql`
+    SELECT id, email, password, name, created_at
+    FROM users
+    WHERE email = ${email}
+    LIMIT 1
+  `
+
+  if (result.length === 0) {
+    throw new Error("Invalid credentials")
   }
-  return userId
-}
 
-export async function getUser() {
-  try {
-    const user = await getCurrentUser()
-    return user ? { id: user.id, email: user.email, displayName: user.display_name } : null
-  } catch (error) {
-    console.error("Error getting user:", error)
-    return null
+  const user = result[0] as User & { password: string }
+  const isValid = await verifyPassword(password, user.password)
+
+  if (!isValid) {
+    throw new Error("Invalid credentials")
   }
-}
 
-export async function signUp(email: string, password: string, displayName?: string) {
-  try {
-    // Check if user exists
-    const existing = await sql`SELECT id FROM users WHERE email = ${email}`
-    if (existing.length > 0) {
-      return { error: "User already exists" }
-    }
+  const token = await createToken(user.id)
+  await setAuthCookie(token)
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10)
-
-    // Generate UUID using Web Crypto API
-    const userId = crypto.randomUUID()
-
-    // Create user
-    await sql`
-      INSERT INTO users (id, email, password_hash, display_name, created_at)
-      VALUES (${userId}, ${email}, ${passwordHash}, ${displayName || null}, NOW())
-    `
-
-    // Create session token
-    const token = await createToken({ userId, email })
-    const cookieStore = await cookies()
-    cookieStore.set("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      path: "/",
-    })
-
-    return { success: true }
-  } catch (error) {
-    console.error("Sign up error:", error)
-    return { error: "Failed to create account" }
-  }
-}
-
-export async function signIn(email: string, password: string) {
-  try {
-    // Get user
-    const result = await sql`
-      SELECT id, email, password_hash
-      FROM users
-      WHERE email = ${email}
-    `
-
-    if (result.length === 0) {
-      return { error: "Invalid email or password" }
-    }
-
-    const user = result[0]
-
-    // Verify password
-    const validPassword = await bcrypt.compare(password, user.password_hash)
-    if (!validPassword) {
-      return { error: "Invalid email or password" }
-    }
-
-    // Create session token
-    const token = await createToken({ userId: user.id, email: user.email })
-    const cookieStore = await cookies()
-    cookieStore.set("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      path: "/",
-    })
-
-    return { success: true }
-  } catch (error) {
-    console.error("Sign in error:", error)
-    return { error: "Failed to sign in" }
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      created_at: user.created_at,
+    },
+    token,
   }
 }
 
 export async function signOut() {
-  const cookieStore = await cookies()
-  cookieStore.delete("auth_token")
-  redirect("/auth/signin")
+  await removeAuthCookie()
 }
