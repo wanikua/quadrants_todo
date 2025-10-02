@@ -166,3 +166,20 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
 export async function signOut() {
   await removeAuthCookie()
 }
+
+export async function requireAuth(): Promise<User> {
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error("Unauthorized")
+  }
+  return user
+}
+
+export async function getUserId(): Promise<string | null> {
+  const user = await getCurrentUser()
+  return user?.id || null
+}
+
+export async function getUser(): Promise<User | null> {
+  return getCurrentUser()
+}
