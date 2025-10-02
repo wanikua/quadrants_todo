@@ -1,172 +1,96 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { sql } from "@/lib/db"
+import { db } from "@/lib/database"
 import { requireAuth } from "@/lib/auth"
 
-export async function createTaskAction(
-  projectId: string,
-  taskData: {
-    title: string
-    description?: string
-    urgency: number
-    importance: number
-    status?: string
-  },
-) {
+export async function createTaskAction(formData: FormData) {
   const userId = await requireAuth()
+  const projectId = formData.get("projectId") as string
+  const title = formData.get("title") as string
+  const quadrant = formData.get("quadrant") as string
 
-  // Verify project ownership
-  const project = await sql`
-    SELECT id FROM projects 
-    WHERE id = ${projectId} AND user_id = ${userId}
-  `
-
-  if (project.length === 0) {
-    throw new Error("Project not found or unauthorized")
+  if (!projectId || !title || !quadrant) {
+    throw new Error("Missing required fields")
   }
 
-  const result = await sql`
-    INSERT INTO tasks (
-      project_id,
-      title,
-      description,
-      urgency,
-      importance,
-      status,
-      created_at,
-      updated_at
-    ) VALUES (
-      ${projectId},
-      ${taskData.title},
-      ${taskData.description || ""},
-      ${taskData.urgency},
-      ${taskData.importance},
-      ${taskData.status || "pending"},
-      NOW(),
-      NOW()
-    )
-    RETURNING *
-  `
+  await db.createTask({
+    projectId,
+    title,
+    quadrant: quadrant as
+      | "urgent-important"
+      | "not-urgent-important"
+      | "urgent-not-important"
+      | "not-urgent-not-important",
+    userId,
+  })
 
   revalidatePath(`/projects/${projectId}`)
-
-  return result[0]
+  return { success: true }
 }
 
-export async function createPlayerAction(playerData: {
-  name: string
-  email?: string
-}) {
+export async function createPlayerAction(formData: FormData) {
   const userId = await requireAuth()
+  const name = formData.get("name") as string
+  const email = formData.get("email") as string
 
-  const result = await sql`
-    INSERT INTO players (
-      user_id,
-      name,
-      email,
-      created_at
-    ) VALUES (
-      ${userId},
-      ${playerData.name},
-      ${playerData.email || null},
-      NOW()
-    )
-    RETURNING *
-  `
+  if (!name || !email) {
+    throw new Error("Missing required fields")
+  }
+
+  const player = await db.createPlayer({
+    name,
+    email,
+    userId,
+  })
 
   revalidatePath("/players")
-
-  return result[0]
+  return { success: true, player }
 }
 
 export async function updateTaskAction(
   taskId: string,
   updates: {
     title?: string
-    description?: string
-    urgency?: number
-    importance?: number
-    status?: string
+    completed?: boolean
+    quadrant?: string
   },
 ) {
-  const userId = await requireAuth()
-
-  // Verify task ownership through project
-  const task = await sql`
-    SELECT t.id 
-    FROM tasks t
-    JOIN projects p ON t.project_id = p.id
-    WHERE t.id = ${taskId} AND p.user_id = ${userId}
-  `
-
-  if (task.length === 0) {
-    throw new Error("Task not found or unauthorized")
-  }
-
-  const setClauses = []
-  const values = []
-
-  if (updates.title !== undefined) {
-    setClauses.push(`title = $${setClauses.length + 1}`)
-    values.push(updates.title)
-  }
-  if (updates.description !== undefined) {
-    setClauses.push(`description = $${setClauses.length + 1}`)
-    values.push(updates.description)
-  }
-  if (updates.urgency !== undefined) {
-    setClauses.push(`urgency = $${setClauses.length + 1}`)
-    values.push(updates.urgency)
-  }
-  if (updates.importance !== undefined) {
-    setClauses.push(`importance = $${setClauses.length + 1}`)
-    values.push(updates.importance)
-  }
-  if (updates.status !== undefined) {
-    setClauses.push(`status = $${setClauses.length + 1}`)
-    values.push(updates.status)
-  }
-
-  setClauses.push("updated_at = NOW()")
-
-  const result = await sql.query(
-    `UPDATE tasks SET ${setClauses.join(", ")} WHERE id = $${values.length + 1} RETURNING *`,
-    [...values, taskId],
-  )
-
-  const projectId = await sql`
-    SELECT project_id FROM tasks WHERE id = ${taskId}
-  `
-
-  if (projectId.length > 0) {
-    revalidatePath(`/projects/${projectId[0].project_id}`)
-  }
-
-  return result.rows[0]
+  await requireAuth()
+  await db.updateTask(taskId, updates)
+  revalidatePath("/projects")
+  return { success: true }
 }
 
 export async function deleteTaskAction(taskId: string) {
+  await requireAuth()
+  await db.deleteTask(taskId)
+  revalidatePath("/projects")
+  return { success: true }
+}
+
+export async function createProjectAction(formData: FormData) {
   const userId = await requireAuth()
+  const name = formData.get("name") as string
+  const description = formData.get("description") as string
 
-  // Get project ID before deletion
-  const projectId = await sql`
-    SELECT p.id as project_id
-    FROM tasks t
-    JOIN projects p ON t.project_id = p.id
-    WHERE t.id = ${taskId} AND p.user_id = ${userId}
-  `
-
-  if (projectId.length === 0) {
-    throw new Error("Task not found or unauthorized")
+  if (!name) {
+    throw new Error("Project name is required")
   }
 
-  await sql`
-    DELETE FROM tasks 
-    WHERE id = ${taskId}
-  `
+  const project = await db.createProject({
+    name,
+    description: description || "",
+    ownerId: userId,
+  })
 
-  revalidatePath(`/projects/${projectId[0].project_id}`)
+  revalidatePath("/projects")
+  return { success: true, project }
+}
 
+export async function deleteProjectAction(projectId: string) {
+  await requireAuth()
+  await db.deleteProject(projectId)
+  revalidatePath("/projects")
   return { success: true }
 }

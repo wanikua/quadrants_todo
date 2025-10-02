@@ -5,7 +5,7 @@ import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
 import { redirect } from "next/navigation"
-import { stackServerApp } from "./stack-server"
+import { stackServerApp } from "@/stack"
 
 const DATABASE_URL = process.env.DATABASE_URL
 if (!DATABASE_URL) {
@@ -69,22 +69,15 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function getUserId(): Promise<string | null> {
-  try {
-    const user = await stackServerApp.getUser()
-    return user?.id || null
-  } catch (error) {
-    console.error("Error getting user ID:", error)
-    return null
-  }
+  const user = await stackServerApp.getUser()
+  return user?.id ?? null
 }
 
-export async function requireAuth() {
+export async function requireAuth(): Promise<string> {
   const userId = await getUserId()
-
   if (!userId) {
     throw new Error("Unauthorized")
   }
-
   return userId
 }
 

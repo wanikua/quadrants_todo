@@ -4,23 +4,59 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("STRIPE_SECRET_KEY is not set")
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-12-18.acacia",
   typescript: true,
 })
 
+export const SUBSCRIPTION_PLANS = {
+  FREE: {
+    name: "Free",
+    maxProjects: 1,
+    maxMembers: 1,
+    features: ["1 project", "Unlimited tasks", "Basic support"],
+  },
+  PRO: {
+    name: "Pro",
+    maxProjects: 10,
+    maxMembers: 5,
+    features: ["10 projects", "Unlimited tasks", "Up to 5 team members", "Priority support", "Export data"],
+    priceMonthly: process.env.STRIPE_PRICE_ID_PRO_MONTHLY,
+    priceYearly: process.env.STRIPE_PRICE_ID_PRO_YEARLY,
+  },
+  TEAM: {
+    name: "Team",
+    maxProjects: -1,
+    maxMembers: -1,
+    features: [
+      "Unlimited projects",
+      "Unlimited tasks",
+      "Unlimited team members",
+      "24/7 support",
+      "Advanced analytics",
+      "Custom integrations",
+    ],
+    priceMonthly: process.env.STRIPE_PRICE_ID_TEAM_MONTHLY,
+    priceYearly: process.env.STRIPE_PRICE_ID_TEAM_YEARLY,
+  },
+} as const
+
+export type SubscriptionPlan = keyof typeof SUBSCRIPTION_PLANS
+
 export async function createCheckoutSession(userId: string, userEmail: string, priceId: string): Promise<string> {
   const session = await stripe.checkout.sessions.create({
     customer_email: userEmail,
+    client_reference_id: userId,
+    payment_method_types: ["card"],
+    mode: "subscription",
     line_items: [
       {
         price: priceId,
         quantity: 1,
       },
     ],
-    mode: "subscription",
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/projects?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/projects?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/pricing`,
     metadata: {
       userId,
     },
@@ -36,41 +72,31 @@ export async function createCheckoutSession(userId: string, userEmail: string, p
 export async function createPortalSession(customerId: string): Promise<string> {
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/projects`,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/projects`,
   })
 
   return session.url
 }
 
-export async function getStripeCustomer(customerId: string) {
-  return await stripe.customers.retrieve(customerId)
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  await stripe.subscriptions.cancel(subscriptionId)
 }
 
-export async function getStripeSubscription(subscriptionId: string) {
-  return await stripe.subscriptions.retrieve(subscriptionId)
-}
-
-export async function cancelStripeSubscription(subscriptionId: string) {
-  return await stripe.subscriptions.cancel(subscriptionId)
-}
-
-export async function constructWebhookEvent(payload: string | Buffer, signature: string) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
-  if (!webhookSecret) {
-    throw new Error("STRIPE_WEBHOOK_SECRET is not set")
+export function getPlanLimits(plan: SubscriptionPlan) {
+  return {
+    maxProjects: SUBSCRIPTION_PLANS[plan].maxProjects,
+    maxMembers: SUBSCRIPTION_PLANS[plan].maxMembers,
   }
-
-  return stripe.webhooks.constructEvent(payload, signature, webhookSecret)
 }
 
-export async function getStripePriceId(tier: "pro" | "team", interval: "monthly" | "yearly"): Promise<string> {
-  const envKey = `STRIPE_PRICE_ID_${tier.toUpperCase()}_${interval.toUpperCase()}`
-  const priceId = process.env[envKey]
+export function canCreateProject(currentCount: number, plan: SubscriptionPlan): boolean {
+  const limits = getPlanLimits(plan)
+  if (limits.maxProjects === -1) return true
+  return currentCount < limits.maxProjects
+}
 
-  if (!priceId) {
-    throw new Error(`${envKey} is not set`)
-  }
-
-  return priceId
+export function canAddMember(currentCount: number, plan: SubscriptionPlan): boolean {
+  const limits = getPlanLimits(plan)
+  if (limits.maxMembers === -1) return true
+  return currentCount < limits.maxMembers
 }
