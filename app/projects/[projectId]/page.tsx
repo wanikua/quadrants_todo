@@ -1,8 +1,8 @@
-import { auth, currentUser } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { ProjectTaskManager } from "@/components/project-task-manager"
 import { DatabaseConfigWarning } from "@/components/database-config-warning"
 import { getProjectWithData, getUserProjectAccess } from "@/app/db/actions"
+import { requireAuth } from "@/lib/auth"
 
 interface ProjectPageProps {
   params: {
@@ -11,11 +11,10 @@ interface ProjectPageProps {
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
-  const { userId } = await auth()
-  const user = await currentUser()
+  const userId = await requireAuth()
 
-  if (!userId || !user) {
-    redirect("/")
+  if (!userId) {
+    redirect("/auth/signin")
   }
 
   // Check if database is configured

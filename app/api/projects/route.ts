@@ -1,24 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/db"
+import { getUserId } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await stackServerApp.getUser()
-    if (!user) {
+    const userId = await getUserId()
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
-    const { name, description } = body
+    const { name, description, type = 'personal' } = body
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 })
     }
 
+    // Insert with actual table columns
     const result = await sql`
-      INSERT INTO projects (id, user_id, name, description, created_at, updated_at)
-      VALUES (gen_random_uuid(), ${user.id}, ${name}, ${description}, NOW(), NOW())
+      INSERT INTO projects (id, owner_id, name, type, created_at)
+      VALUES (gen_random_uuid()::text, ${userId}, ${name}, ${type}, NOW())
       RETURNING *
     `
 
@@ -31,13 +32,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await stackServerApp.getUser()
-    if (!user) {
+    const userId = await getUserId()
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const projects = await sql`
-      SELECT * FROM projects WHERE user_id = ${user.id} ORDER BY created_at DESC
+      SELECT * FROM projects WHERE owner_id = ${userId} ORDER BY created_at DESC
     `
 
     return NextResponse.json(projects)

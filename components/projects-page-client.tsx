@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dialog"
 import { LogOut, Plus, Folder } from "lucide-react"
 import { toast } from "sonner"
-import { useUser } from "@stackframe/stack"
 import Link from "next/link"
 
 interface Project {
@@ -28,9 +27,8 @@ interface Project {
   created_at: string
 }
 
-export default function ProjectsPageClient({ initialProjects }: { initialProjects: Project[]; user: any }) {
+export default function ProjectsPageClient({ initialProjects, user }: { initialProjects: Project[]; user: any }) {
   const router = useRouter()
-  const user = useUser()
   const [projects, setProjects] = useState<Project[]>(initialProjects)
   const [newProjectName, setNewProjectName] = useState("")
   const [newProjectDescription, setNewProjectDescription] = useState("")
@@ -38,9 +36,15 @@ export default function ProjectsPageClient({ initialProjects }: { initialProject
   const [dialogOpen, setDialogOpen] = useState(false)
 
   async function handleSignOut() {
-    await user?.signOut()
-    router.push("/")
-    router.refresh()
+    try {
+      const response = await fetch('/api/auth/signout', { method: 'POST' })
+      if (response.ok) {
+        router.push("/")
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
   }
 
   async function handleCreateProject(e: React.FormEvent) {

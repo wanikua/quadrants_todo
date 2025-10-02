@@ -1,10 +1,10 @@
 'use server'
 
-import { auth } from '@clerk/nextjs/server'
 import { db } from './index'
 import { projects, projectMembers, tasks, players, taskAssignments, lines, comments } from './schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { getUserId } from '@/lib/auth'
 
 // Fallback data for when database is not available
 const fallbackProject = {
@@ -51,7 +51,7 @@ const fallbackPlayers = [
 
 // Project actions
 export async function createProject(name: string, type: 'personal' | 'team') {
-  const { userId } = await auth()
+  const userId = await getUserId()
   if (!userId) return { success: false, error: 'Not authenticated' }
 
   if (!db) {
@@ -107,7 +107,7 @@ export async function createProject(name: string, type: 'personal' | 'team') {
 }
 
 export async function joinProject(inviteCode: string) {
-  const { userId } = await auth()
+  const userId = await getUserId()
   if (!userId) return { success: false, error: 'Not authenticated' }
 
   if (!db) {
@@ -182,7 +182,7 @@ export async function getProjectsForUser(userId: string) {
 
 // Task actions
 export async function createTask(projectId: string, description: string, urgency: number, importance: number, assigneeIds: number[]) {
-  const { userId } = await auth()
+  const userId = await getUserId()
   if (!userId) return { success: false, error: 'Not authenticated' }
 
   if (!db) {
@@ -221,7 +221,7 @@ export async function createTask(projectId: string, description: string, urgency
 }
 
 export async function deleteTask(taskId: number) {
-  const { userId } = await auth()
+  const userId = await getUserId()
   if (!userId) return { success: false, error: 'Not authenticated' }
 
   if (!db) {
@@ -247,7 +247,7 @@ export async function deleteTask(taskId: number) {
 
 // Player actions
 export async function createPlayer(projectId: string, name: string, color: string) {
-  const { userId } = await auth()
+  const userId = await getUserId()
   if (!userId) return { success: false, error: 'Not authenticated' }
 
   if (!db) {
