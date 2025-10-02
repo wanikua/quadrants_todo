@@ -74,6 +74,15 @@ export interface TaskWithAssignees extends Task {
   comments?: TaskComment[]
 }
 
+export interface Project {
+  id: string
+  name: string
+  description: string
+  user_id: string
+  created_at: string
+  updated_at: string
+}
+
 export async function getPlayers(): Promise<Player[]> {
   if (!sql) {
     console.log("Database not available, returning default players")
@@ -579,3 +588,90 @@ export async function initializeDatabase(): Promise<void> {
     // Don't throw error here, just log it
   }
 }
+
+// Database helper functions
+export const db = {
+  async createTask(data: {
+    projectId: string
+    title: string
+    quadrant: string
+    userId: string
+  }) {
+    if (!sql) throw new Error("Database not configured")
+
+    const result = await sql`
+      INSERT INTO tasks (project_id, title, quadrant, user_id, completed, created_at, updated_at)
+      VALUES (${data.projectId}, ${data.title}, ${data.quadrant}, ${data.userId}, false, NOW(), NOW())
+      RETURNING *
+    `
+    return result[0]
+  },
+
+  async updateTask(taskId: string, updates: any) {
+    if (!sql) throw new Error("Database not configured")
+
+    const setClauses = []
+    const values = []
+    let paramCount = 1
+
+    if (updates.title !== undefined) {
+      setClauses.push(`title = $${paramCount++}`)
+      values.push(updates.title)
+    }
+    if (updates.completed !== undefined) {
+      setClauses.push(`completed = $${paramCount++}`)
+      values.push(updates.completed)
+    }
+    if (updates.quadrant !== undefined) {
+      setClauses.push(`quadrant = $${paramCount++}`)
+      values.push(updates.quadrant)
+    }
+
+    setClauses.push("updated_at = NOW()")
+    values.push(taskId)
+
+    const result = await sql.query(
+      `UPDATE tasks SET ${setClauses.join(", ")} WHERE id = $${paramCount} RETURNING *`,
+      values,
+    )
+    return result.rows[0]
+  },
+
+  async deleteTask(taskId: string) {
+    if (!sql) throw new Error("Database not configured")
+    await sql`DELETE FROM tasks WHERE id = ${taskId}`
+  },
+
+  async createPlayer(data: { name: string; email: string; userId: string }) {
+    if (!sql) throw new Error("Database not configured")
+
+    const result = await sql`
+      INSERT INTO players (name, email, user_id, created_at)
+      VALUES (${data.name}, ${data.email}, ${data.userId}, NOW())
+      RETURNING *
+    `
+    return result[0]
+  },
+
+  async createProject(data: { name: string; description: string; ownerId: string }) {
+    if (!sql) throw new Error("Database not configured")
+
+    const result = await sql`
+      INSERT INTO projects (name, description, user_id, created_at, updated_at)
+      VALUES (${data.name}, ${data.description}, ${data.ownerId}, NOW(), NOW())
+      RETURNING *
+    `
+    return result[0]
+  },
+
+  async deleteProject(projectId: string) {
+    if (!sql) throw new Error("Database not configured")
+
+    // Delete tasks first
+    await sql`DELETE FROM tasks WHERE project_id = ${projectId}`
+    // Then delete project
+    await sql`DELETE FROM projects WHERE id = ${projectId}`
+  },
+}
+
+export { sql }

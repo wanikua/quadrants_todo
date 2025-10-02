@@ -1,13 +1,11 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
-import { neon } from "@neondatabase/serverless"
-import Stripe from "stripe"
+import { sql } from "@/lib/database"
+import type Stripe from "stripe"
 
-const sql = neon(process.env.DATABASE_URL!)
-
-export async function POST(req: NextRequest) {
-  const body = await req.text()
-  const signature = req.headers.get("stripe-signature")
+export async function POST(request: NextRequest) {
+  const body = await request.text()
+  const signature = request.headers.get("stripe-signature")
 
   if (!signature) {
     return NextResponse.json({ error: "No signature" }, { status: 400 })
@@ -16,9 +14,14 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!)
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err)
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      throw new Error("STRIPE_WEBHOOK_SECRET not configured")
+    }
+
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+  } catch (error) {
+    console.error("Webhook signature verification failed:", error)
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
@@ -26,44 +29,36 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
-        const userId = session.metadata?.userId || session.client_reference_id
+        const userId = session.metadata?.userId
+        const customerId = session.customer as string
 
-        if (!userId) {
-          console.error("No user ID found in checkout session")
-          break
+        if (userId && customerId) {
+          await sql`
+            UPDATE users 
+            SET stripe_customer_id = ${customerId}
+            WHERE id = ${userId}
+          `
         }
-
-        // Update user subscription in database
-        await sql`
-          UPDATE users
-          SET
-            subscription_id = ${session.subscription as string},
-            stripe_customer_id = ${session.customer as string},
-            subscription_status = 'pro',
-            updated_at = NOW()
-          WHERE id = ${userId}
-        `
         break
       }
 
+      case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
 
-        // Determine subscription status based on price
-        let status = "pro"
-        const priceId = subscription.items.data[0]?.price.id
-
-        if (priceId === process.env.STRIPE_PRICE_ID_TEAM_MONTHLY || priceId === process.env.STRIPE_PRICE_ID_TEAM_YEARLY) {
-          status = "team"
-        }
+        const plan =
+          subscription.items.data[0]?.price.id === process.env.STRIPE_PRICE_ID_TEAM_MONTHLY ||
+          subscription.items.data[0]?.price.id === process.env.STRIPE_PRICE_ID_TEAM_YEARLY
+            ? "TEAM"
+            : "PRO"
 
         await sql`
-          UPDATE users
-          SET
-            subscription_status = ${status},
-            subscription_id = ${subscription.id},
-            updated_at = NOW()
+          UPDATE users 
+          SET 
+            stripe_subscription_id = ${subscription.id},
+            subscription_plan = ${plan},
+            subscription_status = ${subscription.status}
           WHERE stripe_customer_id = ${customerId}
         `
         break
@@ -74,37 +69,23 @@ export async function POST(req: NextRequest) {
         const customerId = subscription.customer as string
 
         await sql`
-          UPDATE users
-          SET
-            subscription_status = 'free',
-            subscription_id = NULL,
-            updated_at = NOW()
+          UPDATE users 
+          SET 
+            stripe_subscription_id = NULL,
+            subscription_plan = 'FREE',
+            subscription_status = 'canceled'
           WHERE stripe_customer_id = ${customerId}
         `
         break
       }
-
-      case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice
-        console.log(`Payment succeeded for invoice ${invoice.id}`)
-        // You can add additional logic here, like sending a confirmation email
-        break
-      }
-
-      case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice
-        console.error(`Payment failed for invoice ${invoice.id}`)
-        // You can add logic to notify the user about the failed payment
-        break
-      }
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error("Error processing webhook:", error)
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 },
+    )
   }
 }

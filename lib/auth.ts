@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
 import { redirect } from "next/navigation"
 import { stackServerApp } from "@/stack"
+import "server-only"
 
 const DATABASE_URL = process.env.DATABASE_URL
 if (!DATABASE_URL) {
@@ -69,20 +70,30 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function getUserId(): Promise<string | null> {
-  const user = await stackServerApp.getUser()
-  return user?.id ?? null
+  try {
+    const user = await stackServerApp.getUser()
+    return user?.id || null
+  } catch (error) {
+    console.error("Error getting user:", error)
+    return null
+  }
 }
 
 export async function requireAuth(): Promise<string> {
   const userId = await getUserId()
   if (!userId) {
-    throw new Error("Unauthorized")
+    throw new Error("Unauthorized - Please sign in")
   }
   return userId
 }
 
 export async function getUser() {
-  return await stackServerApp.getUser()
+  try {
+    return await stackServerApp.getUser()
+  } catch (error) {
+    console.error("Error getting user:", error)
+    return null
+  }
 }
 
 export async function signUp(email: string, password: string, displayName?: string) {

@@ -88,7 +88,7 @@
     "react-hook-form": "latest",
     "react-resizable-panels": "latest",
     "recharts": "latest",
-    "server-only": "0.0.1",
+    "server-only": "latest",
     "sonner": "latest",
     "sql.js": "latest",
     "sqlite3": "latest",

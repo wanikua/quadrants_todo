@@ -1,26 +1,32 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { createCheckoutSession } from "@/lib/stripe"
-import { stackServerApp } from "@/lib/stack-server"
+import { requireAuth } from "@/lib/auth"
+import { stackServerApp } from "@/stack"
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
+    const userId = await requireAuth()
     const user = await stackServerApp.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!user?.primaryEmail) {
+      return NextResponse.json({ error: "User email not found" }, { status: 400 })
     }
 
-    const { priceId } = await req.json()
+    const body = await request.json()
+    const { priceId } = body
 
     if (!priceId) {
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 })
     }
 
-    const checkoutUrl = await createCheckoutSession(user.id, user.primaryEmail || "", priceId)
+    const url = await createCheckoutSession(userId, user.primaryEmail, priceId)
 
-    return NextResponse.json({ url: checkoutUrl })
+    return NextResponse.json({ url })
   } catch (error) {
     console.error("Error creating checkout session:", error)
-    return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 },
+    )
   }
 }
