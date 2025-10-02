@@ -85,7 +85,7 @@ export async function getAuthenticatedDb() {
     throw new Error('Unauthorized: No user ID found')
   }
 
-  const sql = neon(process.env.DATABASE_URL!)
+  const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null as any
   
   // 返回设置了用户上下文的查询函数
   return {
@@ -114,7 +114,7 @@ export async function checkProjectAccess(
   }
 
   // 查询数据库
-  const sql = neon(process.env.DATABASE_URL!)
+  const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null as any
   const result = await sql`
     SELECT 1 
     FROM project_members 
@@ -142,7 +142,7 @@ export async function getUserProjects(userId: string) {
   }
 
   // 查询数据库
-  const sql = neon(process.env.DATABASE_URL!)
+  const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null as any
   const projects = await sql`
     SELECT 
       p.*,
@@ -174,7 +174,7 @@ export async function initializeProjectDatabase(
   projectId: string, 
   userId: string
 ) {
-  const sql = neon(process.env.DATABASE_URL!)
+  const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null as any
   
   try {
     // 设置用户上下文

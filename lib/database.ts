@@ -1,16 +1,14 @@
 import { neon } from "@neondatabase/serverless"
 
 const DATABASE_URL = process.env.DATABASE_URL
-if (!DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
-}
 
-export const sql = neon(DATABASE_URL)
+// Only throw error at build time if explicitly required
+export const sql = DATABASE_URL ? neon(DATABASE_URL) : null as any
 
 let sqlClient: any = null
 
 try {
-  sqlClient = neon(DATABASE_URL)
+  sqlClient = DATABASE_URL ? neon(DATABASE_URL) : null
 } catch (error) {
   console.error("Failed to initialize database connection:", error)
 }

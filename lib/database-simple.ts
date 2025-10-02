@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 
 // 创建简单的数据库连接
-const sql = neon(process.env.DATABASE_URL!)
+const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null as any
 
 // 项目操作
 export async function createProject(name: string, type: string, userId: string) {
