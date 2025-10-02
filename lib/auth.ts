@@ -113,7 +113,7 @@ export async function signUp(email: string, password: string, name: string): Pro
   const userId = generateUUID()
 
   await sql`
-    INSERT INTO users (id, email, password, name, created_at)
+    INSERT INTO users (id, email, password_hash, name, created_at)
     VALUES (${userId}, ${email}, ${hashedPassword}, ${name}, NOW())
   `
 
@@ -132,7 +132,7 @@ export async function signUp(email: string, password: string, name: string): Pro
 
 export async function signIn(email: string, password: string): Promise<AuthSession> {
   const result = await sql`
-    SELECT id, email, password, name, created_at
+    SELECT id, email, password_hash, name, created_at
     FROM users
     WHERE email = ${email}
     LIMIT 1
@@ -142,8 +142,8 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
     throw new Error("Invalid credentials")
   }
 
-  const user = result[0] as User & { password: string }
-  const isValid = await verifyPassword(password, user.password)
+  const user = result[0] as User & { password_hash: string }
+  const isValid = await verifyPassword(password, user.password_hash)
 
   if (!isValid) {
     throw new Error("Invalid credentials")
