@@ -5,7 +5,6 @@ import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
 import { redirect } from "next/navigation"
-import { stackServerApp } from "@/stack"
 import "server-only"
 
 const DATABASE_URL = process.env.DATABASE_URL

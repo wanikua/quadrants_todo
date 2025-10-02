@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-rds-data": "latest",
-    "@clerk/nextjs": "^6.33.1",
     "@cloudflare/workers-types": "latest",
     "@electric-sql/pglite": "latest",
     "@libsql/client": "latest",
@@ -49,7 +48,6 @@
     "@radix-ui/react-toggle": "latest",
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
-    "@stackframe/stack": "latest",
     "@tidbcloud/serverless": "latest",
     "@types/better-sqlite3": "latest",
     "@types/pg": "latest",

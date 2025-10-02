@@ -280,6 +280,17 @@ export async function getUserProjectAccess(userId: string, projectId: string): P
   }
 
   try {
+    // Check if user is the owner
+    const ownedProjects = await db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.owner_id, userId)))
+
+    if (ownedProjects.length > 0) {
+      return true
+    }
+
+    // Check if user is a member
     const members = await db
       .select()
       .from(projectMembers)

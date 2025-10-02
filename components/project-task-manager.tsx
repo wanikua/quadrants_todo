@@ -1,10 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Settings, Copy, Check } from "lucide-react"
+import { ArrowLeft, Settings, Copy, Check, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 
@@ -34,6 +33,18 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
       await navigator.clipboard.writeText(project.invite_code)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch('/api/auth/signout', { method: 'POST' })
+      if (response.ok) {
+        router.push("/")
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Sign out error:', error)
     }
   }
 
@@ -80,7 +91,9 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
               <Button variant="ghost" size="sm">
                 <Settings className="w-4 h-4" />
               </Button>
-              <UserButton afterSignOutUrl="/" />
+              <Button variant="ghost" size="sm" onClick={handleSignOut} title="Sign Out">
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
