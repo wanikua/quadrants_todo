@@ -80,14 +80,12 @@ export async function deleteProject(projectId: string) {
       throw new Error("Unauthorized")
     }
 
-    // Delete all tasks in the project first
     await sql`
       DELETE FROM tasks 
       WHERE project_id = ${projectId} 
       AND user_id = ${userId}
     `
 
-    // Then delete the project
     await sql`
       DELETE FROM projects 
       WHERE id = ${projectId} 
@@ -137,6 +135,44 @@ export async function getTasks(projectId: string) {
   }
 }
 
+export async function createPlayerAction(name: string, color: string, projectId?: string) {
+  try {
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
+    }
+
+    const { rows } = await sql`
+      INSERT INTO players (name, color, user_id, project_id)
+      VALUES (${name}, ${color}, ${userId}, ${projectId || null})
+      RETURNING *
+    `
+
+    if (projectId) {
+      revalidatePath(`/projects/${projectId}`)
+    } else {
+      revalidatePath("/")
+    }
+
+    return {
+      success: true,
+      player: {
+        id: rows[0].id,
+        name: rows[0].name,
+        color: rows[0].color,
+        userId: rows[0].user_id,
+        projectId: rows[0].project_id,
+      },
+    }
+  } catch (error) {
+    console.error("Error creating player:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create player",
+    }
+  }
+}
+
 export async function createTask(data: {
   title: string
   description?: string
@@ -156,6 +192,54 @@ export async function createTask(data: {
     `
 
     revalidatePath(`/projects/${data.projectId}`)
+
+    return {
+      success: true,
+      task: {
+        id: rows[0].id,
+        title: rows[0].title,
+        description: rows[0].description || "",
+        quadrant: rows[0].quadrant,
+        projectId: rows[0].project_id,
+        userId: rows[0].user_id,
+        completed: rows[0].completed || false,
+        createdAt: rows[0].created_at.toISOString(),
+        updatedAt: rows[0].updated_at.toISOString(),
+      },
+    }
+  } catch (error) {
+    console.error("Error creating task:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create task",
+    }
+  }
+}
+
+export async function createTaskAction(
+  description: string,
+  urgency: number,
+  importance: number,
+  assigneeIds: number[],
+  projectId?: string,
+) {
+  try {
+    const userId = await getUserId()
+    if (!userId) {
+      throw new Error("Unauthorized")
+    }
+
+    const { rows } = await sql`
+      INSERT INTO tasks (title, description, quadrant, project_id, user_id, completed)
+      VALUES (${description}, ${""}, ${Math.floor((urgency + importance) / 2)}, ${projectId || null}, ${userId}, false)
+      RETURNING *
+    `
+
+    if (projectId) {
+      revalidatePath(`/projects/${projectId}`)
+    } else {
+      revalidatePath("/")
+    }
 
     return {
       success: true,

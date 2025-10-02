@@ -67,6 +67,16 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
+export async function getUserId(): Promise<string | null> {
+  try {
+    const user = await getCurrentUser()
+    return user?.id || null
+  } catch (error) {
+    console.error("Error getting user ID:", error)
+    return null
+  }
+}
+
 export async function requireAuth(): Promise<User> {
   const user = await getCurrentUser()
   if (!user) redirect("/auth/signin")
