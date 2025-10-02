@@ -27,6 +27,7 @@ interface User {
 interface JWTPayload {
   userId: string
   email: string
+  [key: string]: any
 }
 
 async function createToken(payload: JWTPayload): Promise<string> {
@@ -71,8 +72,15 @@ export async function getCurrentUser(): Promise<User | null> {
 
 export async function getUserId(): Promise<string | null> {
   try {
-    const user = await stackServerApp.getUser()
-    return user?.id || null
+    const cookieStore = await cookies()
+    const token = cookieStore.get("auth_token")?.value
+
+    if (!token) return null
+
+    const payload = await verifyToken(token)
+    if (!payload) return null
+
+    return payload.userId
   } catch (error) {
     console.error("Error getting user:", error)
     return null
@@ -89,7 +97,8 @@ export async function requireAuth(): Promise<string> {
 
 export async function getUser() {
   try {
-    return await stackServerApp.getUser()
+    const user = await getCurrentUser()
+    return user ? { id: user.id, email: user.email, displayName: user.display_name } : null
   } catch (error) {
     console.error("Error getting user:", error)
     return null

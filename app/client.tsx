@@ -18,13 +18,23 @@ export default function QuadrantTodoClient({
 }: QuadrantTodoClientProps) {
   // Example for createPlayerAction call
   const createPlayer = async (name: string, color: string) => {
-    const result = await createPlayerAction(name, color, projectId)
+    const formData = new FormData()
+    formData.append("name", name)
+    formData.append("color", color)
+    if (projectId) formData.append("projectId", projectId)
+    const result = await createPlayerAction(formData)
     // Handle result
   }
 
   // Example for createTaskAction call
   const createTask = async (description: string, urgency: number, importance: number, assigneeIds: number[]) => {
-    const result = await createTaskAction(description, urgency, importance, assigneeIds, projectId)
+    const formData = new FormData()
+    formData.append("description", description)
+    formData.append("urgency", urgency.toString())
+    formData.append("importance", importance.toString())
+    formData.append("assigneeIds", JSON.stringify(assigneeIds))
+    if (projectId) formData.append("projectId", projectId)
+    const result = await createTaskAction(formData)
     // Handle result
   }
 

@@ -70,21 +70,21 @@ export const comments = pgTable('comments', {
 })
 
 // Define relations
-export const projectsRelations = relations(projects, ({ many }) => ({
+export const projectsRelations = relations(projects, ({ many }: { many: any }) => ({
   members: many(projectMembers),
   tasks: many(tasks),
   players: many(players),
   lines: many(lines),
 }))
 
-export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+export const projectMembersRelations = relations(projectMembers, ({ one }: { one: any }) => ({
   project: one(projects, {
     fields: [projectMembers.project_id],
     references: [projects.id],
   }),
 }))
 
-export const tasksRelations = relations(tasks, ({ one, many }) => ({
+export const tasksRelations = relations(tasks, ({ one, many }: { one: any; many: any }) => ({
   project: one(projects, {
     fields: [tasks.project_id],
     references: [projects.id],
@@ -95,7 +95,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   toLines: many(lines, { relationName: 'toTask' }),
 }))
 
-export const playersRelations = relations(players, ({ one, many }) => ({
+export const playersRelations = relations(players, ({ one, many }: { one: any; many: any }) => ({
   project: one(projects, {
     fields: [players.project_id],
     references: [projects.id],
@@ -103,7 +103,7 @@ export const playersRelations = relations(players, ({ one, many }) => ({
   assignments: many(taskAssignments),
 }))
 
-export const taskAssignmentsRelations = relations(taskAssignments, ({ one }) => ({
+export const taskAssignmentsRelations = relations(taskAssignments, ({ one }: { one: any }) => ({
   task: one(tasks, {
     fields: [taskAssignments.task_id],
     references: [tasks.id],
@@ -114,7 +114,7 @@ export const taskAssignmentsRelations = relations(taskAssignments, ({ one }) => 
   }),
 }))
 
-export const linesRelations = relations(lines, ({ one }) => ({
+export const linesRelations = relations(lines, ({ one }: { one: any }) => ({
   project: one(projects, {
     fields: [lines.project_id],
     references: [projects.id],
@@ -131,7 +131,7 @@ export const linesRelations = relations(lines, ({ one }) => ({
   }),
 }))
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one }: { one: any }) => ({
   task: one(tasks, {
     fields: [comments.task_id],
     references: [tasks.id],

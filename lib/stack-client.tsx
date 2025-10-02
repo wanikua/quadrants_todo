@@ -9,7 +9,7 @@ export function StackProvider({ children }: { children: React.ReactNode }) {
       app={{
         projectId: STACK_CONFIG.projectId,
         publishableClientKey: STACK_CONFIG.publishableClientKey,
-      }}
+      } as any}
     >
       <StackTheme>{children}</StackTheme>
     </StackProviderSDK>
