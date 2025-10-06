@@ -4,7 +4,8 @@ import { NextResponse } from "next/server"
 export async function POST() {
   try {
     const cookieStore = await cookies()
-    cookieStore.delete("auth_token")
+    // Use consistent cookie name
+    cookieStore.delete("auth-token")
 
     return NextResponse.json({ success: true })
   } catch (error) {

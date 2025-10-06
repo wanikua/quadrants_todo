@@ -1,42 +1,74 @@
 import { NextResponse } from "next/server"
-import { sql } from "@/lib/database"
+import { sql } from "@/lib/db"
 
-export async function POST() {
+export async function GET() {
+  if (!sql) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Database not configured. Add DATABASE_URL to environment variables.",
+      },
+      { status: 500 },
+    )
+  }
+
   try {
-    if (!sql) {
-      return NextResponse.json(
-        { error: "Database not configured" },
-        { status: 500 }
-      )
+    // Check if column already exists
+    const columnCheck = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'password_hash'
+    `
+
+    if (columnCheck.length > 0) {
+      return NextResponse.json({
+        success: true,
+        message: "password_hash column already exists",
+        alreadyExists: true,
+      })
     }
 
-    // Add password_hash column if it doesn't exist
+    // Add password_hash column
     await sql`
-      ALTER TABLE users
+      ALTER TABLE users 
       ADD COLUMN IF NOT EXISTS password_hash TEXT
     `
 
-    // Add name column if it doesn't exist
-    await sql`
-      ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS name TEXT
+    // Check if name column exists
+    const nameCheck = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'name'
     `
 
-    // Add updated_at column if it doesn't exist
-    await sql`
-      ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    `
+    if (nameCheck.length === 0) {
+      // Add name column
+      await sql`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS name TEXT
+      `
+
+      // Populate name from email for existing users
+      await sql`
+        UPDATE users 
+        SET name = SPLIT_PART(email, '@', 1) 
+        WHERE name IS NULL
+      `
+    }
 
     return NextResponse.json({
       success: true,
-      message: "User table migration completed successfully"
+      message: "Migration completed successfully",
+      columns: ["password_hash", "name"],
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error("Migration error:", error)
     return NextResponse.json(
-      { error: error.message || "Migration failed" },
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     )
   }
 }

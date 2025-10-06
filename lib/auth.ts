@@ -1,9 +1,11 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 import bcrypt from "bcryptjs"
-import { sql } from "./database"
+import { sql } from "./db"
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-change-this-in-production")
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "change-this-to-a-secure-secret-key-at-least-32-characters-long",
+)
 
 const COOKIE_NAME = "auth-token"
 
@@ -49,7 +51,8 @@ export async function verifyToken(token: string): Promise<{ userId: string } | n
   try {
     const verified = await jwtVerify(token, JWT_SECRET)
     return verified.payload as { userId: string }
-  } catch {
+  } catch (error) {
+    console.error("Token verification failed:", error)
     return null
   }
 }
@@ -77,13 +80,22 @@ export async function removeAuthCookie() {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-  const token = await getAuthCookie()
-  if (!token) return null
-
-  const payload = await verifyToken(token)
-  if (!payload) return null
-
   try {
+    const token = await getAuthCookie()
+    if (!token) {
+      return null
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return null
+    }
+
+    if (!sql) {
+      console.error("Database not configured")
+      return null
+    }
+
     const result = await sql`
       SELECT id, email, name, created_at
       FROM users
@@ -91,7 +103,9 @@ export async function getCurrentUser(): Promise<User | null> {
       LIMIT 1
     `
 
-    if (result.length === 0) return null
+    if (result.length === 0) {
+      return null
+    }
 
     return result[0] as User
   } catch (error) {
@@ -101,6 +115,19 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function signUp(email: string, password: string, name: string): Promise<AuthSession> {
+  if (!sql) {
+    throw new Error("Database not configured")
+  }
+
+  // Validate inputs
+  if (!email || !password || !name) {
+    throw new Error("Email, password, and name are required")
+  }
+
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters")
+  }
+
   const existingUser = await sql`
     SELECT id FROM users WHERE email = ${email} LIMIT 1
   `
@@ -131,6 +158,15 @@ export async function signUp(email: string, password: string, name: string): Pro
 }
 
 export async function signIn(email: string, password: string): Promise<AuthSession> {
+  if (!sql) {
+    throw new Error("Database not configured")
+  }
+
+  // Validate inputs
+  if (!email || !password) {
+    throw new Error("Email and password are required")
+  }
+
   const result = await sql`
     SELECT id, email, password_hash, name, created_at
     FROM users
@@ -143,6 +179,11 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
   }
 
   const user = result[0] as User & { password_hash: string }
+
+  if (!user.password_hash) {
+    throw new Error("Account requires password reset")
+  }
+
   const isValid = await verifyPassword(password, user.password_hash)
 
   if (!isValid) {
@@ -156,7 +197,7 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
     user: {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name || user.email.split("@")[0],
       created_at: user.created_at,
     },
     token,
