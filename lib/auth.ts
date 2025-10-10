@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 import bcrypt from "bcryptjs"
-import { sql } from "./db"
+import { sql } from "./database"
+import { auth, currentUser } from "@clerk/nextjs/server"
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "change-this-to-a-secure-secret-key-at-least-32-characters-long",
@@ -80,17 +81,32 @@ export async function removeAuthCookie() {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
+  // Try Clerk authentication first
   try {
-    const token = await getAuthCookie()
-    if (!token) {
-      return null
+    const { userId } = await auth()
+    if (userId) {
+      const clerkUser = await currentUser()
+      if (clerkUser) {
+        return {
+          id: userId,
+          email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          name: clerkUser.firstName || clerkUser.username || 'User',
+          created_at: new Date(clerkUser.createdAt).toISOString(),
+        }
+      }
     }
+  } catch (error) {
+    console.log("Clerk auth not available, trying JWT")
+  }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
-      return null
-    }
+  // Fallback to JWT authentication
+  const token = await getAuthCookie()
+  if (!token) return null
 
+  const payload = await verifyToken(token)
+  if (!payload) return null
+
+  try {
     if (!sql) {
       console.error("Database not configured")
       return null

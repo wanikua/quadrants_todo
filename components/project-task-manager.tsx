@@ -106,6 +106,7 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         initialLines={initialLines}
         isOfflineMode={false}
         projectId={project.id}
+        projectType={project.type}
       />
     </div>
   )

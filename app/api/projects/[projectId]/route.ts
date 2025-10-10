@@ -4,16 +4,18 @@ import { getCurrentUser } from "@/lib/auth"
 
 const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null as any
 
-export async function DELETE(request: Request, { params }: { params: { projectId: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   try {
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { projectId } = await params
+
     await sql`
       DELETE FROM projects
-      WHERE id = ${params.projectId} AND user_id = ${user.id}
+      WHERE id = ${projectId} AND user_id = ${user.id}
     `
 
     return NextResponse.json({ success: true })

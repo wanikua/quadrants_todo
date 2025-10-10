@@ -68,7 +68,7 @@ export default function HomePage() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                <Link href="/auth/signup">
+                <Link href="/sign-up">
                   <Button
                     size="lg"
                     className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 border-0 shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70 transition-all duration-300 overflow-hidden"
@@ -80,7 +80,7 @@ export default function HomePage() {
                     </span>
                   </Button>
                 </Link>
-                <Link href="/auth/signin">
+                <Link href="/sign-in">
                   <Button
                     size="lg"
                     variant="outline"
@@ -323,7 +323,7 @@ export default function HomePage() {
               <p className="mb-12 text-xl text-gray-400">
                 Join 10,000+ users who have transformed their productivity with Quadrants
               </p>
-              <Link href="/auth/signup">
+              <Link href="/sign-up">
                 <Button
                   size="lg"
                   className="group relative h-16 px-12 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 border-0 shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/70 transition-all duration-300 overflow-hidden"

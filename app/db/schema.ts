@@ -31,10 +31,11 @@ export const tasks = pgTable('tasks', {
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 })
 
-// Players table
+// Players table (links users to projects for task assignments)
 export const players = pgTable('players', {
   id: serial('id').primaryKey(),
   project_id: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  user_id: text('user_id').notNull(), // Links to the actual user
   name: text('name').notNull(),
   color: text('color').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),

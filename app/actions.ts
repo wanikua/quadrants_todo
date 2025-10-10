@@ -6,8 +6,13 @@ import { revalidatePath } from "next/cache"
 
 export async function createTaskAction(projectId: string, title: string, quadrant: string) {
   try {
-    const userId = await requireAuth()
-    await db.createTask(userId, projectId, title, quadrant)
+    const user = await requireAuth()
+    await db.createTask({
+      projectId,
+      title,
+      quadrant,
+      userId: user.id,
+    })
     revalidatePath(`/projects/${projectId}`)
     return { success: true }
   } catch (error) {
@@ -18,8 +23,8 @@ export async function createTaskAction(projectId: string, title: string, quadran
 
 export async function updateTaskAction(taskId: string, updates: any) {
   try {
-    const userId = await requireAuth()
-    await db.updateTask(taskId, userId, updates)
+    const user = await requireAuth()
+    await db.updateTask(taskId, updates)
     return { success: true }
   } catch (error) {
     console.error("Error updating task:", error)
@@ -29,8 +34,8 @@ export async function updateTaskAction(taskId: string, updates: any) {
 
 export async function deleteTaskAction(taskId: string) {
   try {
-    const userId = await requireAuth()
-    await db.deleteTask(taskId, userId)
+    const user = await requireAuth()
+    await db.deleteTask(taskId)
     return { success: true }
   } catch (error) {
     console.error("Error deleting task:", error)
@@ -40,10 +45,14 @@ export async function deleteTaskAction(taskId: string) {
 
 export async function createProjectAction(name: string, description?: string) {
   try {
-    const userId = await requireAuth()
-    const projectId = await db.createProject(userId, name, description)
+    const user = await requireAuth()
+    const project = await db.createProject({
+      name,
+      description: description || "",
+      ownerId: user.id,
+    })
     revalidatePath("/projects")
-    return { success: true, projectId }
+    return { success: true, projectId: project.id }
   } catch (error) {
     console.error("Error creating project:", error)
     return { error: "Failed to create project" }
@@ -52,7 +61,7 @@ export async function createProjectAction(name: string, description?: string) {
 
 export async function createPlayerAction(name: string) {
   try {
-    const userId = await requireAuth()
+    const user = await requireAuth()
     // Implement player creation logic if needed
     return { success: true }
   } catch (error) {

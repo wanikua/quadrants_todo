@@ -19,11 +19,13 @@ import {
 import { LogOut, Plus, Folder } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Project {
   id: string
   name: string
   description: string | null
+  type?: string
   created_at: string
 }
 
@@ -32,6 +34,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
   const [projects, setProjects] = useState<Project[]>(initialProjects)
   const [newProjectName, setNewProjectName] = useState("")
   const [newProjectDescription, setNewProjectDescription] = useState("")
+  const [newProjectType, setNewProjectType] = useState<"personal" | "team">("personal")
   const [isCreating, setIsCreating] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
 
@@ -58,6 +61,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
         body: JSON.stringify({
           name: newProjectName,
           description: newProjectDescription || null,
+          type: newProjectType,
         }),
       })
 
@@ -67,6 +71,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
       setProjects([newProject, ...projects])
       setNewProjectName("")
       setNewProjectDescription("")
+      setNewProjectType("personal")
       setDialogOpen(false)
       toast.success("Project created successfully!")
     } catch (error) {
@@ -126,6 +131,18 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                     disabled={isCreating}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type">Project Type</Label>
+                  <Select value={newProjectType} onValueChange={(value: "personal" | "team") => setNewProjectType(value)} disabled={isCreating}>
+                    <SelectTrigger id="type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">🧑 Personal Project</SelectItem>
+                      <SelectItem value="team">👥 Team Project</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button type="submit" className="w-full" disabled={isCreating}>
                   {isCreating ? "Creating..." : "Create Project"}
                 </Button>
@@ -152,7 +169,9 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                     <CardDescription>{project.description || "No description"}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-500">Created {new Date(project.created_at).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-500" suppressHydrationWarning>
+                      Created {new Date(project.created_at).toLocaleDateString()}
+                    </p>
                   </CardContent>
                 </Card>
               </Link>

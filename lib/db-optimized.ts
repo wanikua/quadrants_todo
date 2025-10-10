@@ -1,7 +1,8 @@
 import { neon, Pool } from '@neondatabase/serverless'
+import { auth } from '@clerk/nextjs/server'
 
 // 创建连接池以优化性能
-const pool = new Pool({ 
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL!,
   // 连接池配置
   max: 10, // 最大连接数

@@ -83,20 +83,13 @@ export async function createProject(name: string, type: 'personal' | 'team') {
     const { initializeProjectDatabase } = await import('@/lib/db-optimized')
     await initializeProjectDatabase(projectId, userId)
 
-    // Create default players
-    const defaultPlayers = [
-      { name: 'Alice', color: '#ef4444' },
-      { name: 'Bob', color: '#f97316' },
-      { name: 'Charlie', color: '#eab308' },
-    ]
-
-    await db.insert(players).values(
-      defaultPlayers.map(player => ({
-        project_id: projectId,
-        name: player.name,
-        color: player.color,
-      }))
-    )
+    // Create player for owner
+    await db.insert(players).values({
+      project_id: projectId,
+      user_id: userId,
+      name: `User ${userId.substring(0, 8)}`, // Will be updated with actual user name later
+      color: '#3b82f6',
+    })
 
     revalidatePath('/projects')
     return { success: true, projectId, inviteCode }
@@ -143,6 +136,21 @@ export async function joinProject(inviteCode: string) {
       project_id: project.id,
       user_id: userId,
       role: 'member',
+    })
+
+    // Create player for the new member
+    const existingPlayers = await db.select().from(players).where(eq(players.project_id, project.id))
+    const colors = [
+      '#ef4444', '#f97316', '#eab308', '#22c55e',
+      '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
+    ]
+    const colorIndex = existingPlayers.length % colors.length
+
+    await db.insert(players).values({
+      project_id: project.id,
+      user_id: userId,
+      name: `User ${userId.substring(0, 8)}`,
+      color: colors[colorIndex],
     })
 
     revalidatePath('/projects')
@@ -194,6 +202,12 @@ export async function createTask(projectId: string, description: string, urgency
     const hasAccess = await getUserProjectAccess(userId, projectId)
     if (!hasAccess) return { success: false, error: 'Access denied' }
 
+    // Get project to check its type
+    const projectList = await db.select().from(projects).where(eq(projects.id, projectId))
+    if (projectList.length === 0) return { success: false, error: 'Project not found' }
+
+    const project = projectList[0]
+
     // Create task
     const [task] = await db.insert(tasks).values({
       project_id: projectId,
@@ -202,8 +216,18 @@ export async function createTask(projectId: string, description: string, urgency
       importance,
     }).returning()
 
-    // Assign players
-    if (assigneeIds.length > 0) {
+    // For personal projects, assign to first player by default
+    // For team projects, assign to selected players
+    if (project.type === 'personal') {
+      // Get first player from project
+      const projectPlayers = await db.select().from(players).where(eq(players.project_id, projectId)).limit(1)
+      if (projectPlayers.length > 0) {
+        await db.insert(taskAssignments).values({
+          task_id: task.id,
+          player_id: projectPlayers[0].id,
+        })
+      }
+    } else if (assigneeIds.length > 0) {
       await db.insert(taskAssignments).values(
         assigneeIds.map(playerId => ({
           task_id: task.id,
@@ -217,6 +241,31 @@ export async function createTask(projectId: string, description: string, urgency
   } catch (error) {
     console.error('Error creating task:', error)
     return { success: false, error: 'Failed to create task' }
+  }
+}
+
+export async function updateTask(taskId: number, urgency: number, importance: number) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Get task to check project access
+    const taskList = await db.select({ project_id: tasks.project_id }).from(tasks).where(eq(tasks.id, taskId))
+    if (taskList.length === 0) return { success: false, error: 'Task not found' }
+
+    const hasAccess = await getUserProjectAccess(userId, taskList[0].project_id)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    await db.update(tasks).set({ urgency, importance, updated_at: new Date() }).where(eq(tasks.id, taskId))
+    revalidatePath(`/projects/${taskList[0].project_id}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating task:', error)
+    return { success: false, error: 'Failed to update task' }
   }
 }
 
@@ -246,7 +295,7 @@ export async function deleteTask(taskId: number) {
 }
 
 // Player actions
-export async function createPlayer(projectId: string, name: string, color: string) {
+export async function updatePlayer(playerId: number, name: string, color: string) {
   const userId = await getUserId()
   if (!userId) return { success: false, error: 'Not authenticated' }
 
@@ -255,20 +304,22 @@ export async function createPlayer(projectId: string, name: string, color: strin
   }
 
   try {
-    const hasAccess = await getUserProjectAccess(userId, projectId)
-    if (!hasAccess) return { success: false, error: 'Access denied' }
+    // Get player to check if it belongs to the user
+    const playerList = await db.select().from(players).where(eq(players.id, playerId))
+    if (playerList.length === 0) return { success: false, error: 'Player not found' }
 
-    const [player] = await db.insert(players).values({
-      project_id: projectId,
-      name,
-      color,
-    }).returning()
+    const player = playerList[0]
+    if (player.user_id !== userId) {
+      return { success: false, error: 'You can only update your own player info' }
+    }
 
-    revalidatePath(`/projects/${projectId}`)
-    return { success: true, player }
+    await db.update(players).set({ name, color }).where(eq(players.id, playerId))
+
+    revalidatePath(`/projects/${player.project_id}`)
+    return { success: true }
   } catch (error) {
-    console.error('Error creating player:', error)
-    return { success: false, error: 'Failed to create player' }
+    console.error('Error updating player:', error)
+    return { success: false, error: 'Failed to update player' }
   }
 }
 
@@ -381,5 +432,102 @@ export async function getProjectWithData(projectId: string) {
       players: fallbackPlayers,
       lines: []
     }
+  }
+}
+
+// Line actions
+export async function createLine(projectId: string, fromTaskId: number, toTaskId: number) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    const hasAccess = await getUserProjectAccess(userId, projectId)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    const [line] = await db.insert(lines).values({
+      project_id: projectId,
+      from_task_id: fromTaskId,
+      to_task_id: toTaskId,
+      style: 'filled',
+    }).returning()
+
+    revalidatePath(`/projects/${projectId}`)
+    return { success: true, line }
+  } catch (error) {
+    console.error('Error creating line:', error)
+    return { success: false, error: 'Failed to create line' }
+  }
+}
+
+export async function deleteLine(lineId: number) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Get line to check project access
+    const lineList = await db.select({ project_id: lines.project_id }).from(lines).where(eq(lines.id, lineId))
+    if (lineList.length === 0) return { success: false, error: 'Line not found' }
+
+    const hasAccess = await getUserProjectAccess(userId, lineList[0].project_id)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    await db.delete(lines).where(eq(lines.id, lineId))
+    revalidatePath(`/projects/${lineList[0].project_id}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting line:', error)
+    return { success: false, error: 'Failed to delete line' }
+  }
+}
+
+export async function toggleLine(projectId: string, fromTaskId: number, toTaskId: number) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    const hasAccess = await getUserProjectAccess(userId, projectId)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    // Check if line exists
+    const existingLines = await db.select().from(lines).where(
+      and(
+        eq(lines.project_id, projectId),
+        eq(lines.from_task_id, fromTaskId),
+        eq(lines.to_task_id, toTaskId)
+      )
+    )
+
+    if (existingLines.length > 0) {
+      // Delete existing line
+      await db.delete(lines).where(eq(lines.id, existingLines[0].id))
+      revalidatePath(`/projects/${projectId}`)
+      return { success: true, action: 'deleted', lineId: existingLines[0].id }
+    } else {
+      // Create new line
+      const [line] = await db.insert(lines).values({
+        project_id: projectId,
+        from_task_id: fromTaskId,
+        to_task_id: toTaskId,
+        style: 'filled',
+      }).returning()
+
+      revalidatePath(`/projects/${projectId}`)
+      return { success: true, action: 'created', line }
+    }
+  } catch (error) {
+    console.error('Error toggling line:', error)
+    return { success: false, error: 'Failed to toggle line' }
   }
 }
