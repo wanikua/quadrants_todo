@@ -16,12 +16,12 @@ Generated: 2025-10-10
 ### How It Works
 
 1. **User Authentication**:
-   ```typescript
+   \`\`\`typescript
    // lib/auth.ts:getCurrentUser()
    1. Try Clerk auth first → auth() and currentUser()
    2. If Clerk fails → Try JWT token from cookies
    3. Return User object with: id, email, name, created_at
-   ```
+   \`\`\`
 
 2. **User ID Formats**:
    - Clerk: `user_30t02g9Q4VztyeOuzL5gMUFkGf1` ✅ CURRENT
@@ -35,7 +35,7 @@ Generated: 2025-10-10
 ### Core Tables
 
 #### 1. `users` (Optional - for JWT fallback)
-```sql
+\`\`\`sql
 - id: text (PRIMARY KEY)
 - email: text
 - name: text
@@ -43,55 +43,55 @@ Generated: 2025-10-10
 - password_hash: text (for JWT auth)
 - created_at: timestamp
 - subscription_status: text
-```
+\`\`\`
 **Note**: When using Clerk, this table is NOT required. User info comes from Clerk API.
 
 #### 2. `projects`
-```sql
+\`\`\`sql
 - id: text (PRIMARY KEY)
 - name: text
 - type: text ('personal' | 'team')
 - owner_id: text → Clerk user ID
 - invite_code: text (for team projects)
 - created_at: timestamp
-```
+\`\`\`
 
 #### 3. `project_members`
-```sql
+\`\`\`sql
 - id: text (PRIMARY KEY)
 - project_id: text → projects.id
 - user_id: text → Clerk user ID
 - role: text ('owner' | 'admin' | 'member')
 - joined_at: timestamp
-```
+\`\`\`
 
 #### 4. `players` (User representation in projects)
-```sql
+\`\`\`sql
 - id: serial (PRIMARY KEY)
 - project_id: text → projects.id
 - user_id: text → Clerk user ID ✅ KEY INTEGRATION POINT
 - name: text
 - color: text
 - created_at: timestamp
-```
+\`\`\`
 
 #### 5. `tasks`
-```sql
+\`\`\`sql
 - id: serial (PRIMARY KEY)
 - project_id: text → projects.id
 - description: text
 - urgency: integer (0-100)
 - importance: integer (0-100)
 - created_at, updated_at: timestamp
-```
+\`\`\`
 
 #### 6. `task_assignments`
-```sql
+\`\`\`sql
 - id: serial (PRIMARY KEY)
 - task_id: integer → tasks.id
 - player_id: integer → players.id
 - assigned_at: timestamp
-```
+\`\`\`
 
 ---
 
@@ -101,7 +101,7 @@ Generated: 2025-10-10
 
 **File**: `app/db/actions.ts:createProject()`
 
-```typescript
+\`\`\`typescript
 export async function createProject(name: string, type: 'personal' | 'team') {
   const userId = await getUserId()  // Gets Clerk user ID
 
@@ -124,13 +124,13 @@ export async function createProject(name: string, type: 'personal' | 'team') {
     ...
   })
 }
-```
+\`\`\`
 
 ### 2. Joining Team Projects
 
 **File**: `app/db/actions.ts:joinProject()`
 
-```typescript
+\`\`\`typescript
 export async function joinProject(inviteCode: string) {
   const userId = await getUserId()  // Clerk user ID
 
@@ -146,13 +146,13 @@ export async function joinProject(inviteCode: string) {
     ...
   })
 }
-```
+\`\`\`
 
 ### 3. Task Assignment
 
 **File**: `app/db/actions.ts:createTask()`
 
-```typescript
+\`\`\`typescript
 // Personal project → Auto-assign to owner's player
 if (project.type === 'personal') {
   const projectPlayers = await db.select()
@@ -174,20 +174,20 @@ else if (assigneeIds.length > 0) {
     }))
   )
 }
-```
+\`\`\`
 
 ---
 
 ## ✅ Data Integrity Status
 
 ### Current Stats (as of 2025-10-10)
-```
+\`\`\`
 ✅ Total projects: 17
 ✅ Projects with members: 17 (100%)
 ✅ Projects with players: 17 (100%)
 ✅ All players linked to real users via user_id
 ✅ No orphaned data
-```
+\`\`\`
 
 ### Fixed Issues
 1. ✅ API endpoint now uses full `createProject()` logic
@@ -201,7 +201,7 @@ else if (assigneeIds.length > 0) {
 
 ### Example 1: User creates personal project
 
-```
+\`\`\`
 1. User signs in with Clerk
    → Clerk provides: user_ABC123
 
@@ -216,11 +216,11 @@ else if (assigneeIds.length > 0) {
 
 4. When creating a task:
    → Automatically assigns to the player where user_id = "user_ABC123"
-```
+\`\`\`
 
 ### Example 2: User joins team project
 
-```
+\`\`\`
 1. User B has invite code for Team A's project
 
 2. User B submits invite code
@@ -231,7 +231,7 @@ else if (assigneeIds.length > 0) {
    players:          { user_id: "user_XYZ789", project_id: "team_a" }
 
 4. Team members can now assign tasks to User B's player
-```
+\`\`\`
 
 ---
 
@@ -241,7 +241,7 @@ else if (assigneeIds.length > 0) {
 
 **File**: `app/db/actions.ts:getUserProjectAccess()`
 
-```typescript
+\`\`\`typescript
 export async function getUserProjectAccess(userId: string, projectId: string) {
   // Check if owner
   const ownedProjects = await db.select()
@@ -261,7 +261,7 @@ export async function getUserProjectAccess(userId: string, projectId: string) {
 
   return ownedProjects.length > 0 || members.length > 0
 }
-```
+\`\`\`
 
 ---
 
@@ -280,17 +280,17 @@ export async function getUserProjectAccess(userId: string, projectId: string) {
 
 ### Environment Variables Required
 
-```env
+\`\`\`env
 # .env.local
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 DATABASE_URL=postgresql://...
-```
+\`\`\`
 
 ### Middleware Configuration
 
 **File**: `middleware.ts`
-```typescript
+\`\`\`typescript
 import { clerkMiddleware } from '@clerk/nextjs/server'
 
 export default clerkMiddleware()
@@ -301,7 +301,7 @@ export const config = {
     '/(api|trpc)(.*)',
   ],
 }
-```
+\`\`\`
 
 ---
 
