@@ -60,6 +60,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         initialTasks={projectData.tasks}
         initialPlayers={projectData.players}
         initialLines={projectData.lines}
+        user={user}
       />
     )
   } catch (error) {

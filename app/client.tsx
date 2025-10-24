@@ -27,6 +27,8 @@ interface QuadrantTodoClientProps {
   isOfflineMode: boolean
   projectId: string
   projectType: "personal" | "team"
+  userName?: string
+  projectName?: string
 }
 
 export default function QuadrantTodoClient({
@@ -36,6 +38,8 @@ export default function QuadrantTodoClient({
   isOfflineMode,
   projectId,
   projectType,
+  userName,
+  projectName,
 }: QuadrantTodoClientProps) {
   const router = useRouter()
   const [isDrawingLine, setIsDrawingLine] = useState(false)
@@ -49,7 +53,7 @@ export default function QuadrantTodoClient({
     description: "",
     urgency: 50,
     importance: 50,
-    assigneeIds: [] as string[],
+    assigneeIds: [] as number[],
   })
 
   const isMobile = false // You can add proper mobile detection if needed
@@ -84,8 +88,8 @@ export default function QuadrantTodoClient({
     return "Not Important & Not Urgent"
   }, [])
 
-  const handleTaskCreate = async (description: string, urgency: number, importance: number, assigneeIds: string[]) => {
-    const result = await createTask(projectId, description, urgency, importance, assigneeIds.map(id => parseInt(id)))
+  const handleTaskCreate = async (description: string, urgency: number, importance: number, assigneeIds: number[]) => {
+    const result = await createTask(projectId, description, urgency, importance, assigneeIds)
     if (result.success) {
       router.refresh()
     }
@@ -101,12 +105,15 @@ export default function QuadrantTodoClient({
     setIsTaskDetailOpen(true)
   }
 
-  const handleTaskUpdate = async (taskId: string, updates: any) => {
-    router.refresh()
+  const handleTaskUpdate = async (taskId: number, description: string, urgency: number, importance: number, assigneeIds: number[]) => {
+    const result = await updateTaskAction(taskId, urgency, importance)
+    if (result.success) {
+      router.refresh()
+    }
   }
 
-  const handleTaskDelete = async (taskId: string) => {
-    const result = await deleteTask(parseInt(taskId))
+  const handleTaskDelete = async (taskId: number) => {
+    const result = await deleteTask(taskId)
     if (result.success) {
       setIsTaskDetailOpen(false)
       router.refresh()
@@ -142,7 +149,7 @@ export default function QuadrantTodoClient({
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
           <div className="flex items-center gap-2 sm:gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Task Manager</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{projectName || "Task Manager"}</h1>
             {isOfflineMode && (
               <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
                 Offline Mode
@@ -308,6 +315,8 @@ export default function QuadrantTodoClient({
               onTaskDetailClick={handleTaskDetailClick}
               onToggleDrawingMode={handleDrawingToggle}
               onLongPress={handleLongPress}
+              userName={userName}
+              projectType={projectType}
             />
           </TabsContent>
 
@@ -363,7 +372,7 @@ export default function QuadrantTodoClient({
                         onClick={() => handleTaskDetailClick(task)}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
-                          <TaskSegment task={task} size={isMobile ? 28 : 32} />
+                          <TaskSegment task={task} size={isMobile ? 28 : 32} userName={userName} projectType={projectType} />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm sm:text-base truncate">{task.description}</p>
                             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-1">
@@ -393,7 +402,7 @@ export default function QuadrantTodoClient({
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleTaskDelete(task.id.toString())
+                              handleTaskDelete(task.id)
                             }}
                             className="text-destructive hover:text-destructive h-8 w-8 sm:h-auto sm:w-auto"
                           >
@@ -498,6 +507,8 @@ export default function QuadrantTodoClient({
           <TaskDetailDialog
             task={selectedTask}
             players={initialPlayers}
+            projectType={projectType}
+            userName={userName}
             isOpen={isTaskDetailOpen}
             onOpenChange={setIsTaskDetailOpen}
             isMobile={isMobile}

@@ -17,6 +17,7 @@ interface TaskDialogProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   taskDescription: string
+  taskType: 'personal' | 'team'
   taskUrgency: number[]
   taskImportance: number[]
   taskAssignees: number[]
@@ -24,6 +25,7 @@ interface TaskDialogProps {
   isPending: boolean
   isMobile: boolean
   onTaskDescriptionChange: (value: string) => void
+  onTaskTypeChange: (value: 'personal' | 'team') => void
   onTaskUrgencyChange: (value: number[]) => void
   onTaskImportanceChange: (value: number[]) => void
   onPlayerSelect: (playerId: string) => void
@@ -47,6 +49,7 @@ export const MobileTaskDialog = React.memo(function MobileTaskDialog({
   isOpen,
   onOpenChange,
   taskDescription,
+  taskType,
   taskUrgency,
   taskImportance,
   taskAssignees,
@@ -54,6 +57,7 @@ export const MobileTaskDialog = React.memo(function MobileTaskDialog({
   isPending,
   isMobile,
   onTaskDescriptionChange,
+  onTaskTypeChange,
   onTaskUrgencyChange,
   onTaskImportanceChange,
   onPlayerSelect,
@@ -97,6 +101,19 @@ export const MobileTaskDialog = React.memo(function MobileTaskDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="taskType">Task Type</Label>
+            <Select value={taskType} onValueChange={onTaskTypeChange} disabled={isPending}>
+              <SelectTrigger id="taskType" className="h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="team">Team</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Urgency: {taskUrgency[0]}</Label>
@@ -129,47 +146,49 @@ export const MobileTaskDialog = React.memo(function MobileTaskDialog({
             </p>
           </div>
 
-          <div className="space-y-3">
-            <Label>Assign Players (Optional)</Label>
+          {taskType === 'team' && (
+            <div className="space-y-3">
+              <Label>Assign Players (Optional)</Label>
 
-            <Select onValueChange={onPlayerSelect} disabled={isPending}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Select players to assign" />
-              </SelectTrigger>
-              <SelectContent>
-                {players
-                  .filter((player) => !taskAssignees.includes(player.id))
-                  .map((player) => (
-                    <SelectItem key={player.id} value={player.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                        {player.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+              <Select onValueChange={onPlayerSelect} disabled={isPending}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Select players to assign" />
+                </SelectTrigger>
+                <SelectContent>
+                  {players
+                    .filter((player) => !taskAssignees.includes(player.id))
+                    .map((player) => (
+                      <SelectItem key={player.id} value={player.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
+                          {player.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
 
-            <div className="flex flex-wrap gap-2">
-              {taskAssignees.map((playerId) => {
-                const player = players.find((p) => p.id === playerId)
-                return player ? (
-                  <Badge
-                    key={playerId}
-                    variant="secondary"
-                    className="cursor-pointer text-sm py-2 px-3"
-                    onClick={() => onPlayerRemove(playerId)}
-                  >
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: player.color }} />
-                    {player.name} ×
-                  </Badge>
-                ) : null
-              })}
-              {taskAssignees.length === 0 && (
-                <div className="text-sm text-muted-foreground italic">No players assigned (task will be unassigned)</div>
-              )}
+              <div className="flex flex-wrap gap-2">
+                {taskAssignees.map((playerId) => {
+                  const player = players.find((p) => p.id === playerId)
+                  return player ? (
+                    <Badge
+                      key={playerId}
+                      variant="secondary"
+                      className="cursor-pointer text-sm py-2 px-3"
+                      onClick={() => onPlayerRemove(playerId)}
+                    >
+                      <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: player.color }} />
+                      {player.name} ×
+                    </Badge>
+                  ) : null
+                })}
+                {taskAssignees.length === 0 && (
+                  <div className="text-sm text-muted-foreground italic">No players assigned (task will be unassigned)</div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <Button onClick={onAddTask} disabled={isPending || !taskDescription.trim()} className="w-full h-12 text-base">
             {isPending ? "Creating..." : "Create Task"}
@@ -184,6 +203,7 @@ export const DesktopTaskDialog = React.memo(function DesktopTaskDialog({
   isOpen,
   onOpenChange,
   taskDescription,
+  taskType,
   taskUrgency,
   taskImportance,
   taskAssignees,
@@ -191,6 +211,7 @@ export const DesktopTaskDialog = React.memo(function DesktopTaskDialog({
   isPending,
   isMobile,
   onTaskDescriptionChange,
+  onTaskTypeChange,
   onTaskUrgencyChange,
   onTaskImportanceChange,
   onPlayerSelect,
@@ -234,6 +255,19 @@ export const DesktopTaskDialog = React.memo(function DesktopTaskDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="taskType">Task Type</Label>
+            <Select value={taskType} onValueChange={onTaskTypeChange} disabled={isPending}>
+              <SelectTrigger id="taskType">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="team">Team</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Urgency: {taskUrgency[0]}</Label>
@@ -266,47 +300,49 @@ export const DesktopTaskDialog = React.memo(function DesktopTaskDialog({
             </p>
           </div>
 
-          <div className="space-y-3">
-            <Label>Assign Players</Label>
+          {taskType === 'team' && (
+            <div className="space-y-3">
+              <Label>Assign Players</Label>
 
-            <Select onValueChange={onPlayerSelect} disabled={isPending}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select players to assign" />
-              </SelectTrigger>
-              <SelectContent>
-                {players
-                  .filter((player) => !taskAssignees.includes(player.id))
-                  .map((player) => (
-                    <SelectItem key={player.id} value={player.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                        {player.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+              <Select onValueChange={onPlayerSelect} disabled={isPending}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select players to assign" />
+                </SelectTrigger>
+                <SelectContent>
+                  {players
+                    .filter((player) => !taskAssignees.includes(player.id))
+                    .map((player) => (
+                      <SelectItem key={player.id} value={player.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
+                          {player.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
 
-            <div className="flex flex-wrap gap-2">
-              {taskAssignees.map((playerId) => {
-                const player = players.find((p) => p.id === playerId)
-                return player ? (
-                  <Badge
-                    key={playerId}
-                    variant="secondary"
-                    className="cursor-pointer text-sm"
-                    onClick={() => onPlayerRemove(playerId)}
-                  >
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: player.color }} />
-                    {player.name} ×
-                  </Badge>
-                ) : null
-              })}
-              {taskAssignees.length === 0 && (
-                <div className="text-sm text-muted-foreground italic">No players assigned yet</div>
-              )}
+              <div className="flex flex-wrap gap-2">
+                {taskAssignees.map((playerId) => {
+                  const player = players.find((p) => p.id === playerId)
+                  return player ? (
+                    <Badge
+                      key={playerId}
+                      variant="secondary"
+                      className="cursor-pointer text-sm"
+                      onClick={() => onPlayerRemove(playerId)}
+                    >
+                      <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: player.color }} />
+                      {player.name} ×
+                    </Badge>
+                  ) : null
+                })}
+                {taskAssignees.length === 0 && (
+                  <div className="text-sm text-muted-foreground italic">No players assigned yet</div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <Button onClick={onAddTask} disabled={isPending || !taskDescription.trim()} className="w-full">
             {isPending ? "Creating..." : "Create Task"}

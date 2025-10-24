@@ -40,7 +40,7 @@ export async function initializeProjectPlayers(projectId: string) {
 
     // Create players for each member
     await db.insert(players).values(
-      members.map((member, index) => ({
+      members.map((member: { id: string; project_id: string; user_id: string; role: string; joined_at: Date | null }, index: number) => ({
         project_id: projectId,
         user_id: member.user_id,
         name: `User ${member.user_id.substring(0, 8)}`, // Will be replaced with actual user name

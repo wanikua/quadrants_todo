@@ -87,10 +87,74 @@ export async function getCurrentUser(): Promise<User | null> {
     if (userId) {
       const clerkUser = await currentUser()
       if (clerkUser) {
+        const email = clerkUser.emailAddresses[0]?.emailAddress || ''
+
+        // Default name from Clerk
+        let defaultName = clerkUser.firstName || clerkUser.username
+        if (!defaultName && email) {
+          defaultName = email.split('@')[0]
+        }
+        if (!defaultName) {
+          defaultName = 'User'
+        }
+
+        // Try to get user's custom name from database
+        let name = defaultName
+        if (sql) {
+          try {
+            // First, check if user exists in database by Clerk userId
+            const dbResult = await sql`
+              SELECT name FROM users WHERE id = ${userId} LIMIT 1
+            `
+
+            if (dbResult.length > 0) {
+              // User exists with Clerk ID, use their custom name if set
+              if (dbResult[0].name) {
+                name = dbResult[0].name
+              }
+            } else {
+              // Check if user exists by email (may be from old JWT auth)
+              const emailResult = await sql`
+                SELECT id, name FROM users WHERE email = ${email} LIMIT 1
+              `
+
+              if (emailResult.length > 0) {
+                // User exists with same email but different ID, update the ID to Clerk's
+                try {
+                  await sql`
+                    UPDATE users
+                    SET id = ${userId}, password_hash = '__clerk_user__', updated_at = NOW()
+                    WHERE email = ${email}
+                  `
+                  // Use their existing name
+                  if (emailResult[0].name) {
+                    name = emailResult[0].name
+                  }
+                } catch (updateError) {
+                  console.log("Failed to update user ID:", updateError)
+                }
+              } else {
+                // User doesn't exist at all, create new record
+                try {
+                  await sql`
+                    INSERT INTO users (id, email, password_hash, name, created_at)
+                    VALUES (${userId}, ${email}, '__clerk_user__', ${defaultName}, NOW())
+                    ON CONFLICT (id) DO NOTHING
+                  `
+                } catch (insertError) {
+                  console.log("Failed to insert user into database:", insertError)
+                }
+              }
+            }
+          } catch (dbError) {
+            console.log("Failed to get/create user in database:", dbError)
+          }
+        }
+
         return {
           id: userId,
-          email: clerkUser.emailAddresses[0]?.emailAddress || '',
-          name: clerkUser.firstName || clerkUser.username || 'User',
+          email,
+          name,
           created_at: new Date(clerkUser.createdAt).toISOString(),
         }
       }

@@ -5,12 +5,19 @@ import { Toaster } from "sonner"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: "Quadrant Task Manager",
   description: "Manage your tasks with the Eisenhower Matrix",
-  generator: 'v0.app'
+  generator: 'v0.app',
+  icons: {
+    icon: '/Original Logo Symbol.png',
+  }
 }
 
 export default function RootLayout({
@@ -19,9 +26,35 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "#F45F00",
+          colorText: "#000000",
+          colorBackground: "#FFFFFF",
+          colorNeutral: "#FFFFFF",
+          borderRadius: "0.5rem",
+        },
+        elements: {
+          rootBox: "bg-white",
+          card: "bg-white border border-gray-200 shadow-sm",
+          main: "bg-white",
+          formButtonPrimary: "bg-[#F45F00] hover:bg-[#d64f00] text-white transition-all duration-200 font-medium",
+          headerTitle: "text-black font-semibold",
+          headerSubtitle: "text-[#575757]",
+          socialButtonsBlockButton: "border border-gray-200 text-black hover:bg-gray-50 transition-all duration-200",
+          formFieldLabel: "text-black font-medium",
+          formFieldInput: "border border-gray-200 focus:border-[#F45F00] transition-all duration-200",
+          footerActionLink: "text-[#F45F00] hover:text-[#d64f00] transition-colors duration-200",
+        },
+        layout: {
+          socialButtonsPlacement: "bottom",
+          socialButtonsVariant: "blockButton",
+        },
+      }}
+    >
       <html lang="en">
-        <body className={inter.className}>
+        <body className={`${inter.className} antialiased`}>
           {children}
           <Toaster />
         </body>

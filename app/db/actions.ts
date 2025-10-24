@@ -60,7 +60,10 @@ export async function createProject(name: string, type: 'personal' | 'team') {
 
   try {
     const projectId = `proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    const inviteCode = type === 'team' ? `invite_${Math.random().toString(36).substr(2, 8)}` : null
+    // Generate 8-character alphanumeric invite code
+    const inviteCode = type === 'team'
+      ? Math.random().toString(36).substring(2, 10).toUpperCase()
+      : null
 
     // Create project
     await db.insert(projects).values({
@@ -158,6 +161,24 @@ export async function joinProject(inviteCode: string) {
   } catch (error) {
     console.error('Error joining project:', error)
     return { success: false, error: 'Failed to join project' }
+  }
+}
+
+export async function getProjectMemberCount(projectId: string) {
+  if (!db) {
+    return 1
+  }
+
+  try {
+    const members = await db
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.project_id, projectId))
+
+    return members.length
+  } catch (error) {
+    console.error('Error getting member count:', error)
+    return 1
   }
 }
 

@@ -18,6 +18,8 @@ interface QuadrantMatrixMapProps {
   onTaskDetailClick: (task: TaskWithAssignees) => void
   onToggleDrawingMode: () => void
   onLongPress: (urgency: number, importance: number) => void
+  userName?: string
+  projectType?: "personal" | "team"
 }
 
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
@@ -30,6 +32,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   onTaskDetailClick,
   onToggleDrawingMode,
   onLongPress,
+  userName,
+  projectType,
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
@@ -108,7 +112,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   }
 
   const handleMatrixMouseDown = (e: React.MouseEvent) => {
-    if (isMobile || isDrawingLine) return
+    if (isDrawingLine) return
 
     const target = e.target as HTMLElement
     if (target.closest('[data-task-id]')) return
@@ -126,7 +130,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     const timer = setTimeout(() => {
       setIsLongPress(true)
       onLongPress(Math.round(urgency), Math.round(importance))
-    }, 2000)
+    }, 800)
 
     setLongPressTimer(timer)
   }
@@ -161,6 +165,67 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     setMouseDownPos(null)
   }
 
+  // Touch event handlers for mobile support
+  const handleMatrixTouchStart = (e: React.TouchEvent) => {
+    if (isDrawingLine) return
+
+    const target = e.target as HTMLElement
+    if (target.closest('[data-task-id]')) return
+
+    const touch = e.touches[0]
+    if (!touch) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((touch.clientX - rect.left) / rect.width) * 100
+    const y = ((touch.clientY - rect.top) / rect.height) * 100
+
+    const urgency = Math.max(0, Math.min(100, x))
+    const importance = Math.max(0, Math.min(100, 100 - y))
+
+    setMouseDownPos({ x: touch.clientX, y: touch.clientY })
+    setIsLongPress(false)
+
+    const timer = setTimeout(() => {
+      setIsLongPress(true)
+      onLongPress(Math.round(urgency), Math.round(importance))
+    }, 800)
+
+    setLongPressTimer(timer)
+  }
+
+  const handleMatrixTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+    setMouseDownPos(null)
+    setTimeout(() => setIsLongPress(false), 100)
+  }
+
+  const handleMatrixTouchMove = (e: React.TouchEvent) => {
+    if (longPressTimer && mouseDownPos) {
+      const touch = e.touches[0]
+      if (!touch) return
+
+      const deltaX = Math.abs(touch.clientX - mouseDownPos.x)
+      const deltaY = Math.abs(touch.clientY - mouseDownPos.y)
+
+      if (deltaX > 15 || deltaY > 15) {
+        clearTimeout(longPressTimer)
+        setLongPressTimer(null)
+        setMouseDownPos(null)
+      }
+    }
+  }
+
+  const handleMatrixTouchCancel = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+    setMouseDownPos(null)
+  }
+
   React.useEffect(() => {
     return () => {
       if (longPressTimer) {
@@ -181,8 +246,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           </div>
         )}
         {isMobile && (
-          <div className="text-center text-sm text-orange-600 dark:text-orange-400 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20">
-            For full functionality, please use desktop
+          <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+            Long press (0.8s) on empty space to create a task
           </div>
         )}
       </CardHeader>
@@ -194,6 +259,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           onMouseUp={handleMatrixMouseUp}
           onMouseMove={handleMatrixMouseMove}
           onMouseLeave={handleMatrixMouseLeave}
+          onTouchStart={handleMatrixTouchStart}
+          onTouchEnd={handleMatrixTouchEnd}
+          onTouchMove={handleMatrixTouchMove}
+          onTouchCancel={handleMatrixTouchCancel}
           onDragOver={handleMatrixDragOver}
           onDrop={handleMatrixDrop}
         >
@@ -350,15 +419,12 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                   onClick={(e) => handleTaskClick(task, e)}
                 >
                   <div className="relative">
-                    <TaskSegment task={task} size={taskSize} />
+                    <TaskSegment task={task} size={taskSize} userName={userName} projectType={projectType} />
 
                     {/* Task Description Tooltip */}
                     {!isMobile && (
                       <div className="absolute left-full top-0 ml-2 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border shadow-lg">
                         <div className="font-medium">{task.description}</div>
-                        <div className="text-muted-foreground">
-                          Urgency: {task.urgency} | Importance: {task.importance}
-                        </div>
                         {task.assignees && task.assignees.length > 0 && (
                           <div className="text-muted-foreground">{task.assignees.map((p) => p.name).join(", ")}</div>
                         )}
@@ -432,7 +498,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           <div className="space-y-4 text-sm">
             <div>
               <h4 className="font-medium mb-2">Create Task</h4>
-              <p className="text-muted-foreground">Long press (2 seconds) on empty space, or use "Add Task" button</p>
+              <p className="text-muted-foreground">Long press (0.8 seconds) on empty space, or use "Add Task" button</p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Move Task</h4>

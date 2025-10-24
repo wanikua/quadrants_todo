@@ -1,20 +1,20 @@
 export interface Player {
-  id: string
+  id: number
   name: string
   color: string
   created_at?: string
 }
 
 export interface Comment {
-  id: string
-  task_id: string
+  id: number
+  task_id: number
   content: string
   author_name: string
   created_at?: string
 }
 
 export interface Task {
-  id: string
+  id: number
   description: string
   urgency: number
   importance: number
@@ -30,11 +30,11 @@ export interface TaskWithAssignees extends Task {
 }
 
 export interface Line {
-  id: string
-  from_task_id: string
-  to_task_id: string
+  id: number
+  from_task_id: number
+  to_task_id: number
   style?: string
-  size?: string
+  size?: number
   color?: string
   created_at?: string
 }
@@ -57,31 +57,31 @@ export interface ProjectMember {
   joined_at?: string
 }
 
-export type StateAction = 
+export type StateAction =
   | { type: 'SET_PLAYERS'; players: Player[] }
   | { type: 'ADD_PLAYER'; player: Player }
-  | { type: 'DELETE_PLAYER'; playerId: string }
+  | { type: 'DELETE_PLAYER'; playerId: number }
   | { type: 'SET_TASKS'; tasks: Task[] }
   | { type: 'ADD_TASK'; task: Task }
   | { type: 'UPDATE_TASK'; task: Task }
-  | { type: 'DELETE_TASK'; taskId: string }
+  | { type: 'DELETE_TASK'; taskId: number }
   | { type: 'SET_LINES'; lines: Line[] }
   | { type: 'ADD_LINE'; line: Line }
-  | { type: 'DELETE_LINE'; lineId: string }
-  | { type: 'TOGGLE_LINE'; from: string; to: string }
-  | { type: 'ADD_COMMENT'; taskId: string; comment: Comment }
-  | { type: 'DELETE_COMMENT'; taskId: string; commentId: string }
+  | { type: 'DELETE_LINE'; lineId: number }
+  | { type: 'TOGGLE_LINE'; from: number; to: number }
+  | { type: 'ADD_COMMENT'; taskId: number; comment: Comment }
+  | { type: 'DELETE_COMMENT'; taskId: number; commentId: number }
   | { type: 'SET_DATABASE_STATUS'; status: boolean }
   | { type: 'SET_DRAWING_MODE'; enabled: boolean }
-  | { type: 'SET_SELECTED_TASK'; taskId: string | null }
-  | { type: 'SET_STARTING_TASK'; taskId: string | null }
+  | { type: 'SET_SELECTED_TASK'; taskId: number | null }
+  | { type: 'SET_STARTING_TASK'; taskId: number | null }
 
 export interface AppState {
   players: Player[]
   tasks: TaskWithAssignees[]
   lines: Line[]
   isDrawingMode: boolean
-  startingTaskForLine: string | null
-  selectedTaskForDetail: string | null
+  startingTaskForLine: number | null
+  selectedTaskForDetail: number | null
   isDatabaseConnected: boolean
 }

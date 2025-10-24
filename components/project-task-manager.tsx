@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Settings, Copy, Check, LogOut } from "lucide-react"
+import { Copy, Check, LogOut, Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 
@@ -22,9 +22,10 @@ interface ProjectTaskManagerProps {
   initialTasks: any[]
   initialPlayers: any[]
   initialLines: any[]
+  user: any
 }
 
-export function ProjectTaskManager({ project, initialTasks, initialPlayers, initialLines }: ProjectTaskManagerProps) {
+export function ProjectTaskManager({ project, initialTasks, initialPlayers, initialLines, user }: ProjectTaskManagerProps) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
 
@@ -55,19 +56,22 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" onClick={() => router.push("/projects")} className="flex items-center">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Projects
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/projects")}
+                title="Back to Projects"
+                className="p-0 h-auto hover:bg-transparent"
+              >
+                <Image
+                  src="/Original Logo Symbol.png"
+                  alt="Home"
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 object-contain"
+                />
               </Button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                  <span>{project.name}</span>
-                  <Badge variant={project.type === "personal" ? "secondary" : "default"}>{project.type}</Badge>
-                  <Badge variant="outline">{project.role}</Badge>
-                </h1>
-              </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               {project.type === "team" && project.invite_code && (
                 <Button
                   variant="outline"
@@ -88,7 +92,12 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                   )}
                 </Button>
               )}
-              <Button variant="ghost" size="sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/dashboard")}
+                title="Settings"
+              >
                 <Settings className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={handleSignOut} title="Sign Out">
@@ -107,6 +116,8 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         isOfflineMode={false}
         projectId={project.id}
         projectType={project.type}
+        userName={user?.name}
+        projectName={project.name}
       />
     </div>
   )

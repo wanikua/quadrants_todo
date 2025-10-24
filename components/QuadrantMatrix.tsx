@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Edit, Trash2, Users, HelpCircle, X } from 'lucide-react'
-import { TaskSegment } from './TaskSegment'
+import TaskSegment from './TaskSegment'
 import { Task, Player, TaskWithAssignees, Line, Project } from '@/app/types'
 
 interface QuadrantMatrixProps {
@@ -18,9 +18,9 @@ interface QuadrantMatrixProps {
   tasks: Task[]
   players: Player[]
   lines: Line[]
-  onTaskCreate?: (description: string, urgency: number, importance: number, assigneeIds: string[]) => void
-  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void
-  onTaskDelete?: (taskId: string) => void
+  onTaskCreate?: (description: string, urgency: number, importance: number, assigneeIds: number[]) => void
+  onTaskUpdate?: (taskId: number, updates: Partial<Task>) => void
+  onTaskDelete?: (taskId: number) => void
   onPlayerCreate?: (name: string, color: string) => void
 }
 
@@ -41,7 +41,7 @@ export function QuadrantMatrix({
     description: '',
     urgency: 50,
     importance: 50,
-    assigneeIds: [] as string[]
+    assigneeIds: [] as number[]
   })
   const [newPlayer, setNewPlayer] = useState({
     name: '',
@@ -182,10 +182,7 @@ export function QuadrantMatrix({
             {quadrants['urgent-important'].map((task) => (
               <TaskSegment
                 key={task.id}
-                task={task}
-                players={players}
-                onUpdate={onTaskUpdate}
-                onDelete={onTaskDelete}
+                task={{ ...task, assignees: task.assignees || [] }}
               />
             ))}
             {quadrants['urgent-important'].length === 0 && (
@@ -208,10 +205,7 @@ export function QuadrantMatrix({
             {quadrants['not-urgent-important'].map((task) => (
               <TaskSegment
                 key={task.id}
-                task={task}
-                players={players}
-                onUpdate={onTaskUpdate}
-                onDelete={onTaskDelete}
+                task={{ ...task, assignees: task.assignees || [] }}
               />
             ))}
             {quadrants['not-urgent-important'].length === 0 && (
@@ -234,10 +228,7 @@ export function QuadrantMatrix({
             {quadrants['urgent-not-important'].map((task) => (
               <TaskSegment
                 key={task.id}
-                task={task}
-                players={players}
-                onUpdate={onTaskUpdate}
-                onDelete={onTaskDelete}
+                task={{ ...task, assignees: task.assignees || [] }}
               />
             ))}
             {quadrants['urgent-not-important'].length === 0 && (
@@ -260,10 +251,7 @@ export function QuadrantMatrix({
             {quadrants['not-urgent-not-important'].map((task) => (
               <TaskSegment
                 key={task.id}
-                task={task}
-                players={players}
-                onUpdate={onTaskUpdate}
-                onDelete={onTaskDelete}
+                task={{ ...task, assignees: task.assignees || [] }}
               />
             ))}
             {quadrants['not-urgent-not-important'].length === 0 && (

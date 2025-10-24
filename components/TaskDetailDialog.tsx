@@ -21,16 +21,18 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void
   isMobile: boolean
   players: Player[]
-  onDeleteTask: (taskId: string) => void
+  projectType: 'personal' | 'team'
+  userName?: string
+  onDeleteTask: (taskId: number) => void
   onUpdateTask: (
-    taskId: string,
+    taskId: number,
     description: string,
     urgency: number,
     importance: number,
-    assigneeIds: string[],
+    assigneeIds: number[],
   ) => Promise<void> | void
-  onAddComment: (taskId: string, content: string, authorName: string) => Promise<void>
-  onDeleteComment: (commentId: string, taskId: string) => Promise<void>
+  onAddComment: (taskId: number, content: string, authorName: string) => Promise<void>
+  onDeleteComment: (commentId: number, taskId: number) => Promise<void>
 }
 
 export const TaskDetailDialog = React.memo(function TaskDetailDialog({
@@ -39,6 +41,8 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   onOpenChange,
   isMobile,
   players,
+  projectType,
+  userName,
   onDeleteTask,
   onUpdateTask,
   onAddComment,
@@ -48,7 +52,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   const [editDescription, setEditDescription] = React.useState("")
   const [editUrgency, setEditUrgency] = React.useState<number[]>([50])
   const [editImportance, setEditImportance] = React.useState<number[]>([50])
-  const [editAssignees, setEditAssignees] = React.useState<string[]>([])
+  const [editAssignees, setEditAssignees] = React.useState<number[]>([])
   const [newComment, setNewComment] = React.useState("")
   const [authorName, setAuthorName] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -98,17 +102,22 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
   }
 
   const handlePlayerSelect = (playerId: string) => {
-    setEditAssignees((prev) => (prev.includes(playerId) ? prev : [...prev, playerId]))
+    const id = parseInt(playerId)
+    setEditAssignees((prev) => (prev.includes(id) ? prev : [...prev, id]))
   }
 
-  const handlePlayerRemove = (playerId: string) => {
+  const handlePlayerRemove = (playerId: number) => {
     setEditAssignees((prev) => prev.filter((id) => id !== playerId))
   }
 
   const handleAddComment = async () => {
     const content = newComment.trim()
-    const author = authorName.trim()
-    if (!content || !author) return
+    if (!content) return
+
+    // For personal projects, use userName; for team projects, use authorName
+    const author = projectType === 'personal' ? (userName || 'User') : authorName.trim()
+    if (!author) return
+
     setIsSubmitting(true)
     try {
       await onAddComment(task.id, content, author)
@@ -121,7 +130,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
     }
   }
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = async (commentId: number) => {
     // eslint-disable-next-line no-alert
     if (confirm("Are you sure you want to delete this comment?")) {
       try {
@@ -267,73 +276,75 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
         </div>
       </div>
 
-      {/* Assigned Players */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Users className="w-4 h-4" />
-          Assigned Players ({isEditing ? editAssignees.length : task.assignees.length})
-        </div>
+      {/* Assigned Players - Only show for team projects */}
+      {projectType === 'team' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Users className="w-4 h-4" />
+            Assigned Players ({isEditing ? editAssignees.length : task.assignees.length})
+          </div>
 
-        {isEditing ? (
-          <div className="space-y-3">
-            <Select onValueChange={handlePlayerSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select players to assign" />
-              </SelectTrigger>
-              <SelectContent>
-                {players
-                  .filter((player) => !editAssignees.includes(player.id))
-                  .map((player) => (
-                    <SelectItem key={player.id} value={player.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                        {player.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+          {isEditing ? (
+            <div className="space-y-3">
+              <Select onValueChange={handlePlayerSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select players to assign" />
+                </SelectTrigger>
+                <SelectContent>
+                  {players
+                    .filter((player) => !editAssignees.includes(player.id))
+                    .map((player) => (
+                      <SelectItem key={player.id} value={player.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
+                          {player.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
 
-            <div className="flex flex-wrap gap-2">
-              {editAssignees.map((playerId) => {
-                const player = players.find((p) => p.id === playerId)
-                return player ? (
-                  <Badge
-                    key={playerId}
-                    variant="secondary"
-                    className="cursor-pointer text-sm py-1 px-3"
-                    onClick={() => handlePlayerRemove(playerId)}
-                  >
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: player.color }} />
-                    {player.name} ×
-                  </Badge>
-                ) : null
-              })}
-              {editAssignees.length === 0 && (
-                <div className="text-sm text-muted-foreground italic">No players assigned</div>
+              <div className="flex flex-wrap gap-2">
+                {editAssignees.map((playerId) => {
+                  const player = players.find((p) => p.id === playerId)
+                  return player ? (
+                    <Badge
+                      key={playerId}
+                      variant="secondary"
+                      className="cursor-pointer text-sm py-1 px-3"
+                      onClick={() => handlePlayerRemove(playerId)}
+                    >
+                      <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: player.color }} />
+                      {player.name} ×
+                    </Badge>
+                  ) : null
+                })}
+                {editAssignees.length === 0 && (
+                  <div className="text-sm text-muted-foreground italic">No players assigned</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {task.assignees.length === 0 ? (
+                <div className="text-sm text-muted-foreground italic p-3 bg-muted rounded-lg">
+                  No players assigned to this task
+                </div>
+              ) : (
+                task.assignees.map((player) => (
+                  <div key={player.id} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
+                    <div
+                      className="w-4 h-4 rounded-full border border-border"
+                      style={{ backgroundColor: player.color }}
+                    />
+                    <span className="text-sm font-medium text-foreground">{player.name}</span>
+                  </div>
+                ))
               )}
             </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {task.assignees.length === 0 ? (
-              <div className="text-sm text-muted-foreground italic p-3 bg-muted rounded-lg">
-                No players assigned to this task
-              </div>
-            ) : (
-              task.assignees.map((player) => (
-                <div key={player.id} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
-                  <div
-                    className="w-4 h-4 rounded-full border border-border"
-                    style={{ backgroundColor: player.color }}
-                  />
-                  <span className="text-sm font-medium text-foreground">{player.name}</span>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Comments Section */}
       <div className="space-y-3 pt-4 border-t border-border">
@@ -344,14 +355,16 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
 
         {/* Add Comment */}
         <div className="space-y-2">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Your name"
-              value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
-              className="w-40"
-            />
-          </div>
+          {projectType === 'team' && (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Your name"
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                className="w-40"
+              />
+            </div>
+          )}
           <div className="flex gap-2">
             <Textarea
               placeholder="Add a comment..."
@@ -361,7 +374,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
             />
             <Button
               onClick={handleAddComment}
-              disabled={!newComment.trim() || !authorName.trim() || isSubmitting}
+              disabled={!newComment.trim() || (projectType === 'team' && !authorName.trim()) || isSubmitting}
               size="sm"
               className="self-end"
             >

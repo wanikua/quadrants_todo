@@ -22,7 +22,9 @@ import { sql } from './db';
  */
 export async function getUserProjects(userId: string) {
   return await sql`
-    SELECT DISTINCT p.*
+    SELECT DISTINCT
+      p.*,
+      (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
     FROM projects p
     LEFT JOIN project_members pm ON p.id = pm.project_id
     WHERE p.owner_id = ${userId}

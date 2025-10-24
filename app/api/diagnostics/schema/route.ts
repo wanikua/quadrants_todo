@@ -18,7 +18,7 @@ export async function GET() {
       ORDER BY table_name
     `
 
-    const tableNames = tables.map((t) => t.table_name)
+    const tableNames = tables.map((t: { table_name: string }) => t.table_name)
     const requiredTables = ["users", "projects", "project_members", "tasks", "players"]
     const missingTables = requiredTables.filter((t) => !tableNames.includes(t))
 
@@ -30,8 +30,8 @@ export async function GET() {
       ORDER BY ordinal_position
     `
 
-    const hasPasswordHash = usersColumns.some((c) => c.column_name === "password_hash")
-    const hasName = usersColumns.some((c) => c.column_name === "name")
+    const hasPasswordHash = usersColumns.some((c: { column_name: string; data_type: string }) => c.column_name === "password_hash")
+    const hasName = usersColumns.some((c: { column_name: string; data_type: string }) => c.column_name === "name")
 
     if (missingTables.length > 0) {
       return NextResponse.json({
@@ -55,7 +55,7 @@ export async function GET() {
       success: true,
       message: `Found ${tableNames.length} tables`,
       tables: tableNames,
-      usersColumns: usersColumns.map((c) => c.column_name),
+      usersColumns: usersColumns.map((c: { column_name: string; data_type: string }) => c.column_name),
     })
   } catch (error) {
     return NextResponse.json({

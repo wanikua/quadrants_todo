@@ -4,13 +4,39 @@ import type { TaskWithAssignees } from "@/app/types"
 interface TaskSegmentProps {
   task: TaskWithAssignees
   size?: number
+  userName?: string
+  projectType?: "personal" | "team"
 }
 
-const TaskSegment = React.memo(function TaskSegment({ task, size = 40 }: TaskSegmentProps) {
+const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName, projectType }: TaskSegmentProps) {
   const assignedPlayers = task.assignees || []
 
-  // If no players assigned, show gray circle
+  // Helper function to get first letter uppercase
+  const getInitial = (name: string) => {
+    return name.charAt(0).toUpperCase()
+  }
+
+  // Personal task - no players assigned, show user initial or empty circle
   if (assignedPlayers.length === 0) {
+    // For personal projects with userName, show user's initial
+    if (projectType === "personal" && userName) {
+      const initial = getInitial(userName)
+      return (
+        <div
+          className="rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-white bg-primary"
+          style={{
+            width: size,
+            height: size,
+            fontSize: size * 0.4,
+          }}
+          title={`${task.description} - ${userName}`}
+        >
+          <span className="drop-shadow-sm">{initial}</span>
+        </div>
+      )
+    }
+
+    // Default: empty circle for team projects or when no userName
     return (
       <div
         className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-muted bg-muted"
@@ -18,31 +44,33 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40 }: TaskSeg
           width: size,
           height: size,
         }}
-        title={`${task.description} - Unassigned`}
+        title={`${task.description} - Personal Task`}
       >
-        <span className="drop-shadow-sm">?</span>
+        {/* Empty circle for personal tasks */}
       </div>
     )
   }
 
-  // Single player - solid color circle
+  // Team task - single player, show player's initial
   if (assignedPlayers.length === 1) {
+    const initial = getInitial(assignedPlayers[0].name)
     return (
       <div
-        className="rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-white"
+        className="rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-white"
         style={{
           backgroundColor: assignedPlayers[0].color,
           width: size,
           height: size,
+          fontSize: size * 0.4, // Scale font size with circle size
         }}
         title={`${task.description} - ${assignedPlayers[0].name}`}
       >
-        <span className="drop-shadow-sm">1</span>
+        <span className="drop-shadow-sm">{initial}</span>
       </div>
     )
   }
 
-  // Multiple players - pie chart segments
+  // Team task - multiple players, show pie chart with initials
   const segmentAngle = 360 / assignedPlayers.length
 
   return (
@@ -79,8 +107,11 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40 }: TaskSeg
           return <path key={player.id} d={pathData} fill={player.color} stroke="white" strokeWidth="1" />
         })}
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold drop-shadow-sm">
-        {assignedPlayers.length}
+      <div
+        className="absolute inset-0 flex items-center justify-center text-white font-bold drop-shadow-sm"
+        style={{ fontSize: size * 0.3 }}
+      >
+        {assignedPlayers.map((p) => getInitial(p.name)).join("")}
       </div>
     </div>
   )
