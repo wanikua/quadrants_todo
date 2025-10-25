@@ -291,30 +291,15 @@
     animation-delay: 6s;
   }
 
-  /* Clerk Styling Overrides - Prevent Purple Background Flash */
-  .cl-rootBox,
-  .cl-card,
-  .cl-main,
-  .cl-signIn-root,
-  .cl-signUp-root,
-  .cl-userButton-root,
-  .cl-userProfile-root,
+  /* Clerk Styling Overrides - Minimal and specific */
+  /* Only override the main background containers, not all elements */
   body:has([data-clerk-component]) {
     background-color: white !important;
   }
 
-  /* Override Clerk's default purple/blue colors */
-  [data-clerk-component] {
-    background-color: white !important;
-  }
-
-  /* Ensure Clerk modal backgrounds are white */
+  /* Ensure Clerk modal backgrounds are correct */
   .cl-modalBackdrop {
     background-color: rgba(0, 0, 0, 0.5) !important;
-  }
-
-  .cl-modalContent {
-    background-color: white !important;
   }
 
   /* Radial Gradient */

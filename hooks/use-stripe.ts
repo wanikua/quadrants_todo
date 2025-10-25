@@ -1,0 +1,80 @@
+'use client'
+
+import { useState } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
+
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+)
+
+export function useStripe() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const createCheckoutSession = async (priceId: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ priceId }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to create checkout session')
+      }
+
+      const { sessionId, url } = await response.json()
+
+      if (url) {
+        window.location.href = url
+      } else {
+        const stripe = await stripePromise
+        if (!stripe) {
+          throw new Error('Stripe failed to load')
+        }
+        await stripe.redirectToCheckout({ sessionId })
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Checkout error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const manageBilling = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch('/api/stripe/portal', {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create portal session')
+      }
+
+      const { url } = await response.json()
+      window.location.href = url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Portal error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return {
+    createCheckoutSession,
+    manageBilling,
+    loading,
+    error,
+  }
+}

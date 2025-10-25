@@ -61,7 +61,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-lg md:text-xl text-[#575757] max-w-2xl mx-auto leading-relaxed">
-              All-in-one task management. Prioritize visually with the Eisenhower Matrix.
+              The simplest todo management. Yet the most powerful.
             </p>
           </div>
 
@@ -95,7 +95,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-black">Overview</h3>
               <p className="text-[#575757] leading-relaxed">
-                See everything at once. One visual grid for all tasks.
+                See everything at once. Priority is clear.
               </p>
             </div>
 
@@ -105,7 +105,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-black">Control</h3>
               <p className="text-[#575757] leading-relaxed">
-                Drag, drop, done. Simple actions. Full control.
+                Drag, drop, done. Simple and full control.
               </p>
             </div>
 
@@ -115,7 +115,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-black">Priority</h3>
               <p className="text-[#575757] leading-relaxed">
-                Urgent or important? The matrix decides for you.
+                First thing todo? The matrix decides for you.
               </p>
             </div>
 

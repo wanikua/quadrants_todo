@@ -9,13 +9,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut } from "lucide-react"
+import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut, Sparkles } from "lucide-react"
+import { useStripe } from "@/hooks/use-stripe"
+import { STRIPE_CONFIG } from "@/lib/stripe"
 
 interface User {
   id: string
   email: string
   name: string
   created_at: string
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+  subscription_status?: string | null
+  subscription_plan?: string | null
+  subscription_period_end?: string | null
 }
 
 interface DashboardClientProps {
@@ -28,6 +35,11 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const { createCheckoutSession, manageBilling, loading: stripeLoading, error: stripeError } = useStripe()
+
+  const isProUser = initialUser.subscription_plan === 'pro' &&
+                    initialUser.subscription_status === 'active'
+  const isFreeUser = !isProUser
 
   async function handleSignOut() {
     try {
@@ -214,15 +226,27 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Current Plan */}
               <div className="p-4 bg-muted rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold">Free Plan</h4>
+                  <h4 className="font-semibold flex items-center gap-2">
+                    {isProUser ? (
+                      <>
+                        <Crown className="w-5 h-5 text-[#F45F00]" />
+                        Pro Plan
+                      </>
+                    ) : (
+                      'Free Plan'
+                    )}
+                  </h4>
                   <span className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
                     Current Plan
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  You are currently on the free plan with unlimited projects and tasks.
+                  {isProUser
+                    ? 'You have access to all premium features including priority support and advanced analytics.'
+                    : 'You are currently on the free plan with unlimited projects and tasks.'}
                 </p>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center space-x-2">
@@ -237,18 +261,85 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                     <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
                     <span>Team collaboration</span>
                   </li>
+                  {isProUser && (
+                    <>
+                      <li className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 bg-[#F45F00] rounded-full"></span>
+                        <span className="text-[#F45F00] font-medium">Unlimited projects (no limits!)</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 bg-[#F45F00] rounded-full"></span>
+                        <span className="text-[#F45F00] font-medium">Priority support</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 bg-[#F45F00] rounded-full"></span>
+                        <span className="text-[#F45F00] font-medium">Advanced analytics</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 bg-[#F45F00] rounded-full"></span>
+                        <span className="text-[#F45F00] font-medium">Custom integrations</span>
+                      </li>
+                    </>
+                  )}
                 </ul>
+                {isProUser && initialUser.subscription_period_end && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-xs text-muted-foreground">
+                      Renews on {new Date(initialUser.subscription_period_end).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              <div className="p-4 border border-dashed rounded-lg text-center">
-                <CreditCard className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-3">
-                  Premium features coming soon!
-                </p>
-                <Button variant="outline" disabled>
-                  Upgrade Plan (Coming Soon)
-                </Button>
-              </div>
+              {/* Action Buttons */}
+              {isFreeUser ? (
+                <div className="p-6 border-2 border-[#F45F00]/20 bg-gradient-to-br from-orange-50 to-white rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-6 h-6 text-[#F45F00]" />
+                    <h4 className="font-semibold text-lg">Upgrade to Pro</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Get unlimited projects, priority support, advanced analytics, and custom integrations for just $9.90/month.
+                  </p>
+                  {stripeError && (
+                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200 mb-4">
+                      {stripeError}
+                    </div>
+                  )}
+                  <Button
+                    onClick={() => createCheckoutSession(STRIPE_CONFIG.prices.pro_monthly)}
+                    disabled={stripeLoading}
+                    className="w-full bg-[#F45F00] hover:bg-[#d64f00] text-white transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    {stripeLoading ? 'Loading...' : 'Upgrade to Pro - $9.90/month'}
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-4 border border-gray-200 rounded-lg">
+                  <CreditCard className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-4 text-center">
+                    Manage your billing information, update payment methods, or cancel your subscription.
+                  </p>
+                  {stripeError && (
+                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200 mb-4">
+                      {stripeError}
+                    </div>
+                  )}
+                  <Button
+                    onClick={manageBilling}
+                    disabled={stripeLoading}
+                    variant="outline"
+                    className="w-full border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                  >
+                    {stripeLoading ? 'Loading...' : 'Manage Billing'}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

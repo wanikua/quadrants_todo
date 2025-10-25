@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { LogOut, Plus, Folder, Settings, Users } from "lucide-react"
+import { LogOut, Plus, Folder, Settings, Users, Crown, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -36,6 +36,13 @@ interface Project {
 export default function ProjectsPageClient({ initialProjects, user }: { initialProjects: Project[]; user: any }) {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>(initialProjects)
+
+  // Check if user is Pro
+  const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active'
+
+  // Count current projects by type
+  const personalProjectCount = projects.filter(p => p.type === 'personal').length
+  const teamProjectCount = projects.filter(p => p.type === 'team').length
   const [newProjectName, setNewProjectName] = useState("")
   const [newProjectDescription, setNewProjectDescription] = useState("")
   const [newProjectType, setNewProjectType] = useState<"personal" | "team">("personal")
@@ -72,10 +79,24 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
         }),
       })
 
-      if (!response.ok) throw new Error("Failed to create project")
+      const data = await response.json()
 
-      const newProject = await response.json()
-      setProjects([newProject, ...projects])
+      if (!response.ok) {
+        // Check if it's a limit error that requires upgrade
+        if (data.requiresUpgrade) {
+          toast.error(data.error, {
+            action: {
+              label: "Upgrade to Pro",
+              onClick: () => router.push("/dashboard")
+            }
+          })
+        } else {
+          toast.error(data.error || "Failed to create project")
+        }
+        return
+      }
+
+      setProjects([data, ...projects])
       setNewProjectName("")
       setNewProjectDescription("")
       setNewProjectType("personal")
@@ -149,12 +170,46 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
       </header>
 
       <div className="max-w-7xl mx-auto px-6 md:px-20 py-12">
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-black mb-2">My Projects</h1>
+            <h1 className="text-4xl font-bold text-black mb-2 flex items-center gap-3">
+              My Projects
+              {isPro && (
+                <Badge className="bg-[#F45F00] hover:bg-[#d64f00] text-white">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Pro
+                </Badge>
+              )}
+            </h1>
             <p className="text-[#575757]">Welcome back, {user?.name || user?.email}</p>
           </div>
         </div>
+
+        {/* Free plan limit banner */}
+        {!isPro && (personalProjectCount >= 1 || teamProjectCount >= 1) && (
+          <div className="mb-8 p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-orange-600" />
+                  <h3 className="font-semibold text-orange-900">You're on the Free Plan</h3>
+                </div>
+                <p className="text-sm text-orange-800 mb-3">
+                  You've used {personalProjectCount}/1 personal project{personalProjectCount !== 1 ? 's' : ''} and {teamProjectCount}/1 team project{teamProjectCount !== 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-orange-700">
+                  Upgrade to Pro for unlimited projects, priority support, and advanced features
+                </p>
+              </div>
+              <Link href="/dashboard">
+                <Button size="sm" className="bg-[#F45F00] hover:bg-[#d64f00] text-white ml-4">
+                  <Crown className="w-4 h-4 mr-1" />
+                  Upgrade to Pro
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         <div className="mb-12 flex gap-4">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -202,6 +257,30 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                       <SelectItem value="team">Team Project</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  {/* Project limits info for free users */}
+                  {!isPro && (
+                    <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                      <p className="text-xs text-orange-800 font-medium mb-1">Free Plan Limits:</p>
+                      <div className="space-y-1 text-xs text-orange-700">
+                        <div className="flex items-center justify-between">
+                          <span>Personal projects:</span>
+                          <span className={personalProjectCount >= 1 ? "font-bold text-orange-900" : ""}>
+                            {personalProjectCount}/1
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Team projects:</span>
+                          <span className={teamProjectCount >= 1 ? "font-bold text-orange-900" : ""}>
+                            {teamProjectCount}/1
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-orange-600 mt-2">
+                        Upgrade to Pro for unlimited projects
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <Button type="submit" className="w-full bg-[#F45F00] hover:bg-[#d64f00] text-white transition-all duration-200 font-medium shadow-sm hover:shadow-md" disabled={isCreating}>
                   {isCreating ? "Creating..." : "Create Project"}

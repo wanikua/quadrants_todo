@@ -15,6 +15,11 @@ export interface User {
   email: string
   name: string
   created_at: string
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+  subscription_status?: string | null
+  subscription_plan?: string | null
+  subscription_period_end?: string | null
 }
 
 export interface AuthSession {
@@ -98,19 +103,43 @@ export async function getCurrentUser(): Promise<User | null> {
           defaultName = 'User'
         }
 
-        // Try to get user's custom name from database
+        // Try to get user's custom name and subscription data from database
         let name = defaultName
+        let subscriptionData = {
+          stripe_customer_id: null as string | null,
+          stripe_subscription_id: null as string | null,
+          subscription_status: null as string | null,
+          subscription_plan: null as string | null,
+          subscription_period_end: null as string | null,
+        }
+
         if (sql) {
           try {
             // First, check if user exists in database by Clerk userId
             const dbResult = await sql`
-              SELECT name FROM users WHERE id = ${userId} LIMIT 1
+              SELECT
+                name,
+                stripe_customer_id,
+                stripe_subscription_id,
+                subscription_status,
+                subscription_plan,
+                subscription_period_end
+              FROM users
+              WHERE id = ${userId}
+              LIMIT 1
             `
 
             if (dbResult.length > 0) {
-              // User exists with Clerk ID, use their custom name if set
+              // User exists with Clerk ID, use their custom name and subscription data
               if (dbResult[0].name) {
                 name = dbResult[0].name
+              }
+              subscriptionData = {
+                stripe_customer_id: dbResult[0].stripe_customer_id || null,
+                stripe_subscription_id: dbResult[0].stripe_subscription_id || null,
+                subscription_status: dbResult[0].subscription_status || null,
+                subscription_plan: dbResult[0].subscription_plan || null,
+                subscription_period_end: dbResult[0].subscription_period_end || null,
               }
             } else {
               // Check if user exists by email (may be from old JWT auth)
@@ -156,6 +185,7 @@ export async function getCurrentUser(): Promise<User | null> {
           email,
           name,
           created_at: new Date(clerkUser.createdAt).toISOString(),
+          ...subscriptionData,
         }
       }
     }
@@ -177,7 +207,16 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     const result = await sql`
-      SELECT id, email, name, created_at
+      SELECT
+        id,
+        email,
+        name,
+        created_at,
+        stripe_customer_id,
+        stripe_subscription_id,
+        subscription_status,
+        subscription_plan,
+        subscription_period_end
       FROM users
       WHERE id = ${payload.userId}
       LIMIT 1

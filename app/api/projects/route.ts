@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
-import { getUserId } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth"
 import { createProject } from "@/app/db/actions"
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserId()
-    if (!userId) {
+    const user = await requireAuth()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -15,6 +15,36 @@ export async function POST(request: NextRequest) {
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 })
+    }
+
+    // Check project limits for free users
+    const isPro = user.subscription_plan === 'pro' && user.subscription_status === 'active'
+
+    if (!isPro) {
+      // Count existing projects by type
+      const projectCounts = await sql`
+        SELECT
+          COUNT(*) FILTER (WHERE type = 'personal') as personal_count,
+          COUNT(*) FILTER (WHERE type = 'team') as team_count
+        FROM projects
+        WHERE owner_id = ${user.id}
+      `
+
+      const { personal_count, team_count } = projectCounts[0]
+
+      if (type === 'personal' && parseInt(personal_count) >= 1) {
+        return NextResponse.json({
+          error: "Free users can only create 1 personal project. Upgrade to Pro for unlimited projects.",
+          requiresUpgrade: true
+        }, { status: 403 })
+      }
+
+      if (type === 'team' && parseInt(team_count) >= 1) {
+        return NextResponse.json({
+          error: "Free users can only create 1 team project. Upgrade to Pro for unlimited projects.",
+          requiresUpgrade: true
+        }, { status: 403 })
+      }
     }
 
     // Use the proper createProject function that handles members and players
@@ -38,10 +68,12 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserId()
-    if (!userId) {
+    const user = await requireAuth()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const userId = user.id
 
     // Get all projects where user is owner or member
     const projects = await sql`
