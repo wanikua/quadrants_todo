@@ -122,14 +122,16 @@ export function QuadrantMatrix({
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Help
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAddingPlayer(true)}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Add Player
-              </Button>
+              {project.type === 'team' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddingPlayer(true)}
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Add Player
+                </Button>
+              )}
               <Button
                 size="sm"
                 onClick={() => setIsAddingTask(true)}
@@ -142,8 +144,8 @@ export function QuadrantMatrix({
         </CardHeader>
       </Card>
 
-      {/* Players Section */}
-      {players.length > 0 && (
+      {/* Players Section - Only show for team projects */}
+      {project.type === 'team' && players.length > 0 && (
         <Card className="mb-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Team Members</CardTitle>
@@ -305,7 +307,7 @@ export function QuadrantMatrix({
               </div>
             </div>
 
-            {players.length > 0 && (
+            {project.type === 'team' && players.length > 0 && (
               <div>
                 <Label>Assign to Players</Label>
                 <div className="flex flex-wrap gap-2 mt-2">

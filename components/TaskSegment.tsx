@@ -16,8 +16,8 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
     return name.charAt(0).toUpperCase()
   }
 
-  // Personal task - no players assigned, show empty circle (no initials)
-  if (assignedPlayers.length === 0) {
+  // Personal project - always show empty circle without initials
+  if (projectType === "personal") {
     return (
       <div
         className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-primary bg-primary/10"
@@ -27,7 +27,23 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
         }}
         title={`${task.description} - Personal Task`}
       >
-        {/* Empty circle for personal tasks */}
+        {/* Empty circle for personal project tasks */}
+      </div>
+    )
+  }
+
+  // Team project with no assignees - show empty circle
+  if (assignedPlayers.length === 0) {
+    return (
+      <div
+        className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-gray-300 bg-gray-100"
+        style={{
+          width: size,
+          height: size,
+        }}
+        title={`${task.description} - Unassigned`}
+      >
+        {/* Empty circle for unassigned team tasks */}
       </div>
     )
   }
