@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, LogOut, Settings } from "lucide-react"
+import { Copy, Check, LogOut, Settings, Home, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 
@@ -53,56 +53,59 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/projects")}
-                title="Back to Projects"
-                className="p-0 h-auto hover:bg-transparent"
-              >
-                <Image
-                  src="/Original Logo Symbol.png"
-                  alt="Home"
-                  width={64}
-                  height={64}
-                  className="w-16 h-16 object-contain"
-                />
-              </Button>
-            </div>
-            <div className="flex items-center space-x-2">
-              {project.type === "team" && project.invite_code && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyInviteCode}
-                  className="flex items-center bg-transparent"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Invite Code
-                    </>
-                  )}
-                </Button>
-              )}
+        <div className="p-2 sm:p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-between items-center h-14">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => router.push("/dashboard")}
-                title="Settings"
+                onClick={() => router.push("/projects")}
+                title="Back to Projects"
+                className="p-2 -ml-2 text-black hover:text-[#F45F00] hover:bg-[#F45F00]/5 transition-all duration-200"
               >
-                <Settings className="w-4 h-4" />
+                <Home className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleSignOut} title="Sign Out">
-                <LogOut className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-2 -mr-2">
+                {project.type === "team" && project.invite_code && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyInviteCode}
+                    className="flex items-center border-gray-200"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Invite Code</span>
+                        <span className="sm:hidden">Invite</span>
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push("/dashboard")}
+                  title="Account Settings"
+                  className="text-black hover:text-[#F45F00] p-2"
+                >
+                  <User className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  title="Sign Out"
+                  className="text-black hover:text-[#F45F00] p-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

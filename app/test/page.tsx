@@ -40,7 +40,7 @@ export default function TestPage() {
           </div>
           
           <div className="text-sm text-gray-600">
-            <p>当前值: "{inputValue}"</p>
+            <p>当前值: &quot;{inputValue}&quot;</p>
             <p>提交次数: {submitCount}</p>
           </div>
           

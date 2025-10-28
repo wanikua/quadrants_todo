@@ -315,6 +315,11 @@ export async function deleteTask(taskId: number) {
   }
 }
 
+export async function completeTask(taskId: number) {
+  // Complete task has the same effect as delete - remove from map
+  return await deleteTask(taskId)
+}
+
 // Player actions
 export async function updatePlayer(playerId: number, name: string, color: string) {
   const userId = await getUserId()

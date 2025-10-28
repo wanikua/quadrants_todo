@@ -88,8 +88,8 @@ export async function removeAuthCookie() {
 export async function getCurrentUser(): Promise<User | null> {
   // Try Clerk authentication first
   try {
-    const { userId } = await auth()
-    if (userId) {
+    const { userId: clerkUserId } = await auth()
+    if (clerkUserId) {
       const clerkUser = await currentUser()
       if (clerkUser) {
         const email = clerkUser.emailAddresses[0]?.emailAddress || ''
@@ -105,6 +105,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
         // Try to get user's custom name and subscription data from database
         let name = defaultName
+        let userId = clerkUserId // Use mutable variable for potential ID override
         let subscriptionData = {
           stripe_customer_id: null as string | null,
           stripe_subscription_id: null as string | null,
@@ -144,30 +145,50 @@ export async function getCurrentUser(): Promise<User | null> {
             } else {
               // Check if user exists by email (may be from old JWT auth)
               const emailResult = await sql`
-                SELECT id, name FROM users WHERE email = ${email} LIMIT 1
+                SELECT
+                  id,
+                  name,
+                  stripe_customer_id,
+                  stripe_subscription_id,
+                  subscription_status,
+                  subscription_plan,
+                  subscription_period_end
+                FROM users
+                WHERE email = ${email}
+                LIMIT 1
               `
 
               if (emailResult.length > 0) {
-                // User exists with same email but different ID, update the ID to Clerk's
+                // User exists with old ID - keep the old ID to avoid foreign key issues
+                // Just mark them as a Clerk user by updating password_hash
                 try {
                   await sql`
                     UPDATE users
-                    SET id = ${userId}, password_hash = '__clerk_user__', updated_at = NOW()
+                    SET password_hash = '__clerk_user__', updated_at = NOW()
                     WHERE email = ${email}
                   `
-                  // Use their existing name
+                  // Use their existing ID and data
+                  userId = emailResult[0].id
                   if (emailResult[0].name) {
                     name = emailResult[0].name
                   }
+                  subscriptionData = {
+                    stripe_customer_id: emailResult[0].stripe_customer_id || null,
+                    stripe_subscription_id: emailResult[0].stripe_subscription_id || null,
+                    subscription_status: emailResult[0].subscription_status || null,
+                    subscription_plan: emailResult[0].subscription_plan || null,
+                    subscription_period_end: emailResult[0].subscription_period_end || null,
+                  }
+                  console.log(`Migrated user ${email} from JWT to Clerk (kept existing ID: ${userId})`)
                 } catch (updateError) {
-                  console.log("Failed to update user ID:", updateError)
+                  console.log("Failed to migrate user to Clerk:", updateError)
                 }
               } else {
-                // User doesn't exist at all, create new record
+                // User doesn't exist at all, create new record with Clerk ID
                 try {
                   await sql`
                     INSERT INTO users (id, email, password_hash, name, created_at)
-                    VALUES (${userId}, ${email}, '__clerk_user__', ${defaultName}, NOW())
+                    VALUES (${clerkUserId}, ${email}, '__clerk_user__', ${defaultName}, NOW())
                     ON CONFLICT (id) DO NOTHING
                   `
                 } catch (insertError) {

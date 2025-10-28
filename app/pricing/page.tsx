@@ -1,200 +1,177 @@
-"use client"
-
-import { useState } from "react"
-import { Check } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "sonner"
-
-const plans = [
-  {
-    name: "Free",
-    price: "$0",
-    description: "Perfect for individuals getting started",
-    features: [
-      "1 project",
-      "Unlimited tasks",
-      "Basic support",
-      "Mobile app access",
-    ],
-    cta: "Current Plan",
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    price: "$12",
-    priceYearly: "$120",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO_MONTHLY || "",
-    priceIdYearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO_YEARLY || "",
-    description: "For professionals managing multiple projects",
-    features: [
-      "10 projects",
-      "Unlimited tasks",
-      "Up to 5 team members",
-      "Priority support",
-      "Export data",
-      "Advanced analytics",
-    ],
-    cta: "Upgrade to Pro",
-    highlighted: true,
-  },
-  {
-    name: "Team",
-    price: "$29",
-    priceYearly: "$290",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TEAM_MONTHLY || "",
-    priceIdYearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TEAM_YEARLY || "",
-    description: "For teams that need unlimited everything",
-    features: [
-      "Unlimited projects",
-      "Unlimited tasks",
-      "Unlimited team members",
-      "24/7 support",
-      "Advanced analytics",
-      "Custom integrations",
-      "API access",
-    ],
-    cta: "Upgrade to Team",
-    highlighted: false,
-  },
-]
+import { Check } from "lucide-react"
 
 export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
-  const [loading, setLoading] = useState<string | null>(null)
-
-  const handleSubscribe = async (priceId?: string, priceIdYearly?: string) => {
-    if (!priceId) {
-      toast.error("Please sign in to subscribe")
-      return
-    }
-
-    const selectedPriceId = billingCycle === "yearly" ? priceIdYearly : priceId
-
-    setLoading(selectedPriceId || "")
-
-    try {
-      const response = await fetch("/api/stripe/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ priceId: selectedPriceId }),
-      })
-
-      const data = await response.json()
-
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        toast.error("Failed to create checkout session")
-      }
-    } catch (error) {
-      console.error("Error:", error)
-      toast.error("Something went wrong")
-    } finally {
-      setLoading(null)
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 py-16 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Choose the perfect plan for your team
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Start for free, upgrade when you need more
-          </p>
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Grid Pattern */}
+      <div className="fixed inset-0 grid-pattern pointer-events-none z-0"></div>
 
-          {/* Billing cycle toggle */}
-          <div className="inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-            <button
-              className={`px-6 py-2 rounded-md transition-all ${
-                billingCycle === "monthly"
-                  ? "bg-white dark:bg-gray-700 shadow-sm"
-                  : "text-gray-600 dark:text-gray-400"
-              }`}
-              onClick={() => setBillingCycle("monthly")}
-            >
-              Monthly
-            </button>
-            <button
-              className={`px-6 py-2 rounded-md transition-all ${
-                billingCycle === "yearly"
-                  ? "bg-white dark:bg-gray-700 shadow-sm"
-                  : "text-gray-600 dark:text-gray-400"
-              }`}
-              onClick={() => setBillingCycle("yearly")}
-            >
-              Yearly
-              <span className="ml-2 text-sm text-green-600 dark:text-green-400">Save 17%</span>
-            </button>
+      {/* Soft Gradient Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute -top-1/2 -left-1/4 w-[800px] h-[800px] bg-gradient-to-br from-purple-200/40 via-pink-200/40 to-transparent rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute top-1/4 -right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-blue-200/40 via-purple-200/40 to-transparent rounded-full blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-xl z-50 border-b-[3px] border-black/10">
+        <div className="w-full px-[4%] md:px-[10%]">
+          <div className="h-24 flex items-center justify-between">
+            <Link href="/" className="flex items-center group">
+              <Image
+                src="/Original Logo Symbol.png"
+                alt="Logo"
+                width={70}
+                height={70}
+                className="w-[70px] h-[70px] object-contain transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:rotate-3"
+              />
+            </Link>
+            <nav className="flex items-center gap-3 md:gap-4">
+              <Link href="/sign-in">
+                <Button variant="ghost" className="text-black hover:text-gray-600 hover:bg-gray-100/50 transition-all duration-[600ms] font-bold text-base md:text-lg px-4 md:px-6 rounded-[15px]">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/sign-up">
+                <Button className="bg-black hover:bg-gray-800 text-white transition-all duration-[600ms] font-bold shadow-lg hover:shadow-2xl px-6 md:px-8 py-3 md:py-4 rounded-[15px] md:rounded-[20px] hover:scale-[1.05] text-base md:text-lg">
+                  Get Started
+                </Button>
+              </Link>
+            </nav>
           </div>
         </div>
+      </header>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={`relative ${plan.highlighted ? "border-2 border-blue-500 shadow-xl" : ""}`}
-            >
-              {plan.highlighted && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                    Most Popular
-                  </span>
+      {/* Main Content */}
+      <main className="pt-48 pb-32 px-[4%] md:px-[10%] relative z-10">
+        <div className="max-w-6xl mx-auto">
+          {/* Hero Section */}
+          <div className="text-center mb-24">
+            <h1 className="text-5xl md:text-7xl font-bold text-black leading-[1.1] mb-8">
+              Simple, <span className="text-highlight-yellow">Transparent Pricing</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Start free. Upgrade when you&apos;re ready.
+            </p>
+          </div>
+
+          {/* Promo Code Notice */}
+          <div className="text-center mb-8">
+            <p className="text-lg text-gray-600 font-medium">
+              Have a promo code? You can enter it on the payment page
+            </p>
+          </div>
+
+          {/* Pricing Cards */}
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Plan */}
+            <div className="bg-white border-[3px] border-black rounded-[20px] p-10 hover:shadow-2xl transition-all duration-[600ms] hover:-translate-y-2">
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-3xl font-bold text-black mb-3">Free</h3>
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-6xl font-bold text-black">$0</span>
+                    <span className="text-gray-600 text-xl">/month</span>
+                  </div>
+                  <p className="text-gray-600 text-lg">Perfect for getting started</p>
                 </div>
-              )}
 
-              <CardHeader>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-              </CardHeader>
-
-              <CardContent>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">
-                    {billingCycle === "yearly" && plan.priceYearly ? plan.priceYearly : plan.price}
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    /{billingCycle === "yearly" ? "year" : "month"}
-                  </span>
-                </div>
-
-                <ul className="space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start">
-                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                    </li>
-                  ))}
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
+                    <span className="text-gray-700 text-lg">Up to 3 projects</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
+                    <span className="text-gray-700 text-lg">Unlimited tasks</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
+                    <span className="text-gray-700 text-lg">Basic collaboration</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
+                    <span className="text-gray-700 text-lg">Mobile access</span>
+                  </li>
                 </ul>
-              </CardContent>
 
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  variant={plan.highlighted ? "default" : "outline"}
-                  disabled={!plan.priceId || loading === plan.priceId || loading === plan.priceIdYearly}
-                  onClick={() => handleSubscribe(plan.priceId, plan.priceIdYearly)}
-                >
-                  {loading === plan.priceId || loading === plan.priceIdYearly
-                    ? "Loading..."
-                    : plan.cta}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                <Link href="/sign-up" className="block">
+                  <Button className="w-full bg-white border-[3px] border-black text-black hover:bg-black hover:text-white transition-all duration-[600ms] font-bold py-6 text-lg rounded-[15px]">
+                    Start Free
+                  </Button>
+                </Link>
+              </div>
+            </div>
 
-        <div className="mt-16 text-center">
-          <p className="text-gray-600 dark:text-gray-400">
-            All plans include 14-day money-back guarantee
-          </p>
+            {/* Pro Plan */}
+            <div className="bg-black text-white border-[3px] border-black rounded-[20px] p-10 hover:shadow-2xl transition-all duration-[600ms] hover:-translate-y-2 relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black px-6 py-2 rounded-full font-bold text-sm">
+                POPULAR
+              </div>
+
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-3xl font-bold mb-3">Pro</h3>
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-6xl font-bold">$9.9</span>
+                    <span className="text-gray-300 text-xl">/month</span>
+                  </div>
+                  <p className="text-gray-300 text-lg">For power users</p>
+                </div>
+
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Unlimited projects</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Unlimited tasks</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Advanced collaboration</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Priority support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Custom themes</span>
+                  </li>
+                </ul>
+
+                <Link href="/sign-up" className="block">
+                  <Button className="w-full bg-white text-black hover:bg-gray-100 transition-all duration-[600ms] font-bold py-6 text-lg rounded-[15px]">
+                    Get Pro
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t-[3px] border-black mt-48 bg-white relative">
+        <div className="px-[4%] md:px-[10%] py-16">
+          <div className="flex flex-col items-center gap-6">
+            <Link href="/" className="inline-block group">
+              <Image
+                src="/Original Logo Symbol.png"
+                alt="Logo"
+                width={60}
+                height={60}
+                className="w-[60px] h-[60px] object-contain transition-transform duration-500 group-hover:scale-110"
+              />
+            </Link>
+            <p className="text-base font-bold text-black">© 2025 Quadrants. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

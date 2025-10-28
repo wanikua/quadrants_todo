@@ -18,6 +18,7 @@ export interface Task {
   description: string
   urgency: number
   importance: number
+  completed?: boolean
   created_at?: string | Date
   updated_at?: string | Date
   assignees?: Player[]

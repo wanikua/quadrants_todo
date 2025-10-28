@@ -137,7 +137,7 @@ export default function PromoCodePage() {
                 onChange={(e) => setUserId(e.target.value)}
               />
               <p className="text-xs text-gray-500 mt-1">
-                For now, use any unique ID (e.g., "test-user-123")
+                For now, use any unique ID (e.g., &quot;test-user-123&quot;)
               </p>
             </div>
           </CardContent>

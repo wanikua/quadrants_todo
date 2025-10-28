@@ -27,6 +27,7 @@ export const tasks = pgTable('tasks', {
   description: text('description').notNull(),
   urgency: integer('urgency').notNull(),
   importance: integer('importance').notNull(),
+  completed: boolean('completed').notNull().default(false),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 })

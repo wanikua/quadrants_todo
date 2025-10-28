@@ -5,20 +5,12 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-09-30.clover',
   typescript: true,
 })
 
-// Stripe pricing configuration
-export const STRIPE_CONFIG = {
-  // Replace with your actual Price IDs from Stripe Dashboard
-  prices: {
-    pro_monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_xxx',
-    pro_yearly: process.env.STRIPE_PRICE_PRO_YEARLY || 'price_xxx',
-  },
-  // Webhook secret for signature verification
-  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
-}
+// Webhook secret for signature verification (server-side only)
+export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
 
 // Helper function to create checkout session
 export async function createCheckoutSession({
@@ -47,6 +39,7 @@ export async function createCheckoutSession({
     cancel_url: cancelUrl,
     customer_email: userEmail,
     client_reference_id: userId,
+    allow_promotion_codes: true, // Enable Stripe promo codes
     metadata: {
       userId,
     },

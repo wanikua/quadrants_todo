@@ -29,16 +29,12 @@ export function useStripe() {
         throw new Error(data.error || 'Failed to create checkout session')
       }
 
-      const { sessionId, url } = await response.json()
+      const { url } = await response.json()
 
       if (url) {
         window.location.href = url
       } else {
-        const stripe = await stripePromise
-        if (!stripe) {
-          throw new Error('Stripe failed to load')
-        }
-        await stripe.redirectToCheckout({ sessionId })
+        throw new Error('No checkout URL returned from server')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')

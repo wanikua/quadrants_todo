@@ -37,7 +37,7 @@ export function DatabaseConfigWarning() {
               Use Local Mode
             </Button>
             <Button onClick={() => window.location.reload()} className="flex-1">
-              I've Added Database URL
+              I&apos;ve Added Database URL
             </Button>
           </div>
         </CardContent>

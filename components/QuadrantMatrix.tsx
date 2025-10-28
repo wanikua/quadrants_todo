@@ -1,17 +1,16 @@
 'use client'
 
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Edit, Trash2, Users, HelpCircle, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Plus, Users, HelpCircle } from 'lucide-react'
 import TaskSegment from './TaskSegment'
-import { Task, Player, TaskWithAssignees, Line, Project } from '@/app/types'
+import { Task, Player, Line, Project } from '@/app/types'
 
 interface QuadrantMatrixProps {
   project: Project

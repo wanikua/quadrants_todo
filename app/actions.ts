@@ -3,6 +3,7 @@
 import { requireAuth } from "@/lib/auth"
 import { db } from "@/lib/database"
 import { revalidatePath } from "next/cache"
+import type { Task } from "@/app/types"
 
 export async function createTaskAction(projectId: string, title: string, quadrant: string) {
   try {
@@ -21,9 +22,9 @@ export async function createTaskAction(projectId: string, title: string, quadran
   }
 }
 
-export async function updateTaskAction(taskId: string, updates: any) {
+export async function updateTaskAction(taskId: string, updates: Partial<Task>) {
   try {
-    const user = await requireAuth()
+    await requireAuth() // Verify authentication
     await db.updateTask(taskId, updates)
     return { success: true }
   } catch (error) {
@@ -34,7 +35,7 @@ export async function updateTaskAction(taskId: string, updates: any) {
 
 export async function deleteTaskAction(taskId: string) {
   try {
-    const user = await requireAuth()
+    await requireAuth() // Verify authentication
     await db.deleteTask(taskId)
     return { success: true }
   } catch (error) {
@@ -61,7 +62,7 @@ export async function createProjectAction(name: string, description?: string) {
 
 export async function createPlayerAction(name: string) {
   try {
-    const user = await requireAuth()
+    await requireAuth() // Verify authentication
     // Implement player creation logic if needed
     return { success: true }
   } catch (error) {

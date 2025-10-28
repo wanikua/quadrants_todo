@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createCheckoutSession, STRIPE_CONFIG } from '@/lib/stripe'
+import { createCheckoutSession } from '@/lib/stripe'
+import { STRIPE_CONFIG } from '@/lib/stripe-config'
 import { requireAuth } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {

@@ -17,7 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 })
     }
 
-    const url = await createCheckoutSession(user.id, user.email, priceId)
+    const session = await createCheckoutSession({
+      priceId,
+      userId: user.id,
+      userEmail: user.email,
+      successUrl: `${request.nextUrl.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${request.nextUrl.origin}/pricing`,
+    })
+
+    const url = session.url
 
     return NextResponse.json({ url })
   } catch (error) {
