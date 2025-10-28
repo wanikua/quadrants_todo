@@ -3,12 +3,12 @@
 import { useState, useCallback, useMemo } from "react"
 import type { TaskWithAssignees, Player, Line, Project } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
-import { createTask, deleteTask, updateTask as updateTaskAction } from "@/app/db/actions"
+import { createTask, deleteTask, updateTask as updateTaskAction, createPlayer, deletePlayer } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map, List, Trash2, Settings, Filter, X, Users, Plus, Link as LinkIcon, ChevronDown } from "lucide-react"
+import { Map, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -16,9 +16,26 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import TaskSegment from "@/components/TaskSegment"
+import { toast } from "sonner"
 
 interface QuadrantTodoClientProps {
   initialTasks: TaskWithAssignees[]
@@ -46,17 +63,30 @@ export default function QuadrantTodoClient({
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null)
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [isSettingsPopoverOpen, setIsSettingsPopoverOpen] = useState(false)
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
+  const [newPlayerData, setNewPlayerData] = useState({
+    name: "",
+    color: "#3b82f6", // Default blue color
+  })
+
+  const isMobile = false // For responsive layout adjustments
+
+  // Find current user's player for default task assignment
+  const currentUserPlayer = useMemo(() => {
+    if (!userName) return null
+    return initialPlayers.find(p => p.name === userName)
+  }, [userName, initialPlayers])
+
+  // Initialize task data with current user as default assignee
   const [newTaskData, setNewTaskData] = useState({
     description: "",
     urgency: 50,
     importance: 50,
-    assigneeIds: [] as number[],
+    assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [] as number[],
   })
-
-  const isMobile = false // You can add proper mobile detection if needed
 
   // Filter and sort tasks
   const filteredAndSortedTasks = useMemo(() => {
@@ -81,6 +111,18 @@ export default function QuadrantTodoClient({
     })
   }, [initialTasks, selectedPlayerFilter])
 
+  // Get highest priority task ID
+  const highestPriorityTaskId = useMemo(() => {
+    if (initialTasks.length === 0) return null
+    const sorted = [...initialTasks].sort((a, b) => {
+      if (a.importance !== b.importance) {
+        return b.importance - a.importance
+      }
+      return b.urgency - a.urgency
+    })
+    return sorted[0]?.id || null
+  }, [initialTasks])
+
   const getQuadrantLabel = useCallback((urgency: number, importance: number): string => {
     if (urgency >= 50 && importance >= 50) return "Important & Urgent"
     if (urgency < 50 && importance >= 50) return "Important & Not Urgent"
@@ -96,7 +138,12 @@ export default function QuadrantTodoClient({
   }
 
   const handleLongPress = async (urgency: number, importance: number) => {
-    setNewTaskData({ ...newTaskData, urgency, importance })
+    setNewTaskData({
+      ...newTaskData,
+      urgency,
+      importance,
+      assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
+    })
     setIsAddTaskOpen(true)
   }
 
@@ -128,19 +175,74 @@ export default function QuadrantTodoClient({
       newTaskData.importance,
       newTaskData.assigneeIds
     )
+    // Reset to default with current user pre-selected for team projects
     setNewTaskData({
       description: "",
       urgency: 50,
       importance: 50,
-      assigneeIds: [],
+      assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
     })
     setIsAddTaskOpen(false)
   }
 
   const handleDrawingToggle = () => {
     setIsDrawingLine(!isDrawingLine)
-    setIsSettingsPopoverOpen(false)
-    setIsSettingsOpen(false)
+  }
+
+  const handleDeleteProject = async () => {
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        toast.error(data.error || "Failed to delete project")
+        return
+      }
+
+      toast.success("Project deleted successfully")
+      setDeleteDialogOpen(false)
+      router.push("/projects")
+      router.refresh()
+    } catch (error) {
+      toast.error("Failed to delete project")
+      console.error(error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleCreatePlayer = async () => {
+    if (!newPlayerData.name.trim()) {
+      toast.error("Please enter a player name")
+      return
+    }
+
+    const result = await createPlayer(projectId, newPlayerData.name, newPlayerData.color)
+    if (result.success) {
+      toast.success("Player created successfully")
+      setNewPlayerData({ name: "", color: "#3b82f6" })
+      router.refresh()
+    } else {
+      toast.error(result.error || "Failed to create player")
+    }
+  }
+
+  const handleDeletePlayer = async (playerId: number, playerName: string) => {
+    if (!confirm(`Are you sure you want to delete ${playerName}? This will unassign them from all tasks.`)) {
+      return
+    }
+
+    const result = await deletePlayer(playerId)
+    if (result.success) {
+      toast.success("Player deleted successfully")
+      router.refresh()
+    } else {
+      toast.error(result.error || "Failed to delete player")
+    }
   }
 
   return (
@@ -148,74 +250,61 @@ export default function QuadrantTodoClient({
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{projectName || "Task Manager"}</h1>
-            {isOfflineMode && (
+          {isOfflineMode && (
+            <div className="flex items-center gap-2 sm:gap-4">
               <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
                 Offline Mode
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
 
-          {/* Desktop Settings Popover */}
-          {!isMobile && (
-            <Popover open={isSettingsPopoverOpen} onOpenChange={setIsSettingsPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                  <ChevronDown className="w-4 h-4 ml-2" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-96 p-0" align="end">
-                <div className="bg-primary/5 p-4 border-b">
-                  <h3 className="font-semibold text-lg">Settings & Actions</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Manage your team and tasks</p>
-                </div>
+        {/* Project Header with Settings */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{projectName}</h1>
 
-                <div className="p-4 space-y-4">
-                  {/* Quick Actions */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-3 flex items-center">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Quick Actions
-                    </h4>
-                    <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Task
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
-                  </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Settings</DropdownMenuLabel>
+              <div className="px-2 py-1 text-xs text-muted-foreground">Manage your team and tasks</div>
 
-                  {/* Tools */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-3 flex items-center">
-                      <LinkIcon className="w-4 h-4 mr-2" />
-                      Add Dependency
-                    </h4>
-                    <Button
-                      variant={isDrawingLine ? "default" : "outline"}
-                      size="sm"
-                      onClick={handleDrawingToggle}
-                      className="w-full justify-start"
-                    >
-                      <LinkIcon className="w-4 h-4 mr-2" />
-                      {isDrawingLine ? "Cancel Connection" : "Connect Tasks"}
-                    </Button>
-                  </div>
+              <DropdownMenuSeparator />
 
-                  {/* Filter */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-3 flex items-center">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter by Player
-                    </h4>
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Quick Actions</DropdownMenuLabel>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                // Reset task data with default assignee before opening dialog
+                setNewTaskData({
+                  description: "",
+                  urgency: 50,
+                  importance: 50,
+                  assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
+                })
+                setIsAddTaskOpen(true)
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Task
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={handleDrawingToggle}>
+                <LinkIcon className="h-4 w-4 mr-2" />
+                {isDrawingLine ? "Cancel Connection" : "Connect Tasks"}
+              </DropdownMenuItem>
+
+              {projectType === "team" && (
+                <>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
+                  <div className="px-2 py-2">
                     <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Filter by player" />
+                        <SelectValue placeholder="All Tasks" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Tasks</SelectItem>
@@ -231,53 +320,38 @@ export default function QuadrantTodoClient({
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
 
-          {/* Mobile Settings Sheet */}
-          {isMobile && (
-            <Sheet open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="lg" className="w-full">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-auto max-h-[80vh]">
-                <SheetHeader>
-                  <SheetTitle>Settings & Actions</SheetTitle>
-                </SheetHeader>
-                <div className="space-y-4 mt-4">
-                  <Button onClick={() => { setIsAddTaskOpen(true); setIsSettingsOpen(false) }} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Task
-                  </Button>
-                  <Button
-                    variant={isDrawingLine ? "default" : "outline"}
-                    onClick={handleDrawingToggle}
-                    className="w-full"
-                  >
-                    <LinkIcon className="w-4 h-4 mr-2" />
-                    {isDrawingLine ? "Cancel Connection" : "Connect Tasks"}
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Manage Players</DropdownMenuLabel>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
+                    <Users className="h-4 w-4 mr-2" />
+                    View & Manage Players
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+                </>
+              )}
+
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Tabs for Map/List View */}
         <Tabs defaultValue="map" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-12 sm:h-10">
-            <TabsTrigger value="map" className="flex items-center gap-2">
-              <Map className="w-4 h-4" />
-              Map View
+            <TabsTrigger value="map" className="flex items-center justify-center">
+              <Map className="w-5 h-5" />
             </TabsTrigger>
-            <TabsTrigger value="list" className="flex items-center gap-2">
-              <List className="w-4 h-4" />
-              List View
+            <TabsTrigger value="list" className="flex items-center justify-center">
+              <List className="w-5 h-5" />
             </TabsTrigger>
           </TabsList>
 
@@ -317,6 +391,7 @@ export default function QuadrantTodoClient({
               onLongPress={handleLongPress}
               userName={userName}
               projectType={projectType}
+              highestPriorityTaskId={highestPriorityTaskId}
             />
           </TabsContent>
 
@@ -324,55 +399,31 @@ export default function QuadrantTodoClient({
           <TabsContent value="list" className="mt-4 sm:mt-6">
             <Card>
               <CardHeader className="px-4 sm:px-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle className="text-lg sm:text-xl">Tasks by Priority</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-muted-foreground" />
-                    <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filter by player" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Tasks</SelectItem>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {initialPlayers.map((player) => (
-                          <SelectItem key={player.id} value={player.id.toString()}>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                              {player.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {selectedPlayerFilter !== "all" && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Showing {filteredAndSortedTasks.length} of {initialTasks.length} tasks
-                    {selectedPlayerFilter === "unassigned"
-                      ? " (unassigned)"
-                      : ` (${initialPlayers.find(p => p.id.toString() === selectedPlayerFilter)?.name})`}
-                  </div>
-                )}
+                <CardTitle className="text-lg sm:text-xl">Tasks by Priority</CardTitle>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <div className="space-y-3">
                   {filteredAndSortedTasks.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
-                      {selectedPlayerFilter !== "all"
-                        ? `No tasks found for ${selectedPlayerFilter === "unassigned" ? "unassigned" : initialPlayers.find(p => p.id.toString() === selectedPlayerFilter)?.name}`
-                        : "No tasks yet. Create your first task!"}
+                      No tasks yet. Create your first task!
                     </p>
                   ) : (
                     filteredAndSortedTasks.map((task) => (
                       <div
                         key={task.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-accent cursor-pointer gap-3 sm:gap-4"
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-accent cursor-pointer gap-3 sm:gap-4 transition-all ${
+                          task.id === highestPriorityTaskId ? 'border-yellow-400 border-2 bg-yellow-50 shadow-lg' : ''
+                        }`}
                         onClick={() => handleTaskDetailClick(task)}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
-                          <TaskSegment task={task} size={isMobile ? 28 : 32} userName={userName} projectType={projectType} />
+                          <TaskSegment
+                            task={task}
+                            size={isMobile ? 28 : 32}
+                            userName={userName}
+                            projectType={projectType}
+                            isHighestPriority={task.id === highestPriorityTaskId}
+                          />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm sm:text-base truncate">{task.description}</p>
                             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-1">
@@ -518,6 +569,122 @@ export default function QuadrantTodoClient({
             onDeleteComment={async () => {}}
           />
         )}
+
+        {/* Manage Players Dialog */}
+        <Dialog open={isManagePlayersOpen} onOpenChange={setIsManagePlayersOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Manage Players</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Current Players List */}
+              <div>
+                <Label className="text-sm font-medium">Current Players ({initialPlayers.length})</Label>
+                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                  {initialPlayers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No players yet</p>
+                  ) : (
+                    initialPlayers.map((player) => (
+                      <div key={player.id} className="flex items-center justify-between p-2 border rounded-lg hover:bg-accent">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full border-2 border-white shadow" style={{ backgroundColor: player.color }} />
+                          <span className="text-sm font-medium">{player.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePlayer(player.id, player.name)}
+                          className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Add New Player Form */}
+              <div className="border-t pt-4">
+                <Label className="text-sm font-medium">Add New Player</Label>
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <Label htmlFor="player-name" className="text-xs text-muted-foreground">Player Name</Label>
+                    <Input
+                      id="player-name"
+                      value={newPlayerData.name}
+                      onChange={(e) => setNewPlayerData({ ...newPlayerData, name: e.target.value })}
+                      placeholder="Enter player name..."
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Choose Color</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[
+                        "#ef4444", // red
+                        "#f97316", // orange
+                        "#f59e0b", // amber
+                        "#eab308", // yellow
+                        "#84cc16", // lime
+                        "#22c55e", // green
+                        "#10b981", // emerald
+                        "#14b8a6", // teal
+                        "#06b6d4", // cyan
+                        "#0ea5e9", // sky
+                        "#3b82f6", // blue
+                        "#6366f1", // indigo
+                        "#8b5cf6", // violet
+                        "#a855f7", // purple
+                        "#d946ef", // fuchsia
+                        "#ec4899", // pink
+                      ].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            newPlayerData.color === color ? "border-foreground scale-110" : "border-white hover:scale-105"
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setNewPlayerData({ ...newPlayerData, color })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button onClick={handleCreatePlayer} disabled={!newPlayerData.name.trim()} className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Player
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this project?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the project{" "}
+                <span className="font-bold text-black">&quot;{projectName}&quot;</span> and all of its tasks, comments, and data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteProject}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              >
+                {isDeleting ? "Deleting..." : "Delete Project"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { ProjectTaskManager } from "@/components/project-task-manager"
 import { DatabaseConfigWarning } from "@/components/database-config-warning"
-import { getProjectWithData, getUserProjectAccess } from "@/app/db/actions"
+import { getProjectWithData, getUserProjectAccess, fixPlayerNames } from "@/app/db/actions"
 import { initializeProjectPlayers } from "@/app/db/initialize-project"
 import { requireAuth } from "@/lib/auth"
 
@@ -41,6 +41,17 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     }
 
     console.log("Loading project:", projectData.project.id, "Tasks:", projectData.tasks.length, "Players:", projectData.players.length)
+
+    // Fix auto-generated player names
+    const fixResult = await fixPlayerNames()
+    if (fixResult.success && fixResult.updatedCount && fixResult.updatedCount > 0) {
+      console.log(`Fixed ${fixResult.updatedCount} player name(s)`)
+      // Re-fetch project data to get updated names
+      const updatedData = await getProjectWithData(projectId)
+      if (updatedData) {
+        projectData.players = updatedData.players
+      }
+    }
 
     // Initialize players if none exist
     if (projectData.players.length === 0) {

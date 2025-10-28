@@ -144,15 +144,15 @@ export function QuadrantMatrix({
         </CardHeader>
       </Card>
 
-      {/* Players Section - Only show for team projects */}
-      {project.type === 'team' && players.length > 0 && (
+      {/* Players Section - Only show for team projects with real player names */}
+      {project.type === 'team' && players.filter(p => !p.name.startsWith('User ')).length > 0 && (
         <Card className="mb-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Team Members</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {players.map((player) => (
+              {players.filter(player => !player.name.startsWith('User ')).map((player) => (
                 <Badge
                   key={player.id}
                   variant="secondary"
@@ -184,6 +184,7 @@ export function QuadrantMatrix({
               <TaskSegment
                 key={task.id}
                 task={{ ...task, assignees: task.assignees || [] }}
+                projectType={project.type}
               />
             ))}
             {quadrants['urgent-important'].length === 0 && (
@@ -207,6 +208,7 @@ export function QuadrantMatrix({
               <TaskSegment
                 key={task.id}
                 task={{ ...task, assignees: task.assignees || [] }}
+                projectType={project.type}
               />
             ))}
             {quadrants['not-urgent-important'].length === 0 && (
@@ -230,6 +232,7 @@ export function QuadrantMatrix({
               <TaskSegment
                 key={task.id}
                 task={{ ...task, assignees: task.assignees || [] }}
+                projectType={project.type}
               />
             ))}
             {quadrants['urgent-not-important'].length === 0 && (
@@ -253,6 +256,7 @@ export function QuadrantMatrix({
               <TaskSegment
                 key={task.id}
                 task={{ ...task, assignees: task.assignees || [] }}
+                projectType={project.type}
               />
             ))}
             {quadrants['not-urgent-not-important'].length === 0 && (

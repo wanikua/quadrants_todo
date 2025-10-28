@@ -2,6 +2,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
+import { Footer } from "@/components/footer"
 
 export default function PricingPage() {
   return (
@@ -16,7 +17,7 @@ export default function PricingPage() {
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-xl z-50 border-b-[3px] border-black/10">
+      <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b-[3px] border-black/10">
         <div className="w-full px-[4%] md:px-[10%]">
           <div className="h-24 flex items-center justify-between">
             <Link href="/" className="flex items-center group">
@@ -155,23 +156,7 @@ export default function PricingPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t-[3px] border-black mt-48 bg-white relative">
-        <div className="px-[4%] md:px-[10%] py-16">
-          <div className="flex flex-col items-center gap-6">
-            <Link href="/" className="inline-block group">
-              <Image
-                src="/Original Logo Symbol.png"
-                alt="Logo"
-                width={60}
-                height={60}
-                className="w-[60px] h-[60px] object-contain transition-transform duration-500 group-hover:scale-110"
-              />
-            </Link>
-            <p className="text-base font-bold text-black">© 2025 Quadrants. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

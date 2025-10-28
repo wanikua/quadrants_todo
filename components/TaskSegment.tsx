@@ -6,10 +6,12 @@ interface TaskSegmentProps {
   size?: number
   userName?: string
   projectType?: "personal" | "team"
+  isHighestPriority?: boolean
 }
 
-const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName, projectType }: TaskSegmentProps) {
-  const assignedPlayers = task.assignees || []
+const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName, projectType, isHighestPriority = false }: TaskSegmentProps) {
+  // Filter out auto-generated user names (e.g., "User c0eea5c2")
+  const assignedPlayers = (task.assignees || []).filter(player => !player.name.startsWith('User '))
 
   // Helper function to get first letter uppercase
   const getInitial = (name: string) => {
@@ -19,31 +21,57 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
   // Personal project - always show empty circle without initials
   if (projectType === "personal") {
     return (
-      <div
-        className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-primary bg-primary/10"
-        style={{
-          width: size,
-          height: size,
-        }}
-        title={`${task.description} - Personal Task`}
-      >
-        {/* Empty circle for personal project tasks */}
+      <div className="relative" style={{ width: size, height: size }}>
+        {isHighestPriority && (
+          <div
+            className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
+            style={{
+              width: size + 8,
+              height: size + 8,
+              top: -4,
+              left: -4,
+            }}
+          />
+        )}
+        <div
+          className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-primary bg-primary/10 relative"
+          style={{
+            width: size,
+            height: size,
+          }}
+          title={`${task.description} - Personal Task${isHighestPriority ? ' (Highest Priority)' : ''}`}
+        >
+          {/* Empty circle for personal project tasks */}
+        </div>
       </div>
     )
   }
 
-  // Team project with no assignees - show empty circle
+  // Team project with no assignees (or only auto-generated users) - show empty circle
   if (assignedPlayers.length === 0) {
     return (
-      <div
-        className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-gray-300 bg-gray-100"
-        style={{
-          width: size,
-          height: size,
-        }}
-        title={`${task.description} - Unassigned`}
-      >
-        {/* Empty circle for unassigned team tasks */}
+      <div className="relative" style={{ width: size, height: size }}>
+        {isHighestPriority && (
+          <div
+            className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
+            style={{
+              width: size + 8,
+              height: size + 8,
+              top: -4,
+              left: -4,
+            }}
+          />
+        )}
+        <div
+          className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-gray-300 bg-gray-100 relative"
+          style={{
+            width: size,
+            height: size,
+          }}
+          title={`${task.description} - Unassigned${isHighestPriority ? ' (Highest Priority)' : ''}`}
+        >
+          {/* Empty circle for unassigned team tasks */}
+        </div>
       </div>
     )
   }
@@ -52,17 +80,30 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
   if (assignedPlayers.length === 1) {
     const initial = getInitial(assignedPlayers[0].name)
     return (
-      <div
-        className="rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-white"
-        style={{
-          backgroundColor: assignedPlayers[0].color,
-          width: size,
-          height: size,
-          fontSize: size * 0.4, // Scale font size with circle size
-        }}
-        title={`${task.description} - ${assignedPlayers[0].name}`}
-      >
-        <span className="drop-shadow-sm">{initial}</span>
+      <div className="relative" style={{ width: size, height: size }}>
+        {isHighestPriority && (
+          <div
+            className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
+            style={{
+              width: size + 8,
+              height: size + 8,
+              top: -4,
+              left: -4,
+            }}
+          />
+        )}
+        <div
+          className="rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-white relative"
+          style={{
+            backgroundColor: assignedPlayers[0].color,
+            width: size,
+            height: size,
+            fontSize: size * 0.4, // Scale font size with circle size
+          }}
+          title={`${task.description} - ${assignedPlayers[0].name}${isHighestPriority ? ' (Highest Priority)' : ''}`}
+        >
+          <span className="drop-shadow-sm">{initial}</span>
+        </div>
       </div>
     )
   }
@@ -71,12 +112,24 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
   const segmentAngle = 360 / assignedPlayers.length
 
   return (
-    <div
-      className="relative rounded-full cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg"
-      style={{ width: size, height: size }}
-      title={`${task.description} - ${assignedPlayers.map((p) => p.name).join(", ")}`}
-    >
-      <svg width={size} height={size} className="absolute inset-0">
+    <div className="relative" style={{ width: size, height: size }}>
+      {isHighestPriority && (
+        <div
+          className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
+          style={{
+            width: size + 8,
+            height: size + 8,
+            top: -4,
+            left: -4,
+          }}
+        />
+      )}
+      <div
+        className="relative rounded-full cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg"
+        style={{ width: size, height: size }}
+        title={`${task.description} - ${assignedPlayers.map((p) => p.name).join(", ")}${isHighestPriority ? ' (Highest Priority)' : ''}`}
+      >
+        <svg width={size} height={size} className="absolute inset-0">
         <circle cx={size / 2} cy={size / 2} r={size / 2 - 1} fill="white" stroke="#e5e7eb" strokeWidth="2" />
         {assignedPlayers.map((player, index) => {
           const startAngle = index * segmentAngle - 90
@@ -109,6 +162,7 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
         style={{ fontSize: size * 0.3 }}
       >
         {assignedPlayers.map((p) => getInitial(p.name)).join("")}
+      </div>
       </div>
     </div>
   )

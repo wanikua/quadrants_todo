@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut, Sparkles, Check } from "lucide-react"
+import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut, Sparkles, Check, Home } from "lucide-react"
 import { useStripe } from "@/hooks/use-stripe"
 import { STRIPE_CONFIG } from "@/lib/stripe-config"
 
@@ -98,32 +98,40 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white border-b-[3px] border-black">
-        <div className="max-w-7xl mx-auto px-[4%] md:px-[10%] h-24 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-4 group">
-            <Image
-              src="/Original Logo Symbol.png"
-              alt="Logo"
-              width={70}
-              height={70}
-              className="w-[70px] h-[70px] object-contain transition-all duration-[1200ms] ease-[ease] group-hover:scale-110"
-            />
-            <span className="text-2xl font-bold text-black">Quadrants</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/projects">
-              <Button variant="ghost" className="text-black hover:text-gray-600 transition-all duration-[1200ms] ease-[ease] font-bold text-lg h-auto px-6 py-3 rounded-[20px] hover:bg-gray-100">
-                <ArrowLeft className="mr-2 h-5 w-5" />
-                Back to Projects
-              </Button>
+      <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b-[3px] border-black/10">
+        <div className="w-full px-[4%] md:px-[10%]">
+          <div className="h-24 flex items-center justify-between">
+            <Link href="/" className="flex items-center group">
+              <Image
+                src="/Original Logo Symbol.png"
+                alt="Logo"
+                width={70}
+                height={70}
+                className="w-[70px] h-[70px] object-contain transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:rotate-3"
+              />
             </Link>
-            <Button onClick={handleSignOut} className="border-[3px] border-black bg-white text-black hover:bg-black hover:text-white transition-all duration-[1200ms] ease-[ease] font-bold text-lg rounded-[20px] px-6 py-3">
-              <LogOut className="mr-2 h-5 w-5" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/projects")}
+                className="text-black hover:text-gray-600 hover:bg-gray-100/50 transition-all duration-[600ms] font-bold text-base px-4 rounded-[15px]"
+              >
+                Projects
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleSignOut}
+                className="text-black hover:text-gray-600 hover:bg-gray-100/50 transition-all duration-[600ms] font-bold text-base px-4 rounded-[15px]"
+              >
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Spacer for fixed header */}
+      <div className="h-24"></div>
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-[4%] md:px-[10%] py-16">

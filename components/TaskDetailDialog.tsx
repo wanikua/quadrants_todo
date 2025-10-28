@@ -174,7 +174,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
     <div className="space-y-6">
       {/* Task Header */}
       <div className="flex items-start gap-4">
-        <TaskSegment task={task} size={isMobile ? 48 : 64} />
+        <TaskSegment task={task} size={isMobile ? 48 : 64} projectType={projectType} />
         <div className="flex-1 min-w-0">
           {isEditing ? (
             <div className="space-y-3">
@@ -281,7 +281,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Users className="w-4 h-4" />
-            Assigned Players ({isEditing ? editAssignees.length : task.assignees.length})
+            Assigned Players ({isEditing ? editAssignees.length : task.assignees.filter(p => !p.name.startsWith('User ')).length})
           </div>
 
           {isEditing ? (
@@ -326,12 +326,12 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
             </div>
           ) : (
             <div className="space-y-2">
-              {task.assignees.length === 0 ? (
+              {task.assignees.filter(p => !p.name.startsWith('User ')).length === 0 ? (
                 <div className="text-sm text-muted-foreground italic p-3 bg-muted rounded-lg">
                   No players assigned to this task
                 </div>
               ) : (
-                task.assignees.map((player) => (
+                task.assignees.filter(player => !player.name.startsWith('User ')).map((player) => (
                   <div key={player.id} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
                     <div
                       className="w-4 h-4 rounded-full border border-border"
@@ -392,7 +392,9 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-foreground">{comment.author_name}</span>
+                        {projectType === 'team' && (
+                          <span className="text-xs font-medium text-foreground">{comment.author_name}</span>
+                        )}
                         <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
                       </div>
                       <p className="text-sm text-foreground break-words">{comment.content}</p>

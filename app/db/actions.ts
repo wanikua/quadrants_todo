@@ -59,6 +59,11 @@ export async function createProject(name: string, type: 'personal' | 'team') {
   }
 
   try {
+    // Get user's actual name
+    const { getUser } = await import('@/lib/auth')
+    const user = await getUser()
+    const userName = user?.name || 'User'
+
     const projectId = `proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     // Generate 8-character alphanumeric invite code
     const inviteCode = type === 'team'
@@ -86,11 +91,11 @@ export async function createProject(name: string, type: 'personal' | 'team') {
     const { initializeProjectDatabase } = await import('@/lib/db-optimized')
     await initializeProjectDatabase(projectId, userId)
 
-    // Create player for owner
+    // Create player for owner using actual user name
     await db.insert(players).values({
       project_id: projectId,
       user_id: userId,
-      name: `User ${userId.substring(0, 8)}`, // Will be updated with actual user name later
+      name: userName,
       color: '#3b82f6',
     })
 
@@ -111,6 +116,11 @@ export async function joinProject(inviteCode: string) {
   }
 
   try {
+    // Get user's actual name
+    const { getUser } = await import('@/lib/auth')
+    const user = await getUser()
+    const userName = user?.name || 'User'
+
     // Find project by invite code
     const projectList = await db
       .select({ id: projects.id, name: projects.name })
@@ -141,7 +151,7 @@ export async function joinProject(inviteCode: string) {
       role: 'member',
     })
 
-    // Create player for the new member
+    // Create player for the new member using actual user name
     const existingPlayers = await db.select().from(players).where(eq(players.project_id, project.id))
     const colors = [
       '#ef4444', '#f97316', '#eab308', '#22c55e',
@@ -152,7 +162,7 @@ export async function joinProject(inviteCode: string) {
     await db.insert(players).values({
       project_id: project.id,
       user_id: userId,
-      name: `User ${userId.substring(0, 8)}`,
+      name: userName,
       color: colors[colorIndex],
     })
 
@@ -238,7 +248,7 @@ export async function createTask(projectId: string, description: string, urgency
     }).returning()
 
     // For personal projects, assign to first player by default
-    // For team projects, assign to selected players
+    // For team projects, assign to selected players or current user if none selected
     if (project.type === 'personal') {
       // Get first player from project
       const projectPlayers = await db.select().from(players).where(eq(players.project_id, projectId)).limit(1)
@@ -248,13 +258,31 @@ export async function createTask(projectId: string, description: string, urgency
           player_id: projectPlayers[0].id,
         })
       }
-    } else if (assigneeIds.length > 0) {
-      await db.insert(taskAssignments).values(
-        assigneeIds.map(playerId => ({
-          task_id: task.id,
-          player_id: playerId,
-        }))
-      )
+    } else {
+      // For team projects
+      if (assigneeIds.length > 0) {
+        // Assign to selected players
+        await db.insert(taskAssignments).values(
+          assigneeIds.map(playerId => ({
+            task_id: task.id,
+            player_id: playerId,
+          }))
+        )
+      } else {
+        // No assignees selected, assign to current user's player by default
+        const currentUserPlayer = await db
+          .select()
+          .from(players)
+          .where(and(eq(players.project_id, projectId), eq(players.user_id, userId)))
+          .limit(1)
+
+        if (currentUserPlayer.length > 0) {
+          await db.insert(taskAssignments).values({
+            task_id: task.id,
+            player_id: currentUserPlayer[0].id,
+          })
+        }
+      }
     }
 
     revalidatePath(`/projects/${projectId}`)
@@ -321,6 +349,63 @@ export async function completeTask(taskId: number) {
 }
 
 // Player actions
+export async function createPlayer(projectId: string, name: string, color: string) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Check project access
+    const hasAccess = await getUserProjectAccess(userId, projectId)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    // Create the player
+    const result = await db.insert(players).values({
+      project_id: projectId,
+      user_id: userId,
+      name,
+      color,
+    }).returning()
+
+    revalidatePath(`/projects/${projectId}`)
+    return { success: true, player: result[0] }
+  } catch (error) {
+    console.error('Error creating player:', error)
+    return { success: false, error: 'Failed to create player' }
+  }
+}
+
+export async function deletePlayer(playerId: number) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Get player to check project access
+    const playerList = await db.select().from(players).where(eq(players.id, playerId))
+    if (playerList.length === 0) return { success: false, error: 'Player not found' }
+
+    const player = playerList[0]
+    const hasAccess = await getUserProjectAccess(userId, player.project_id)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    // Delete player (task assignments will be deleted automatically due to cascade)
+    await db.delete(players).where(eq(players.id, playerId))
+
+    revalidatePath(`/projects/${player.project_id}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting player:', error)
+    return { success: false, error: 'Failed to delete player' }
+  }
+}
+
 export async function updatePlayer(playerId: number, name: string, color: string) {
   const userId = await getUserId()
   if (!userId) return { success: false, error: 'Not authenticated' }
@@ -346,6 +431,44 @@ export async function updatePlayer(playerId: number, name: string, color: string
   } catch (error) {
     console.error('Error updating player:', error)
     return { success: false, error: 'Failed to update player' }
+  }
+}
+
+// Fix auto-generated player names - updates all players with "User xxx" names to actual user names
+export async function fixPlayerNames() {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Get user's actual name
+    const { getUser } = await import('@/lib/auth')
+    const user = await getUser()
+    const userName = user?.name || 'User'
+
+    // Find all players belonging to this user with auto-generated names (starting with "User ")
+    const userPlayers = await db
+      .select()
+      .from(players)
+      .where(eq(players.user_id, userId))
+
+    let updatedCount = 0
+    for (const player of userPlayers) {
+      // Check if name matches auto-generated pattern: "User " followed by characters
+      if (player.name.startsWith('User ')) {
+        await db.update(players).set({ name: userName }).where(eq(players.id, player.id))
+        updatedCount++
+        revalidatePath(`/projects/${player.project_id}`)
+      }
+    }
+
+    return { success: true, updatedCount }
+  } catch (error) {
+    console.error('Error fixing player names:', error)
+    return { success: false, error: 'Failed to fix player names' }
   }
 }
 

@@ -77,8 +77,8 @@
   /* Grid background pattern - Daisy AI 24-column system */
   .grid-pattern {
     background-image:
-      linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+      linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
     background-size: calc(100% / 24) calc(100% / 24);
   }
 
@@ -541,5 +541,36 @@
 
   .animate-scale-pulse {
     animation: scale-pulse 2s ease-in-out infinite;
+  }
+
+  /* Fade Out Animation - for loading overlay */
+  @keyframes fade-out {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  .animate-fade-out {
+    animation: fade-out 0.5s ease forwards;
+  }
+
+  /* Pulse Scale Animation - for logo loading */
+  @keyframes pulse-scale {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
+
+  .animate-pulse-scale {
+    animation: pulse-scale 1.5s ease-in-out infinite;
   }
 }

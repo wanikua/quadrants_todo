@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, LogOut, Settings, Home, User } from "lucide-react"
+import { Copy, Check, LogOut, Home, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 
@@ -61,7 +61,7 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                 size="sm"
                 onClick={() => router.push("/projects")}
                 title="Back to Projects"
-                className="p-2 -ml-2 text-black hover:text-[#F45F00] hover:bg-[#F45F00]/5 transition-all duration-200"
+                className="p-2 -ml-2 text-black hover:text-gray-600 transition-all duration-200"
               >
                 <Home className="w-5 h-5" />
               </Button>
@@ -92,18 +92,18 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                   size="sm"
                   onClick={() => router.push("/dashboard")}
                   title="Account Settings"
-                  className="text-black hover:text-[#F45F00] p-2"
+                  className="text-black hover:text-gray-600 p-2"
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-5 h-5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleSignOut}
                   title="Sign Out"
-                  className="text-black hover:text-[#F45F00] p-2"
+                  className="text-black hover:text-gray-600 p-2"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -111,7 +111,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         </div>
       </header>
 
-      {/* Task Manager */}
       <QuadrantTodoClient
         initialTasks={initialTasks}
         initialPlayers={initialPlayers}

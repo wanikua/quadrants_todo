@@ -15,7 +15,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
 
     await sql`
       DELETE FROM projects
-      WHERE id = ${projectId} AND user_id = ${user.id}
+      WHERE id = ${projectId} AND owner_id = ${user.id}
     `
 
     return NextResponse.json({ success: true })

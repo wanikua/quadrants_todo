@@ -3,6 +3,16 @@
 import React, { useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import TaskSegment from "@/components/TaskSegment"
 import type { TaskWithAssignees, Player, Line } from "@/app/types"
 import { updateTask, toggleLine, deleteLine, deleteTask, completeTask } from "@/app/db/actions"
@@ -21,6 +31,7 @@ interface QuadrantMatrixMapProps {
   onLongPress: (urgency: number, importance: number) => void
   userName?: string
   projectType?: "personal" | "team"
+  highestPriorityTaskId?: number | null
 }
 
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
@@ -35,6 +46,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   onLongPress,
   userName,
   projectType,
+  highestPriorityTaskId,
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
@@ -46,6 +58,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null)
   const [isOverTrash, setIsOverTrash] = useState(false)
   const [isOverComplete, setIsOverComplete] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<TaskWithAssignees | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const handleTaskClick = useCallback((task: TaskWithAssignees, e: React.MouseEvent) => {
@@ -120,7 +134,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     if (isDrawingLine) return
 
     const target = e.target as HTMLElement
-    if (target.closest('[data-task-id]')) return
+    // Only ignore clicks on tasks
+    if (target.closest('[data-task-id]')) {
+      return
+    }
 
     const rect = e.currentTarget.getBoundingClientRect()
     const x = ((e.clientX - rect.left) / rect.width) * 100
@@ -175,7 +192,13 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     if (isDrawingLine) return
 
     const target = e.target as HTMLElement
-    if (target.closest('[data-task-id]')) return
+    // Only ignore touches on tasks
+    if (target.closest('[data-task-id]')) {
+      return
+    }
+
+    // CRITICAL: Prevent default touch behavior to avoid interference
+    e.preventDefault()
 
     const touch = e.touches[0]
     if (!touch) return
@@ -209,6 +232,9 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
   const handleMatrixTouchMove = (e: React.TouchEvent) => {
     if (longPressTimer && mouseDownPos) {
+      // Prevent default to avoid scrolling/zooming during long press
+      e.preventDefault()
+
       const touch = e.touches[0]
       if (!touch) return
 
@@ -249,11 +275,26 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
     if (!draggedTask) return
 
-    const result = await deleteTask(draggedTask.id)
+    // Show confirmation dialog instead of deleting directly
+    setTaskToDelete(draggedTask)
+    setShowDeleteConfirm(true)
+    setDraggedTask(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return
+
+    const result = await deleteTask(taskToDelete.id)
     if (result.success) {
       router.refresh()
     }
-    setDraggedTask(null)
+    setTaskToDelete(null)
+    setShowDeleteConfirm(false)
+  }
+
+  const handleCancelDelete = () => {
+    setTaskToDelete(null)
+    setShowDeleteConfirm(false)
   }
 
   // Complete zone handlers
@@ -281,24 +322,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     setDraggedTask(null)
   }
 
-  // Fullscreen handlers
+  // Fullscreen handlers - Use CSS instead of Fullscreen API to avoid Dialog hiding
   const toggleFullscreen = useCallback(() => {
-    if (!cardRef.current) return
-
-    if (!document.fullscreenElement) {
-      cardRef.current.requestFullscreen().then(() => {
-        setIsFullscreen(true)
-      }).catch((err) => {
-        console.error('Failed to enter fullscreen:', err)
-      })
-    } else {
-      document.exitFullscreen().then(() => {
-        setIsFullscreen(false)
-      }).catch((err) => {
-        console.error('Failed to exit fullscreen:', err)
-      })
-    }
-  }, [])
+    setIsFullscreen(!isFullscreen)
+  }, [isFullscreen])
 
   React.useEffect(() => {
     return () => {
@@ -308,60 +335,75 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     }
   }, [longPressTimer])
 
-  // Listen for fullscreen changes (e.g., ESC key)
+  // Listen for ESC key to exit fullscreen
   React.useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false)
+      }
     }
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [])
+  }, [isFullscreen])
 
   return (
-    <Card ref={cardRef} className={`p-2 sm:p-6 transition-all duration-300 ${isFullscreen ? "h-screen rounded-none" : ""}`}>
-      <CardHeader className={`pb-2 sm:pb-4 px-2 sm:px-6 ${isFullscreen ? "pb-4" : ""}`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex-1" />
-          <CardTitle className={`text-center flex-1 ${isFullscreen ? "text-2xl font-bold" : "text-lg sm:text-xl"}`}>
-            Task Manager - Map View
-          </CardTitle>
-          <div className="flex-1 flex justify-end">
+    <Card
+      ref={cardRef}
+      className={`transition-all duration-300 ${
+        isFullscreen
+          ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
+          : "p-2 sm:p-6"
+      }`}
+    >
+      {/* Exit Fullscreen Button - Higher z-index than Card but lower than Dialog */}
+      {isFullscreen && (
+        <button
+          onClick={toggleFullscreen}
+          className="fixed top-4 right-4 z-[60] flex items-center justify-center w-12 h-12 bg-background/95 hover:bg-muted border-2 border-border rounded-lg shadow-lg transition-all duration-200 hover:scale-110"
+          title="Exit fullscreen (ESC)"
+          style={{ pointerEvents: 'auto' }}
+        >
+          <Minimize2 className="w-6 h-6" />
+        </button>
+      )}
+
+      {!isFullscreen && (
+        <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6">
+          <div className="flex items-center justify-end mb-2">
             <button
               onClick={toggleFullscreen}
-              className={`flex items-center justify-center rounded-lg hover:bg-muted transition-all duration-200 hover:scale-110 ${
-                isFullscreen ? "w-10 h-10 bg-muted/50" : "w-8 h-8"
-              }`}
-              title={isFullscreen ? "Exit fullscreen (ESC)" : "Enter fullscreen"}
+              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200 hover:scale-110"
+              title="Enter fullscreen"
             >
-              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+              <Maximize2 className="w-5 h-5" />
             </button>
           </div>
-        </div>
-        {isDrawingLine && (
-          <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg">
-            {selectedTaskForLine === null
-              ? "Click on a task to start connecting"
-              : "Click on another task to complete the connection"}
-          </div>
-        )}
-        {isMobile && (
-          <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
-            Long press (0.8s) on empty space to create a task
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className={`px-2 sm:px-6 ${isFullscreen ? "h-[calc(100vh-120px)] flex items-center justify-center" : ""}`}>
+          {isDrawingLine && (
+            <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg">
+              {selectedTaskForLine === null
+                ? "Click on a task to start connecting"
+                : "Click on another task to complete the connection"}
+            </div>
+          )}
+          {isMobile && (
+            <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+              Long press (0.8s) on empty space to create a task
+            </div>
+          )}
+        </CardHeader>
+      )}
+      <CardContent className={`${isFullscreen ? "h-screen p-0 relative" : "px-2 sm:px-6"}`}>
         <div
-          className={`relative w-full bg-gradient-to-br from-background to-muted/20 border-2 border-border rounded-xl overflow-hidden cursor-crosshair shadow-inner ${
-            isFullscreen ? "max-w-[1600px] mx-auto" : ""
+          className={`relative w-full bg-gradient-to-br from-background to-muted/20 overflow-hidden cursor-crosshair ${
+            isFullscreen ? "h-screen border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
           }`}
           style={{
-            height: isFullscreen ? "100%" : (isMobile ? "400px" : "700px"),
-            touchAction: "none",
-            aspectRatio: isFullscreen ? "16/9" : undefined
+            height: isFullscreen ? "100vh" : (isMobile ? "400px" : "700px"),
+            // Remove touchAction: "none" to allow proper event handling
+            // We handle preventDefault() in event handlers instead
           }}
           onMouseDown={handleMatrixMouseDown}
           onMouseUp={handleMatrixMouseUp}
@@ -374,6 +416,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           onDragOver={handleMatrixDragOver}
           onDrop={handleMatrixDrop}
         >
+
           {/* Grid Lines and Axes */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ zIndex: 1 }}>
             {/* Subtle grid lines at quadrant boundaries */}
@@ -541,7 +584,13 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                   onClick={(e) => handleTaskClick(task, e)}
                 >
                   <div className="relative">
-                    <TaskSegment task={task} size={taskSize} userName={userName} projectType={projectType} />
+                    <TaskSegment
+                      task={task}
+                      size={taskSize}
+                      userName={userName}
+                      projectType={projectType}
+                      isHighestPriority={task.id === highestPriorityTaskId}
+                    />
 
                     {/* Task Description Tooltip */}
                     {!isMobile && (
@@ -654,39 +703,56 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           <DialogHeader>
             <DialogTitle className="text-lg font-medium">Usage Instructions</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 text-sm">
+          <div className="space-y-3 text-sm">
             <div>
-              <h4 className="font-medium mb-2">Create Task</h4>
-              <p className="text-muted-foreground">Long press (0.8 seconds) on empty space, or use &quot;Add Task&quot; button</p>
+              <h4 className="font-medium mb-1">Create Task</h4>
+              <p className="text-muted-foreground">Long press on empty space or use &quot;Add Task&quot;</p>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Move Task</h4>
-              <p className="text-muted-foreground">Drag task to new position to change urgency/importance</p>
+              <h4 className="font-medium mb-1">Move Task</h4>
+              <p className="text-muted-foreground">Drag to change urgency/importance</p>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Complete or Delete Task</h4>
-              <p className="text-muted-foreground">Drag task to the green checkmark (Complete) or red trash (Delete) zone at the bottom corners. Both actions will remove the task permanently.</p>
+              <h4 className="font-medium mb-1">Edit Task</h4>
+              <p className="text-muted-foreground">Click on task to view details</p>
             </div>
             <div>
-              <h4 className="font-medium mb-2">View/Edit Task</h4>
-              <p className="text-muted-foreground">Click on task to view and edit details</p>
+              <h4 className="font-medium mb-1">Complete/Delete</h4>
+              <p className="text-muted-foreground">Drag to green checkmark or red trash</p>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Connect Tasks</h4>
-              <p className="text-muted-foreground">Enable drawing mode, then click two tasks to create/delete connections</p>
+              <h4 className="font-medium mb-1">Connect Tasks</h4>
+              <p className="text-muted-foreground">Enable drawing mode to visualize dependencies</p>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Fullscreen Mode</h4>
-              <p className="text-muted-foreground">Click the fullscreen icon in the top-right corner to expand the map view. Press ESC to exit.</p>
-            </div>
-            <div className="pt-2 border-t">
-              <p className="text-xs text-muted-foreground">
-                Task position represents (Importance, Urgency) coordinates on the matrix
-              </p>
+              <h4 className="font-medium mb-1">Priority Highlight</h4>
+              <p className="text-muted-foreground">Highest priority task is auto-highlighted</p>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除任务？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {taskToDelete && (
+                <>
+                  你确定要删除任务 <strong>&quot;{taskToDelete.description}&quot;</strong> 吗？此操作无法撤销。
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 })

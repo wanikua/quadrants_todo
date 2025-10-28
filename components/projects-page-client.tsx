@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { LogOut, Plus, Folder, Settings, Users, Crown, Sparkles } from "lucide-react"
+import { LogOut, Plus, Folder, Settings, Users, Crown, Sparkles, User } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -139,6 +139,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
     }
   }
 
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -153,16 +154,24 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
               className="w-[70px] h-[70px] object-contain transition-all duration-[1200ms] ease-[ease] group-hover:scale-110"
             />
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" className="text-black hover:text-gray-600 transition-all duration-[1200ms] ease-[ease] font-bold text-lg h-auto px-6 py-3 rounded-[20px] hover:bg-gray-100">
-                <Settings className="mr-2 h-5 w-5" />
-                Settings
-              </Button>
-            </Link>
-            <Button onClick={handleSignOut} className="border-[3px] border-black bg-white text-black hover:bg-black hover:text-white transition-all duration-[1200ms] ease-[ease] font-bold text-lg rounded-[20px] px-6 py-3">
-              <LogOut className="mr-2 h-5 w-5" />
-              Sign Out
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/dashboard")}
+              title="Account Settings"
+              className="text-black hover:text-gray-600 p-2"
+            >
+              <User className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              title="Sign Out"
+              className="text-black hover:text-gray-600 p-2"
+            >
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -290,18 +299,19 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
             {projects.map((project) => (
-              <Link key={project.id} href={`/projects/${project.id}`}>
-                <Card className="border-[3px] border-black hover:shadow-2xl transition-all duration-[1200ms] ease-[ease] cursor-pointer h-full bg-white rounded-[20px] hover:-translate-y-2">
-                  <CardHeader className="p-8">
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <CardTitle className="flex-1 text-black text-2xl font-bold leading-tight">{project.name}</CardTitle>
-                      <Badge
-                        variant={project.type === 'team' ? 'default' : 'secondary'}
-                        className={project.type === 'team' ? 'bg-black text-white text-sm px-3 py-1 rounded-[10px] font-bold' : 'bg-gray-200 text-black text-sm px-3 py-1 rounded-[10px] font-bold'}
-                      >
-                        {project.type === 'team' ? 'Team' : 'Personal'}
-                      </Badge>
-                    </div>
+              <div key={project.id} className="relative">
+                <Link href={`/projects/${project.id}`}>
+                  <Card className="border-[3px] border-black hover:shadow-2xl transition-all duration-[1200ms] ease-[ease] cursor-pointer h-full bg-white rounded-[20px] hover:-translate-y-2">
+                    <CardHeader className="p-8">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <CardTitle className="flex-1 text-black text-2xl font-bold leading-tight">{project.name}</CardTitle>
+                        <Badge
+                          variant={project.type === 'team' ? 'default' : 'secondary'}
+                          className={project.type === 'team' ? 'bg-black text-white text-sm px-3 py-1 rounded-[10px] font-bold' : 'bg-gray-200 text-black text-sm px-3 py-1 rounded-[10px] font-bold'}
+                        >
+                          {project.type === 'team' ? 'Team' : 'Personal'}
+                        </Badge>
+                      </div>
                     <CardDescription className="text-gray-700 text-base leading-relaxed">{project.description || "No description"}</CardDescription>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
@@ -319,6 +329,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                   </CardContent>
                 </Card>
               </Link>
+              </div>
             ))}
           </div>
         )}

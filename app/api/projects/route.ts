@@ -21,27 +21,18 @@ export async function POST(request: NextRequest) {
     const isPro = user.subscription_plan === 'pro' && user.subscription_status === 'active'
 
     if (!isPro) {
-      // Count existing projects by type
+      // Count total existing projects for free users (max 3)
       const projectCounts = await sql`
-        SELECT
-          COUNT(*) FILTER (WHERE type = 'personal') as personal_count,
-          COUNT(*) FILTER (WHERE type = 'team') as team_count
+        SELECT COUNT(*) as total_count
         FROM projects
         WHERE owner_id = ${user.id}
       `
 
-      const { personal_count, team_count } = projectCounts[0]
+      const { total_count } = projectCounts[0]
 
-      if (type === 'personal' && parseInt(personal_count) >= 1) {
+      if (parseInt(total_count) >= 3) {
         return NextResponse.json({
-          error: "Free users can only create 1 personal project. Upgrade to Pro for unlimited projects.",
-          requiresUpgrade: true
-        }, { status: 403 })
-      }
-
-      if (type === 'team' && parseInt(team_count) >= 1) {
-        return NextResponse.json({
-          error: "Free users can only create 1 team project. Upgrade to Pro for unlimited projects.",
+          error: "Free users can create up to 3 projects. Upgrade to Pro for unlimited projects.",
           requiresUpgrade: true
         }, { status: 403 })
       }
