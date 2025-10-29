@@ -70,14 +70,14 @@ export default function ContactPage() {
             </h2>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-8">
-              For support, questions, or feedback, send us an email and we&apos;ll get back to you within 24 hours.
+              For support, questions, or feedback, send us an email and we'll get back to you.
             </p>
 
             <a
               href="mailto:hello@quadrants.app"
               className="inline-block bg-black hover:bg-gray-800 text-white px-12 py-6 text-xl rounded-[20px] font-bold transition-all duration-[600ms] shadow-xl hover:shadow-2xl hover:scale-[1.05]"
             >
-              hello@quadrants.app
+              contact@quadrants.app
             </a>
           </div>
         </div>
