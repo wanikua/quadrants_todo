@@ -554,7 +554,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           </svg>
 
           {/* Tasks */}
-          <div className="absolute inset-0" style={{ zIndex: 3 }}>
+          <div className="absolute inset-0 p-8" style={{ zIndex: 3 }}>
             {tasks.map((task) => {
               const x = task.urgency
               const y = 100 - task.importance

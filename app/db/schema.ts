@@ -5,6 +5,7 @@ import { relations } from 'drizzle-orm'
 export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  description: text('description'),
   type: text('type').notNull(), // 'personal' | 'team'
   owner_id: text('owner_id').notNull(),
   invite_code: text('invite_code'),
@@ -68,6 +69,14 @@ export const comments = pgTable('comments', {
   content: text('content').notNull(),
   author_name: text('author_name').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
+})
+
+// User activity table (for tracking online users)
+export const userActivity = pgTable('user_activity', {
+  id: serial('id').primaryKey(),
+  project_id: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  user_id: text('user_id').notNull(),
+  last_seen: timestamp('last_seen').defaultNow().notNull(),
 })
 
 // Define relations

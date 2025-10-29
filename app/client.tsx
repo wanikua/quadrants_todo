@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import type { TaskWithAssignees, Player, Line, Project } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
-import { createTask, deleteTask, updateTask as updateTaskAction, createPlayer, deletePlayer } from "@/app/db/actions"
+import { createTask, deleteTask, updateTask as updateTaskAction, createPlayer, deletePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -71,8 +71,109 @@ export default function QuadrantTodoClient({
     name: "",
     color: "#3b82f6", // Default blue color
   })
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
+  const [activeUserCount, setActiveUserCount] = useState<number>(0)
 
   const isMobile = false // For responsive layout adjustments
+
+  // Update user activity heartbeat - runs independently
+  useEffect(() => {
+    if (projectType === 'team' && !isOfflineMode) {
+      // Initial update
+      updateUserActivity(projectId)
+
+      // Update activity every 2 seconds for faster detection
+      const activityInterval = setInterval(() => {
+        updateUserActivity(projectId)
+      }, 2000)
+
+      return () => clearInterval(activityInterval)
+    }
+  }, [projectType, projectId, isOfflineMode])
+
+  // Check for active users - only enables sync if multiple users detected
+  useEffect(() => {
+    if (projectType === 'team' && !isOfflineMode) {
+      let checkInterval: NodeJS.Timeout | null = null
+
+      const checkActiveUsers = async () => {
+        const result = await getActiveUserCount(projectId)
+        setActiveUserCount(result.count)
+      }
+
+      // Initial check
+      checkActiveUsers()
+
+      // Check every 2 seconds for faster user detection
+      checkInterval = setInterval(checkActiveUsers, 2000)
+
+      return () => {
+        if (checkInterval) clearInterval(checkInterval)
+      }
+    }
+  }, [projectType, projectId, isOfflineMode])
+
+  // Real-time sync - only when multiple users are active
+  useEffect(() => {
+    if (projectType === 'team' && !isOfflineMode && activeUserCount > 1) {
+      let interval: NodeJS.Timeout | null = null
+      let isPageVisible = true
+
+      // Check if page is visible
+      const handleVisibilityChange = () => {
+        isPageVisible = !document.hidden
+
+        if (isPageVisible) {
+          // Immediately refresh when page becomes visible
+          router.refresh()
+
+          // Resume polling
+          if (interval) clearInterval(interval)
+          interval = setInterval(() => {
+            if (isPageVisible) {
+              router.refresh()
+            }
+          }, 1000) // Refresh every 1 second when multiple users online - near real-time!
+        } else {
+          // Pause polling when page is hidden to save resources
+          if (interval) clearInterval(interval)
+        }
+      }
+
+      // Listen for visibility changes
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+
+      // Start initial polling
+      interval = setInterval(() => {
+        if (isPageVisible) {
+          router.refresh()
+          setLastSyncTime(new Date())
+        }
+      }, 1000) // Refresh every 1 second - near real-time!
+
+      return () => {
+        if (interval) clearInterval(interval)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
+    }
+  }, [projectType, router, isOfflineMode, activeUserCount])
+
+  // Format time ago
+  const getTimeAgo = useCallback((date: Date) => {
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
+    if (seconds < 5) return 'just now'
+    if (seconds < 60) return `${seconds}s ago`
+    return `${Math.floor(seconds / 60)}m ago`
+  }, [])
+
+  // Update time display every second
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (projectType === 'team') {
+      const timer = setInterval(() => setTick(t => t + 1), 1000)
+      return () => clearInterval(timer)
+    }
+  }, [projectType])
 
   // Find current user's player for default task assignment
   const currentUserPlayer = useMemo(() => {
@@ -134,6 +235,7 @@ export default function QuadrantTodoClient({
     const result = await createTask(projectId, description, urgency, importance, assigneeIds)
     if (result.success) {
       router.refresh()
+      setLastSyncTime(new Date())
     }
   }
 
@@ -153,9 +255,10 @@ export default function QuadrantTodoClient({
   }
 
   const handleTaskUpdate = async (taskId: number, description: string, urgency: number, importance: number, assigneeIds: number[]) => {
-    const result = await updateTaskAction(taskId, urgency, importance)
+    const result = await updateTaskAction(taskId, urgency, importance, description, assigneeIds)
     if (result.success) {
       router.refresh()
+      setLastSyncTime(new Date())
     }
   }
 
@@ -164,6 +267,7 @@ export default function QuadrantTodoClient({
     if (result.success) {
       setIsTaskDetailOpen(false)
       router.refresh()
+      setLastSyncTime(new Date())
     }
   }
 
@@ -226,6 +330,7 @@ export default function QuadrantTodoClient({
       toast.success("Player created successfully")
       setNewPlayerData({ name: "", color: "#3b82f6" })
       router.refresh()
+      setLastSyncTime(new Date())
     } else {
       toast.error(result.error || "Failed to create player")
     }
@@ -240,6 +345,7 @@ export default function QuadrantTodoClient({
     if (result.success) {
       toast.success("Player deleted successfully")
       router.refresh()
+      setLastSyncTime(new Date())
     } else {
       toast.error(result.error || "Failed to delete player")
     }
@@ -250,13 +356,37 @@ export default function QuadrantTodoClient({
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-          {isOfflineMode && (
-            <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            {isOfflineMode && (
               <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
                 Offline Mode
               </Badge>
-            </div>
-          )}
+            )}
+            {projectType === 'team' && !isOfflineMode && (
+              <Badge
+                variant="outline"
+                className={`${
+                  activeUserCount > 1
+                    ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 animate-pulse'
+                    : 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {activeUserCount > 1 ? (
+                    <>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span>Live • {activeUserCount} users • Synced {getTimeAgo(lastSyncTime)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                      <span>You • {activeUserCount} user online</span>
+                    </>
+                  )}
+                </div>
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Project Header with Settings */}
@@ -565,8 +695,20 @@ export default function QuadrantTodoClient({
             isMobile={isMobile}
             onDeleteTask={handleTaskDelete}
             onUpdateTask={handleTaskUpdate}
-            onAddComment={async () => {}}
-            onDeleteComment={async () => {}}
+            onAddComment={async (taskId: number, content: string, authorName: string) => {
+              const result = await addComment(taskId, content, authorName)
+              if (result.success) {
+                router.refresh()
+                setLastSyncTime(new Date())
+              }
+            }}
+            onDeleteComment={async (commentId: number, taskId: number) => {
+              const result = await deleteCommentAction(commentId)
+              if (result.success) {
+                router.refresh()
+                setLastSyncTime(new Date())
+              }
+            }}
           />
         )}
 

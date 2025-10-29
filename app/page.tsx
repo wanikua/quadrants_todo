@@ -7,9 +7,11 @@ import { ArrowRight } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Footer } from "@/components/footer"
 import { useEffect, useState } from "react"
+import { useUser } from "@clerk/nextjs"
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
+  const { isSignedIn, isLoaded } = useUser()
 
   useEffect(() => {
     // Hide loading overlay after animation
@@ -76,23 +78,36 @@ export default function HomePage() {
 
             {/* Navigation - Right aligned */}
             <nav className="flex items-center gap-3 md:gap-4">
-              <Link href="/sign-in">
-                <Button
-                  variant="ghost"
-                  size="default"
-                  className="text-black hover:text-gray-600 hover:bg-gray-100/50 transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] font-bold text-base md:text-lg px-4 md:px-6 h-auto rounded-[15px]"
-                >
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button
-                  size="default"
-                  className="bg-black hover:bg-gray-800 text-white transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] font-bold shadow-lg hover:shadow-2xl h-auto px-6 md:px-8 py-3 md:py-4 rounded-[15px] md:rounded-[20px] hover:scale-[1.05] text-base md:text-lg"
-                >
-                  Get Started
-                </Button>
-              </Link>
+              {isLoaded && isSignedIn ? (
+                <Link href="/projects">
+                  <Button
+                    size="default"
+                    className="bg-black hover:bg-gray-800 text-white transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] font-bold shadow-lg hover:shadow-2xl h-auto px-6 md:px-8 py-3 md:py-4 rounded-[15px] md:rounded-[20px] hover:scale-[1.05] text-base md:text-lg"
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/sign-in">
+                    <Button
+                      variant="ghost"
+                      size="default"
+                      className="text-black hover:text-gray-600 hover:bg-gray-100/50 transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] font-bold text-base md:text-lg px-4 md:px-6 h-auto rounded-[15px]"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/sign-up">
+                    <Button
+                      size="default"
+                      className="bg-black hover:bg-gray-800 text-white transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] font-bold shadow-lg hover:shadow-2xl h-auto px-6 md:px-8 py-3 md:py-4 rounded-[15px] md:rounded-[20px] hover:scale-[1.05] text-base md:text-lg"
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         </div>
@@ -271,21 +286,6 @@ export default function HomePage() {
                       >
                         Try it now—it&apos;s free
                         <ArrowRight className="ml-3 h-6 w-6" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
-  )
-}
-             <ArrowRight className="ml-3 h-6 w-6" />
                       </Button>
                     </Link>
                   </div>
