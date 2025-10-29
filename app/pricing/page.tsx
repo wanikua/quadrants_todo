@@ -51,16 +51,12 @@ export default function PricingPage() {
           {/* Hero Section */}
           <div className="text-center mb-24">
             <h1 className="text-5xl md:text-7xl font-bold text-black leading-[1.1] mb-8">
-              Plans for everyone 
+              Plans for everyone
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Start free. Upgrade when you need.
             </p>
           </div>
-
-          {/* Promo Code Notice */}
-          <div className="text-center mb-8">
-            <p classN  </div>
 
           {/* Pricing Cards */}
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -90,8 +86,8 @@ export default function PricingPage() {
                     <span className="text-gray-700 text-lg">Basic collaboration</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    
-                    
+                    <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
+                    <span className="text-gray-700 text-lg">Community support</span>
                   </li>
                 </ul>
 
@@ -105,8 +101,32 @@ export default function PricingPage() {
 
             {/* Pro Plan */}
             <div className="bg-black text-white border-[3px] border-black rounded-[20px] p-10 hover:shadow-2xl transition-all duration-[600ms] hover:-translate-y-2 relative">
- flex items-ba            <span className="text-lg">Unlimited tasks</span>
-                POPULAR
+              {/* Popular Badge */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-yellow-400 text-black px-6 py-2 rounded-full text-sm font-bold">
+                  POPULAR
+                </span>
+              </div>
+
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-3xl font-bold mb-3">Pro</h3>
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-6xl font-bold">$9</span>
+                    <span className="text-gray-300 text-xl">/month</span>
+                  </div>
+                  <p className="text-gray-300 text-lg">For power users and teams</p>
+                </div>
+
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Unlimited projects</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Unlimited tasks</span>
+                  </li>
                   <li className="flex items-start gap-3">
                     <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
                     <span className="text-lg">Advanced collaboration</span>
@@ -116,8 +136,8 @@ export default function PricingPage() {
                     <span className="text-lg">Priority support</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    
-                    
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Real-time sync</span>
                   </li>
                 </ul>
 
@@ -126,6 +146,36 @@ export default function PricingPage() {
                     Get Pro
                   </Button>
                 </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="mt-32 max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold text-black text-center mb-16">
+              Frequently Asked Questions
+            </h2>
+
+            <div className="space-y-8">
+              <div className="bg-white border-[3px] border-black rounded-[20px] p-8">
+                <h3 className="text-2xl font-bold text-black mb-4">Can I cancel anytime?</h3>
+                <p className="text-gray-700 text-lg leading-relaxed">
+                  Yes! You can cancel your Pro subscription at any time. Your Pro features will remain active until the end of your billing period.
+                </p>
+              </div>
+
+              <div className="bg-white border-[3px] border-black rounded-[20px] p-8">
+                <h3 className="text-2xl font-bold text-black mb-4">What happens to my data if I downgrade?</h3>
+                <p className="text-gray-700 text-lg leading-relaxed">
+                  Your data is always safe. If you downgrade from Pro to Free and have more than 3 projects, you&apos;ll be able to view all projects but can only edit your 3 most recent ones.
+                </p>
+              </div>
+
+              <div className="bg-white border-[3px] border-black rounded-[20px] p-8">
+                <h3 className="text-2xl font-bold text-black mb-4">Do you offer team pricing?</h3>
+                <p className="text-gray-700 text-lg leading-relaxed">
+                  Currently, each team member needs their own Pro subscription. We&apos;re working on team pricing and will announce it soon!
+                </p>
               </div>
             </div>
           </div>
