@@ -285,3 +285,18 @@ export default function HomePage() {
     </div>
   )
 }
+             <ArrowRight className="ml-3 h-6 w-6" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
