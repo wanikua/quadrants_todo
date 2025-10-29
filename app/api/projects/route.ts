@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check project limits for free users
-    const isPro = user.subscription_plan === 'pro' && user.subscription_status === 'active'
+    const isPro = user.subscription_plan === 'pro' && (user.subscription_status === 'pro' || user.subscription_status === 'active')
 
     if (!isPro) {
       // Count total existing projects for free users (max 3)

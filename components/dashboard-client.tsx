@@ -38,7 +38,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   const { createCheckoutSession, manageBilling, loading: stripeLoading, error: stripeError } = useStripe()
 
   const isProUser = initialUser.subscription_plan === 'pro' &&
-                    initialUser.subscription_status === 'active'
+                    (initialUser.subscription_status === 'pro' || initialUser.subscription_status === 'active')
   const isFreeUser = !isProUser
 
   async function handleSignOut() {
