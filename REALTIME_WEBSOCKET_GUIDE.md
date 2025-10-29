@@ -6,7 +6,7 @@
 
 ## WebSocket方案架构
 
-```
+\`\`\`
 ┌─────────────┐         WebSocket        ┌─────────────┐
 │   用户A     │ ◄───────────────────────► │   服务器    │
 └─────────────┘                           └─────────────┘
@@ -18,18 +18,18 @@
 ┌─────────────┐                           ┌─────────────┐
 │   用户B     │ ◄───────────────────────► │   Redis     │
 └─────────────┘         实时推送           └─────────────┘
-```
+\`\`\`
 
 ## 实现步骤
 
 ### 1. 安装依赖
-```bash
+\`\`\`bash
 npm install socket.io socket.io-client
 npm install ioredis  # Redis for pub/sub
-```
+\`\`\`
 
 ### 2. 创建 WebSocket 服务器
-```typescript
+\`\`\`typescript
 // app/api/socket/route.ts
 import { Server } from 'socket.io'
 import { createServer } from 'http'
@@ -54,10 +54,10 @@ export async function GET(req: Request) {
 
   return new Response('WebSocket server running')
 }
-```
+\`\`\`
 
 ### 3. 客户端连接
-```typescript
+\`\`\`typescript
 // app/client.tsx
 import { io } from 'socket.io-client'
 
@@ -72,10 +72,10 @@ useEffect(() => {
 
   return () => socket.disconnect()
 }, [projectId])
-```
+\`\`\`
 
 ### 4. 服务器端触发推送
-```typescript
+\`\`\`typescript
 // app/db/actions.ts
 import { io } from 'socket.io-client'
 
@@ -90,7 +90,7 @@ export async function createTask(...) {
 
   return result
 }
-```
+\`\`\`
 
 ## 对比
 
