@@ -3,6 +3,22 @@ import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe'
 import { sql } from '@/lib/db'
 import Stripe from 'stripe'
 
+// Map Stripe subscription status to app status
+function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'team' {
+  switch (stripeStatus) {
+    case 'active':
+    case 'trialing':
+      return 'pro'
+    case 'canceled':
+    case 'incomplete':
+    case 'incomplete_expired':
+    case 'unpaid':
+    case 'past_due':
+    default:
+      return 'free'
+  }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const signature = req.headers.get('stripe-signature')
@@ -77,46 +93,60 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  console.log('Processing checkout.session.completed:', JSON.stringify(session, null, 2))
+
   const userId = session.metadata?.userId || session.client_reference_id
 
   if (!userId) {
-    console.error('No user ID in checkout session')
-    return
+    console.error('No user ID in checkout session. Metadata:', session.metadata)
+    throw new Error('No user ID found in checkout session')
   }
 
   const customerId = session.customer as string
   const subscriptionId = session.subscription as string
 
-  await sql`
-    UPDATE users
-    SET
-      stripe_customer_id = ${customerId},
-      stripe_subscription_id = ${subscriptionId},
-      subscription_status = 'active',
-      subscription_plan = 'pro',
-      updated_at = NOW()
-    WHERE id = ${userId}
-  `
+  console.log(`Updating user ${userId} with customer ${customerId} and subscription ${subscriptionId}`)
 
-  console.log(`Subscription activated for user ${userId}`)
+  try {
+    const result = await sql`
+      UPDATE users
+      SET
+        stripe_customer_id = ${customerId},
+        stripe_subscription_id = ${subscriptionId},
+        subscription_status = 'pro',
+        subscription_plan = 'pro',
+        updated_at = NOW()
+      WHERE id = ${userId}
+    `
+
+    console.log(`SQL update result:`, result)
+    console.log(`Subscription activated for user ${userId}`)
+  } catch (error) {
+    console.error('SQL Error in handleCheckoutCompleted:', error)
+    throw error
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string
-  const status = subscription.status
+  const stripeStatus = subscription.status
+
+  // Map Stripe status to our app status (free, pro, team)
+  const appStatus = mapStripeStatusToAppStatus(stripeStatus)
+
   // Type assertion needed as Stripe types may not include all runtime properties
   const currentPeriodEnd = new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000)
 
   await sql`
     UPDATE users
     SET
-      subscription_status = ${status},
+      subscription_status = ${appStatus},
       subscription_period_end = ${currentPeriodEnd.toISOString()},
       updated_at = NOW()
     WHERE stripe_customer_id = ${customerId}
   `
 
-  console.log(`Subscription updated for customer ${customerId}`)
+  console.log(`Subscription updated for customer ${customerId}: ${stripeStatus} -> ${appStatus}`)
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -125,7 +155,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   await sql`
     UPDATE users
     SET
-      subscription_status = 'canceled',
+      subscription_status = 'free',
       subscription_plan = 'free',
       updated_at = NOW()
     WHERE stripe_customer_id = ${customerId}
