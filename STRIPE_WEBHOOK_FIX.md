@@ -8,9 +8,9 @@
 
 ### 根本原因
 数据库 `users` 表的 `subscription_status` 字段有 CHECK 约束：
-```sql
+\`\`\`sql
 CHECK ((subscription_status = ANY (ARRAY['free'::text, 'pro'::text, 'team'::text])))
-```
+\`\`\`
 
 **但 webhook 处理代码试图设置不允许的值：**
 - ❌ `subscription_status = 'active'` (checkout.session.completed)
@@ -22,7 +22,7 @@ CHECK ((subscription_status = ANY (ARRAY['free'::text, 'pro'::text, 'team'::text
 ### 1. 添加状态映射函数
 创建了 `mapStripeStatusToAppStatus()` 函数，将 Stripe 状态映射到应用状态：
 
-```typescript
+\`\`\`typescript
 function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'team' {
   switch (stripeStatus) {
     case 'active':
@@ -37,27 +37,27 @@ function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'tea
       return 'free'
   }
 }
-```
+\`\`\`
 
 ### 2. 修复 webhook 处理函数
 
 #### handleCheckoutCompleted
-```typescript
+\`\`\`typescript
 // Before: subscription_status = 'active' ❌
 // After:  subscription_status = 'pro' ✅
-```
+\`\`\`
 
 #### handleSubscriptionUpdated
-```typescript
+\`\`\`typescript
 // Before: subscription_status = ${status} ❌ (直接使用 Stripe 状态)
 // After:  subscription_status = ${mapStripeStatusToAppStatus(status)} ✅
-```
+\`\`\`
 
 #### handleSubscriptionDeleted
-```typescript
+\`\`\`typescript
 // Before: subscription_status = 'canceled' ❌
 // After:  subscription_status = 'free' ✅
-```
+\`\`\`
 
 ### 3. 添加详细错误日志
 增强了所有 webhook 处理函数的日志输出，便于调试：
@@ -87,7 +87,7 @@ function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'tea
 ## 测试结果
 
 ✅ 测试 webhook 成功通过：
-```json
+\`\`\`json
 {
   "success": true,
   "user": {
@@ -97,7 +97,7 @@ function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'tea
     "stripe_subscription_id": "sub_test123"
   }
 }
-```
+\`\`\`
 
 ## 状态映射逻辑
 
@@ -114,18 +114,18 @@ function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'tea
 ## 下一步建议
 
 ### 1. 清理测试文件（可选）
-```bash
+\`\`\`bash
 rm app/api/test-webhook/route.ts
 rm app/api/check-users-table/route.ts
 rm app/api/check-constraints/route.ts
-```
+\`\`\`
 
 ### 2. 测试真实 Webhook
 使用 Stripe CLI 或 Dashboard 触发真实的 webhook 事件：
-```bash
+\`\`\`bash
 stripe listen --forward-to localhost:3002/api/stripe/webhook
 stripe trigger checkout.session.completed
-```
+\`\`\`
 
 ### 3. 监控生产环境
 - 在 Stripe Dashboard 检查 webhook 日志
@@ -150,7 +150,7 @@ stripe trigger checkout.session.completed
 ## 技术细节
 
 ### 数据库约束
-```sql
+\`\`\`sql
 -- 现有约束
 CHECK ((subscription_status = ANY (ARRAY['free'::text, 'pro'::text, 'team'::text])))
 
@@ -160,7 +160,7 @@ CHECK ((subscription_status = ANY (ARRAY['free'::text, 'pro'::text, 'team'::text
 - subscription_status: TEXT (free/pro/team)
 - subscription_plan: TEXT
 - subscription_period_end: TIMESTAMP
-```
+\`\`\`
 
 ### Stripe Webhook 事件
 应用当前处理的事件：
