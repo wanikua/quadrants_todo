@@ -349,7 +349,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                 <div className="p-8 border-[3px] border-black rounded-[20px] bg-white">
                   <CreditCard className="w-12 h-12 mx-auto mb-4 text-black" />
                   <p className="text-lg text-gray-700 mb-6 text-center leading-relaxed">
-                    Manage your billing information, update payment methods, or cancel your subscription.
+                    Manage your subscription, update payment methods, view invoices, or downgrade to the free plan.
                   </p>
                   {stripeError && (
                     <div className="text-base text-red-900 bg-red-100 p-4 rounded-[10px] border-[3px] border-red-600 mb-4 font-medium">
@@ -361,8 +361,11 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                     disabled={stripeLoading}
                     className="w-full border-[3px] border-black bg-white text-black hover:bg-black hover:text-white transition-all duration-[1200ms] ease-[ease] font-bold text-lg rounded-[20px] px-6 py-4"
                   >
-                    {stripeLoading ? 'Loading...' : 'Manage Billing'}
+                    {stripeLoading ? 'Loading...' : 'Manage Subscription & Billing'}
                   </Button>
+                  <p className="text-sm text-gray-500 text-center mt-4">
+                    You can cancel your subscription anytime
+                  </p>
                 </div>
               )}
             </CardContent>
