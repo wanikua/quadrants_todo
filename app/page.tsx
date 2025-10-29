@@ -115,9 +115,7 @@ export default function HomePage() {
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed animate-on-load animate-fade-in-up animation-delay-200">
               The simplest todo management. Yet the most <span className="text-highlight-purple">powerful</span>.
               <br />
-              <span className="text-gray-900 font-semibold">
-                Drag. Drop. Done.
-              </span>
+              
             </p>
           </div>
 
@@ -215,7 +213,6 @@ export default function HomePage() {
                   Stop wasting time <span className="text-underline-curve">deciding</span> what to do next
                 </h2>
                 <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
-                  Every task lands exactly where it should. <span className="text-highlight-purple">Urgent in the top right.</span> Important but not urgent on the left.
                   Your next move is always <span className="text-highlight-yellow">obvious</span>.
                 </p>
               </div>
@@ -234,7 +231,6 @@ export default function HomePage() {
                   </h2>
                   <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
                     No endless scrolling. No hidden tasks. Everything visible on one screen.
-                    The Eisenhower Matrix gives you instant clarity on what matters most.
                   </p>
                 </div>
               </div>
