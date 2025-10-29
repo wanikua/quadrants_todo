@@ -130,9 +130,7 @@ export default function HomePage() {
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed animate-on-load animate-fade-in-up animation-delay-200">
               The simplest todo management. Yet the most <span className="text-highlight-purple">powerful</span>.
               <br />
-              <span className="text-gray-900 font-semibold">
-                Drag. Drop. Done.
-              </span>
+              
             </p>
           </div>
 
@@ -249,7 +247,6 @@ export default function HomePage() {
                   </h2>
                   <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
                     No endless scrolling. No hidden tasks. Everything visible on one screen.
-                    The Eisenhower Matrix gives you instant clarity on what matters most.
                   </p>
                 </div>
               </div>
@@ -284,7 +281,7 @@ export default function HomePage() {
                         size="lg"
                         className="bg-white text-black hover:bg-gray-100 px-12 py-8 text-xl rounded-[20px] font-bold transition-all duration-[1200ms] ease-[ease] shadow-xl hover:shadow-2xl hover:scale-[1.02]"
                       >
-                        Try it now—it&apos;s free
+                        Try it now
                         <ArrowRight className="ml-3 h-6 w-6" />
                       </Button>
                     </Link>

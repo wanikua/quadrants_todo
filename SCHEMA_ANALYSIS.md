@@ -13,7 +13,7 @@
 ### 1. Projects Table
 
 #### Database Schema (schema.ts)
-```typescript
+\`\`\`typescript
 export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -23,10 +23,10 @@ export const projects = pgTable('projects', {
   invite_code: text('invite_code'),
   created_at: timestamp('created_at').defaultNow().notNull(),
 })
-```
+\`\`\`
 
 #### TypeScript Types (types.ts)
-```typescript
+\`\`\`typescript
 export interface Project {
   id: string
   name: string
@@ -37,7 +37,7 @@ export interface Project {
   created_at?: string
   updated_at?: string                         // ⚠️ Schema中不存在
 }
-```
+\`\`\`
 
 #### 问题
 1. **字段名不一致**: `invite_code` (schema) vs `access_code` (types)
@@ -49,7 +49,7 @@ export interface Project {
 ### 2. Tasks Table
 
 #### Database Schema
-```typescript
+\`\`\`typescript
 export const tasks = pgTable('tasks', {
   id: serial('id').primaryKey(),
   project_id: text('project_id').notNull().references(() => projects.id),
@@ -59,10 +59,10 @@ export const tasks = pgTable('tasks', {
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 })
-```
+\`\`\`
 
 #### TypeScript Types
-```typescript
+\`\`\`typescript
 export interface Task {
   id: number
   description: string
@@ -74,7 +74,7 @@ export interface Task {
   assignees?: Player[]                        // ✅ 通过join获取
   comments?: Comment[]                        // ✅ 通过join获取
 }
-```
+\`\`\`
 
 #### 问题
 1. **缺少字段**: `project_id` 在schema中存在但types中缺失
@@ -85,7 +85,7 @@ export interface Task {
 ### 3. Players Table
 
 #### Database Schema
-```typescript
+\`\`\`typescript
 export const players = pgTable('players', {
   id: serial('id').primaryKey(),
   project_id: text('project_id').notNull().references(() => projects.id),
@@ -94,17 +94,17 @@ export const players = pgTable('players', {
   color: text('color').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
 })
-```
+\`\`\`
 
 #### TypeScript Types
-```typescript
+\`\`\`typescript
 export interface Player {
   id: number
   name: string
   color: string
   created_at?: string
 }
-```
+\`\`\`
 
 #### 问题
 1. **缺少字段**: `project_id` 和 `user_id` 在types中缺失
@@ -114,19 +114,19 @@ export interface Player {
 ### 4. User Activity Table (新增)
 
 #### Database Schema
-```typescript
+\`\`\`typescript
 export const userActivity = pgTable('user_activity', {
   id: serial('id').primaryKey(),
   project_id: text('project_id').notNull().references(() => projects.id),
   user_id: text('user_id').notNull(),
   last_seen: timestamp('last_seen').defaultNow().notNull(),
 })
-```
+\`\`\`
 
 #### TypeScript Types
-```typescript
+\`\`\`typescript
 // ❌ 完全缺失
-```
+\`\`\`
 
 #### 问题
 1. **缺少类型定义**: types.ts中完全没有UserActivity接口
@@ -152,19 +152,19 @@ export const userActivity = pgTable('user_activity', {
 ### ⚠️ 问题和建议
 
 #### 1. 类型一致性问题
-```
+\`\`\`
 Schema          |  Types          |  建议
 ----------------|-----------------|------------------
 invite_code     |  access_code    |  统一为invite_code
 type (notNull)  |  type?          |  types应该required
 -               |  completed      |  从types移除或添加到schema
 -               |  updated_at     |  projects表添加此字段
-```
+\`\`\`
 
 #### 2. 缺少必要字段
 
 **Tasks表缺少project_id字段在types中**
-```typescript
+\`\`\`typescript
 // 应该添加
 export interface Task {
   id: number
@@ -172,10 +172,10 @@ export interface Task {
   description: string
   // ...
 }
-```
+\`\`\`
 
 **Players表缺少project_id和user_id**
-```typescript
+\`\`\`typescript
 export interface Player {
   id: number
   project_id: string  // ← 添加
@@ -184,10 +184,10 @@ export interface Player {
   color: string
   created_at?: string
 }
-```
+\`\`\`
 
 #### 3. 缺少UserActivity类型定义
-```typescript
+\`\`\`typescript
 // 需要添加
 export interface UserActivity {
   id: number
@@ -195,15 +195,15 @@ export interface UserActivity {
   user_id: string
   last_seen: Date | string
 }
-```
+\`\`\`
 
 #### 4. projects表建议添加updated_at
-```typescript
+\`\`\`typescript
 export const projects = pgTable('projects', {
   // ... 现有字段
   updated_at: timestamp('updated_at').defaultNow().notNull(),  // ← 添加
 })
-```
+\`\`\`
 
 ---
 
