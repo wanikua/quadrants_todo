@@ -1,5 +1,7 @@
 export interface Player {
   id: number
+  project_id?: string
+  user_id?: string
   name: string
   color: string
   created_at?: string
@@ -15,10 +17,10 @@ export interface Comment {
 
 export interface Task {
   id: number
+  project_id?: string
   description: string
   urgency: number
   importance: number
-  completed?: boolean
   created_at?: string | Date
   updated_at?: string | Date
   assignees?: Player[]
@@ -44,10 +46,18 @@ export interface Project {
   id: string
   name: string
   description?: string
+  type: 'personal' | 'team'  // Required as per schema
   owner_id: string
-  access_code?: string
+  invite_code?: string  // Renamed from access_code to match schema
   created_at?: string
   updated_at?: string
+}
+
+export interface UserActivity {
+  id: number
+  project_id: string
+  user_id: string
+  last_seen: Date | string
 }
 
 export interface ProjectMember {

@@ -52,7 +52,7 @@ async function runMigrations() {
     for (let i = 0; i < statements.length; i++) {
       const statement = statements[i]
       try {
-        await sql(statement)
+        await sql.unsafe(statement)
         console.log(`   ✅ Statement ${i + 1}/${statements.length} executed`)
       } catch (error: any) {
         console.error(`   ❌ Error in statement ${i + 1}:`, error.message)

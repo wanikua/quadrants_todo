@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     const { userId, customerId, subscriptionId } = body
 
     // Create a mock Stripe checkout session
-    const mockSession: Stripe.Checkout.Session = {
+    const mockSession = {
       id: 'cs_test_mock',
       object: 'checkout.session',
       customer: customerId || 'cus_test123',
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         userId: userId || null
       },
       client_reference_id: userId || null,
-    } as Stripe.Checkout.Session
+    } as unknown as Stripe.Checkout.Session
 
     const result = await handleCheckoutCompleted(mockSession)
 
