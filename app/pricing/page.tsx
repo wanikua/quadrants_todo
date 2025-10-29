@@ -51,7 +51,7 @@ export default function PricingPage() {
           {/* Hero Section */}
           <div className="text-center mb-24">
             <h1 className="text-5xl md:text-7xl font-bold text-black leading-[1.1] mb-8">
-              Plans 
+              Plans for everyone 
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Start free. Upgrade when you need.
@@ -105,29 +105,8 @@ export default function PricingPage() {
 
             {/* Pro Plan */}
             <div className="bg-black text-white border-[3px] border-black rounded-[20px] p-10 hover:shadow-2xl transition-all duration-[600ms] hover:-translate-y-2 relative">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black px-6 py-2 rounded-full font-bold text-sm">
+ flex items-ba            <span className="text-lg">Unlimited tasks</span>
                 POPULAR
-              </div>
-
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-3xl font-bold mb-3">Pro</h3>
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-6xl font-bold">$9.9</span>
-                    <span className="text-gray-300 text-xl">/month</span>
-                  </div>
-                  <p className="text-gray-300 text-lg">For power users</p>
-                </div>
-
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
-                    <span className="text-lg">Unlimited projects</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
-                    <span className="text-lg">Unlimited tasks</span>
-                  </li>
                   <li className="flex items-start gap-3">
                     <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
                     <span className="text-lg">Advanced collaboration</span>
