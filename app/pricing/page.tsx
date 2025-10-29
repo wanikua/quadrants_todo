@@ -51,16 +51,19 @@ export default function PricingPage() {
           {/* Hero Section */}
           <div className="text-center mb-24">
             <h1 className="text-5xl md:text-7xl font-bold text-black leading-[1.1] mb-8">
-              Plans 
+              Simple, <span className="text-highlight-yellow">Transparent Pricing</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Start free. Upgrade when you need.
+              Start free. Upgrade when you&apos;re ready.
             </p>
           </div>
 
           {/* Promo Code Notice */}
           <div className="text-center mb-8">
-            <p classN  </div>
+            <p className="text-lg text-gray-600 font-medium">
+              Have a promo code? You can enter it on the payment page
+            </p>
+          </div>
 
           {/* Pricing Cards */}
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -90,8 +93,8 @@ export default function PricingPage() {
                     <span className="text-gray-700 text-lg">Basic collaboration</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    
-                    
+                    <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
+                    <span className="text-gray-700 text-lg">Mobile access</span>
                   </li>
                 </ul>
 
@@ -137,8 +140,8 @@ export default function PricingPage() {
                     <span className="text-lg">Priority support</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    
-                    
+                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
+                    <span className="text-lg">Custom themes</span>
                   </li>
                 </ul>
 

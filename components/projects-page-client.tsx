@@ -38,7 +38,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
   const [projects, setProjects] = useState<Project[]>(initialProjects)
 
   // Check if user is Pro
-  const isPro = user?.subscription_plan === 'pro' && (user?.subscription_status === 'pro' || user?.subscription_status === 'active')
+  const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active'
 
   // Count current projects by type
   const personalProjectCount = projects.filter(p => p.type === 'personal').length

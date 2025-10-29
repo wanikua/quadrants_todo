@@ -115,7 +115,9 @@ export default function HomePage() {
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed animate-on-load animate-fade-in-up animation-delay-200">
               The simplest todo management. Yet the most <span className="text-highlight-purple">powerful</span>.
               <br />
-              
+              <span className="text-gray-900 font-semibold">
+                Drag. Drop. Done.
+              </span>
             </p>
           </div>
 
@@ -213,6 +215,7 @@ export default function HomePage() {
                   Stop wasting time <span className="text-underline-curve">deciding</span> what to do next
                 </h2>
                 <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
+                  Every task lands exactly where it should. <span className="text-highlight-purple">Urgent in the top right.</span> Important but not urgent on the left.
                   Your next move is always <span className="text-highlight-yellow">obvious</span>.
                 </p>
               </div>
@@ -231,6 +234,7 @@ export default function HomePage() {
                   </h2>
                   <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
                     No endless scrolling. No hidden tasks. Everything visible on one screen.
+                    The Eisenhower Matrix gives you instant clarity on what matters most.
                   </p>
                 </div>
               </div>
@@ -265,7 +269,7 @@ export default function HomePage() {
                         size="lg"
                         className="bg-white text-black hover:bg-gray-100 px-12 py-8 text-xl rounded-[20px] font-bold transition-all duration-[1200ms] ease-[ease] shadow-xl hover:shadow-2xl hover:scale-[1.02]"
                       >
-                        Try it now<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right ml-3 h-6 w-6"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                        Try it now—it&apos;s free
                         <ArrowRight className="ml-3 h-6 w-6" />
                       </Button>
                     </Link>
