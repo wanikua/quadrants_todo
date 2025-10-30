@@ -3,12 +3,12 @@
 import { useState, useCallback, useMemo, useEffect } from "react"
 import type { TaskWithAssignees, Player, Line, Project } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
-import { createTask, deleteTask, updateTask as updateTaskAction, createPlayer, deletePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount } from "@/app/db/actions"
+import { createTask, deleteTask, updateTask as updateTaskAction, createPlayer, deletePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount, getArchivedTasks } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown } from "lucide-react"
+import { Map, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown, Check, Edit } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -59,6 +59,12 @@ export default function QuadrantTodoClient({
   projectName,
 }: QuadrantTodoClientProps) {
   const router = useRouter()
+
+  // Local state for optimistic updates
+  const [tasks, setTasks] = useState<TaskWithAssignees[]>(initialTasks)
+  const [players, setPlayers] = useState<Player[]>(initialPlayers)
+  const [lines, setLines] = useState<Line[]>(initialLines)
+
   const [isDrawingLine, setIsDrawingLine] = useState(false)
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null)
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
@@ -73,6 +79,36 @@ export default function QuadrantTodoClient({
   })
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
+
+  // Project editing state
+  const [isEditingProject, setIsEditingProject] = useState(false)
+  const [editedProjectName, setEditedProjectName] = useState(projectName || "")
+  const [editedProjectDescription, setEditedProjectDescription] = useState("")
+  const [isArchiving, setIsArchiving] = useState(false)
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+
+  // Sync initial data when props change
+  useEffect(() => {
+    setTasks(initialTasks)
+  }, [initialTasks])
+
+  useEffect(() => {
+    setPlayers(initialPlayers)
+  }, [initialPlayers])
+
+  useEffect(() => {
+    setLines(initialLines)
+  }, [initialLines])
+
+  // Sync selectedTask when tasks change (e.g., after router.refresh())
+  useEffect(() => {
+    if (selectedTask) {
+      const updatedTask = tasks.find(t => t.id === selectedTask.id)
+      if (updatedTask) {
+        setSelectedTask(updatedTask)
+      }
+    }
+  }, [tasks])
 
   const isMobile = false // For responsive layout adjustments
 
@@ -178,8 +214,8 @@ export default function QuadrantTodoClient({
   // Find current user's player for default task assignment
   const currentUserPlayer = useMemo(() => {
     if (!userName) return null
-    return initialPlayers.find(p => p.name === userName)
-  }, [userName, initialPlayers])
+    return players.find(p => p.name === userName)
+  }, [userName, players])
 
   // Initialize task data with current user as default assignee
   const [newTaskData, setNewTaskData] = useState({
@@ -191,14 +227,14 @@ export default function QuadrantTodoClient({
 
   // Filter and sort tasks
   const filteredAndSortedTasks = useMemo(() => {
-    let filtered = initialTasks
+    let filtered = tasks
 
     if (selectedPlayerFilter !== "all") {
       if (selectedPlayerFilter === "unassigned") {
-        filtered = initialTasks.filter(task => !task.assignees || task.assignees.length === 0)
+        filtered = tasks.filter(task => !task.assignees || task.assignees.length === 0)
       } else {
         const playerId = parseInt(selectedPlayerFilter)
-        filtered = initialTasks.filter(task =>
+        filtered = tasks.filter(task =>
           task.assignees && task.assignees.some(p => p.id === playerId)
         )
       }
@@ -210,19 +246,19 @@ export default function QuadrantTodoClient({
       }
       return b.urgency - a.urgency
     })
-  }, [initialTasks, selectedPlayerFilter])
+  }, [tasks, selectedPlayerFilter])
 
   // Get highest priority task ID
   const highestPriorityTaskId = useMemo(() => {
-    if (initialTasks.length === 0) return null
-    const sorted = [...initialTasks].sort((a, b) => {
+    if (tasks.length === 0) return null
+    const sorted = [...tasks].sort((a, b) => {
       if (a.importance !== b.importance) {
         return b.importance - a.importance
       }
       return b.urgency - a.urgency
     })
     return sorted[0]?.id || null
-  }, [initialTasks])
+  }, [tasks])
 
   const getQuadrantLabel = useCallback((urgency: number, importance: number): string => {
     if (urgency >= 50 && importance >= 50) return "Important & Urgent"
@@ -232,10 +268,31 @@ export default function QuadrantTodoClient({
   }, [])
 
   const handleTaskCreate = async (description: string, urgency: number, importance: number, assigneeIds: number[]) => {
+    // Optimistic update: Create temporary task immediately
+    const tempId = Date.now() // Temporary ID
+    const tempTask: TaskWithAssignees = {
+      id: tempId,
+      description,
+      urgency,
+      importance,
+      created_at: new Date().toISOString(),
+      project_id: projectId,
+      assignees: players.filter(p => assigneeIds.includes(p.id)),
+      comments: []
+    }
+
+    setTasks(prev => [...prev, tempTask])
+
+    // Sync to database in background
     const result = await createTask(projectId, description, urgency, importance, assigneeIds)
     if (result.success) {
+      // Replace temp task with real task from server
       router.refresh()
       setLastSyncTime(new Date())
+    } else {
+      // Rollback on error
+      setTasks(prev => prev.filter(t => t.id !== tempId))
+      toast.error(result.error || "Failed to create task")
     }
   }
 
@@ -255,19 +312,51 @@ export default function QuadrantTodoClient({
   }
 
   const handleTaskUpdate = async (taskId: number, description: string, urgency: number, importance: number, assigneeIds: number[]) => {
+    // Optimistic update: Update task immediately in UI
+    const updatedTask = {
+      ...tasks.find(t => t.id === taskId)!,
+      description,
+      urgency,
+      importance,
+      assignees: players.filter(p => assigneeIds.includes(p.id))
+    }
+
+    setTasks(prev => prev.map(task =>
+      task.id === taskId ? updatedTask : task
+    ))
+
+    // Update selectedTask so the dialog shows updated data
+    if (selectedTask && selectedTask.id === taskId) {
+      setSelectedTask(updatedTask)
+    }
+
+    // Sync to database in background
     const result = await updateTaskAction(taskId, urgency, importance, description, assigneeIds)
     if (result.success) {
-      router.refresh()
       setLastSyncTime(new Date())
+      toast.success("Task updated successfully")
+      // Refresh to get latest data from server
+      router.refresh()
+    } else {
+      // Refresh to rollback on error
+      router.refresh()
+      toast.error(result.error || "Failed to update task")
     }
   }
 
   const handleTaskDelete = async (taskId: number) => {
+    // Optimistic update: Remove task immediately from UI
+    setTasks(prev => prev.filter(task => task.id !== taskId))
+    setIsTaskDetailOpen(false)
+
+    // Sync to database in background
     const result = await deleteTask(taskId)
     if (result.success) {
-      setIsTaskDetailOpen(false)
-      router.refresh()
       setLastSyncTime(new Date())
+    } else {
+      // Refresh to rollback on error
+      router.refresh()
+      toast.error(result.error || "Failed to delete task")
     }
   }
 
@@ -319,11 +408,91 @@ export default function QuadrantTodoClient({
     }
   }
 
+  const handleSaveProjectEdit = async () => {
+    if (!editedProjectName.trim()) {
+      toast.error("Project name cannot be empty")
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editedProjectName.trim(),
+          description: editedProjectDescription.trim() || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        toast.error(data.error || "Failed to update project")
+        return
+      }
+
+      toast.success("Project updated successfully")
+      setIsEditingProject(false)
+      router.refresh()
+    } catch (error) {
+      toast.error("Failed to update project")
+      console.error(error)
+    }
+  }
+
+  const handleArchiveProject = async () => {
+    setIsArchiving(true)
+
+    try {
+      // Get archived tasks count before archiving the project
+      const archivedResult = await getArchivedTasks(projectId)
+      const archivedTasksCount = archivedResult.success && archivedResult.tasks ? archivedResult.tasks.length : 0
+
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: true }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        toast.error(data.error || "Failed to archive project")
+        return
+      }
+
+      // Show congratulatory message using archived tasks count
+      const taskWord = archivedTasksCount === 1 ? "task" : "tasks"
+      const congratsMessage = projectType === "team"
+        ? `Congratulations! You all handled ${archivedTasksCount} ${taskWord}!`
+        : `Congratulations! You handled ${archivedTasksCount} ${taskWord}!`
+
+      toast.success(congratsMessage, { duration: 5000 })
+      setShowArchiveDialog(false)
+      router.push("/projects")
+      router.refresh()
+    } catch (error) {
+      toast.error("Failed to archive project")
+      console.error(error)
+    } finally {
+      setIsArchiving(false)
+    }
+  }
+
   const handleCreatePlayer = async () => {
     if (!newPlayerData.name.trim()) {
       toast.error("Please enter a player name")
       return
     }
+
+    // Optimistic update: Add player immediately
+    const tempId = Date.now()
+    const tempPlayer: Player = {
+      id: tempId,
+      name: newPlayerData.name,
+      color: newPlayerData.color,
+      created_at: new Date().toISOString(),
+      project_id: projectId
+    }
+    setPlayers(prev => [...prev, tempPlayer])
 
     const result = await createPlayer(projectId, newPlayerData.name, newPlayerData.color)
     if (result.success) {
@@ -332,6 +501,8 @@ export default function QuadrantTodoClient({
       router.refresh()
       setLastSyncTime(new Date())
     } else {
+      // Rollback on error
+      setPlayers(prev => prev.filter(p => p.id !== tempId))
       toast.error(result.error || "Failed to create player")
     }
   }
@@ -341,12 +512,21 @@ export default function QuadrantTodoClient({
       return
     }
 
+    // Optimistic update: Remove player immediately
+    setPlayers(prev => prev.filter(p => p.id !== playerId))
+    // Also remove from tasks
+    setTasks(prev => prev.map(task => ({
+      ...task,
+      assignees: task.assignees?.filter(a => a.id !== playerId) || []
+    })))
+
     const result = await deletePlayer(playerId)
     if (result.success) {
       toast.success("Player deleted successfully")
-      router.refresh()
       setLastSyncTime(new Date())
     } else {
+      // Refresh to rollback on error
+      router.refresh()
       toast.error(result.error || "Failed to delete player")
     }
   }
@@ -391,7 +571,10 @@ export default function QuadrantTodoClient({
 
         {/* Project Header with Settings */}
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{projectName}</h1>
+          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
+            <Edit className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -439,7 +622,7 @@ export default function QuadrantTodoClient({
                       <SelectContent>
                         <SelectItem value="all">All Tasks</SelectItem>
                         <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {initialPlayers.map((player) => (
+                        {players.map((player) => (
                           <SelectItem key={player.id} value={player.id.toString()}>
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
@@ -462,6 +645,14 @@ export default function QuadrantTodoClient({
                   <DropdownMenuSeparator />
                 </>
               )}
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Project Actions</DropdownMenuLabel>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
+                <Check className="h-4 w-4 mr-2" />
+                Archive Project
+              </DropdownMenuItem>
 
               <DropdownMenuItem
                 className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
@@ -493,10 +684,10 @@ export default function QuadrantTodoClient({
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-primary" />
                     <span className="text-sm">
-                      Filtered: {filteredAndSortedTasks.length} of {initialTasks.length} tasks shown
+                      Filtered: {filteredAndSortedTasks.length} of {tasks.length} tasks shown
                       {selectedPlayerFilter === "unassigned"
                         ? " (unassigned)"
-                        : ` (${initialPlayers.find(p => p.id.toString() === selectedPlayerFilter)?.name})`}
+                        : ` (${players.find(p => p.id.toString() === selectedPlayerFilter)?.name})`}
                     </span>
                   </div>
                   <Button
@@ -510,9 +701,9 @@ export default function QuadrantTodoClient({
               </div>
             )}
             <QuadrantMatrixMap
-              tasks={selectedPlayerFilter !== "all" ? filteredAndSortedTasks : initialTasks}
-              players={initialPlayers}
-              lines={initialLines}
+              tasks={selectedPlayerFilter !== "all" ? filteredAndSortedTasks : tasks}
+              players={players}
+              lines={lines}
               projectId={projectId}
               isMobile={isMobile}
               isDrawingLine={isDrawingLine}
@@ -522,6 +713,7 @@ export default function QuadrantTodoClient({
               userName={userName}
               projectType={projectType}
               highestPriorityTaskId={highestPriorityTaskId}
+              setTasks={setTasks}
             />
           </TabsContent>
 
@@ -644,11 +836,11 @@ export default function QuadrantTodoClient({
                 </div>
               </div>
 
-              {projectType === "team" && initialPlayers.length > 0 && (
+              {projectType === "team" && players.length > 0 && (
                 <div>
                   <Label>Assign to Players</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {initialPlayers.map((player) => (
+                    {players.map((player) => (
                       <Badge
                         key={player.id}
                         variant={newTaskData.assigneeIds.includes(player.id) ? "default" : "outline"}
@@ -687,7 +879,7 @@ export default function QuadrantTodoClient({
         {selectedTask && (
           <TaskDetailDialog
             task={selectedTask}
-            players={initialPlayers}
+            players={players}
             projectType={projectType}
             userName={userName}
             isOpen={isTaskDetailOpen}
@@ -698,15 +890,35 @@ export default function QuadrantTodoClient({
             onAddComment={async (taskId: number, content: string, authorName: string) => {
               const result = await addComment(taskId, content, authorName)
               if (result.success) {
-                router.refresh()
+                // Update selectedTask with the new comment for immediate UI feedback
+                if (selectedTask && selectedTask.id === taskId && result.comment) {
+                  setSelectedTask({
+                    ...selectedTask,
+                    comments: [...(selectedTask.comments || []), result.comment]
+                  })
+                }
                 setLastSyncTime(new Date())
+                toast.success("Comment added")
+                router.refresh()
+              } else {
+                toast.error(result.error || "Failed to add comment")
               }
             }}
             onDeleteComment={async (commentId: number, taskId: number) => {
               const result = await deleteCommentAction(commentId)
               if (result.success) {
-                router.refresh()
+                // Update selectedTask by removing the deleted comment
+                if (selectedTask && selectedTask.id === taskId) {
+                  setSelectedTask({
+                    ...selectedTask,
+                    comments: selectedTask.comments?.filter(c => c.id !== commentId) || []
+                  })
+                }
                 setLastSyncTime(new Date())
+                toast.success("Comment deleted")
+                router.refresh()
+              } else {
+                toast.error(result.error || "Failed to delete comment")
               }
             }}
           />
@@ -721,12 +933,12 @@ export default function QuadrantTodoClient({
             <div className="space-y-4">
               {/* Current Players List */}
               <div>
-                <Label className="text-sm font-medium">Current Players ({initialPlayers.length})</Label>
+                <Label className="text-sm font-medium">Current Players ({players.length})</Label>
                 <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
-                  {initialPlayers.length === 0 ? (
+                  {players.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">No players yet</p>
                   ) : (
-                    initialPlayers.map((player) => (
+                    players.map((player) => (
                       <div key={player.id} className="flex items-center justify-between p-2 border rounded-lg hover:bg-accent">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded-full border-2 border-white shadow" style={{ backgroundColor: player.color }} />
@@ -823,6 +1035,67 @@ export default function QuadrantTodoClient({
                 className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               >
                 {isDeleting ? "Deleting..." : "Delete Project"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Edit Project Dialog */}
+        <Dialog open={isEditingProject} onOpenChange={setIsEditingProject}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Project</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Project Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editedProjectName}
+                  onChange={(e) => setEditedProjectName(e.target.value)}
+                  placeholder="Project name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description (optional)</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editedProjectDescription}
+                  onChange={(e) => setEditedProjectDescription(e.target.value)}
+                  placeholder="Project description"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsEditingProject(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveProjectEdit}>
+                Save Changes
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Archive Project Confirmation */}
+        <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Archive this project?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will archive the project <span className="font-bold text-black">&quot;{projectName}&quot;</span>.
+                You can restore it later from the archived projects list.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleArchiveProject}
+                disabled={isArchiving}
+                className="bg-green-600 hover:bg-green-700 focus:ring-green-600"
+              >
+                {isArchiving ? "Archiving..." : "Archive Project"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

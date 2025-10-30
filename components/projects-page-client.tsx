@@ -17,12 +17,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { LogOut, Plus, Folder, Settings, Users, Crown, Sparkles, User } from "lucide-react"
+import { LogOut, Plus, Folder, Settings, Users, Crown, Sparkles, User, Archive, X as CloseIcon } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { joinProject } from "@/app/db/actions"
+import { useClerk } from "@clerk/nextjs"
 
 interface Project {
   id: string
@@ -35,6 +36,7 @@ interface Project {
 
 export default function ProjectsPageClient({ initialProjects, user }: { initialProjects: Project[]; user: any }) {
   const router = useRouter()
+  const { signOut } = useClerk()
   const [projects, setProjects] = useState<Project[]>(initialProjects)
 
   // Check if user is Pro
@@ -51,16 +53,16 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
   const [joinDialogOpen, setJoinDialogOpen] = useState(false)
   const [inviteCode, setInviteCode] = useState("")
   const [isJoining, setIsJoining] = useState(false)
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+  const [archivedProjects, setArchivedProjects] = useState<Project[]>([])
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false)
 
   async function handleSignOut() {
     try {
-      const response = await fetch('/api/auth/signout', { method: 'POST' })
-      if (response.ok) {
-        router.push("/")
-        router.refresh()
-      }
+      await signOut({ redirectUrl: '/' })
     } catch (error) {
       console.error('Sign out error:', error)
+      toast.error('Failed to sign out')
     }
   }
 
@@ -136,6 +138,46 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
       console.error(error)
     } finally {
       setIsJoining(false)
+    }
+  }
+
+  async function handleOpenArchives() {
+    setArchiveDialogOpen(true)
+    setIsLoadingArchived(true)
+
+    try {
+      const response = await fetch('/api/projects/archived')
+      if (!response.ok) {
+        throw new Error('Failed to load archived projects')
+      }
+      const data = await response.json()
+      setArchivedProjects(data)
+    } catch (error) {
+      toast.error("Failed to load archived projects")
+      console.error(error)
+    } finally {
+      setIsLoadingArchived(false)
+    }
+  }
+
+  async function handleRestoreProject(projectId: string) {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archived: false })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to restore project')
+      }
+
+      toast.success("Project restored successfully")
+      setArchiveDialogOpen(false)
+      window.location.href = '/projects'
+    } catch (error) {
+      toast.error("Failed to restore project")
+      console.error(error)
     }
   }
 
@@ -334,6 +376,74 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
           </div>
         )}
       </div>
+
+      {/* Floating Archives Button */}
+      <Button
+        onClick={handleOpenArchives}
+        className="fixed bottom-8 right-8 rounded-full w-14 h-14 shadow-lg bg-gray-800 hover:bg-gray-900 text-white"
+        title="View Archived Projects"
+      >
+        <Archive className="w-6 h-6" />
+      </Button>
+
+      {/* Archived Projects Dialog */}
+      <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Archive className="w-6 h-6" />
+              Archived Projects
+            </DialogTitle>
+            <DialogDescription>
+              Projects that have been archived. You can restore them anytime.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {isLoadingArchived ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-gray-500">Loading archived projects...</div>
+              </div>
+            ) : archivedProjects.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Archive className="h-16 w-16 text-gray-300 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No archived projects</h3>
+                <p className="text-gray-500">Archived projects will appear here</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 max-h-[50vh] overflow-y-auto">
+                {archivedProjects.map((project) => (
+                  <Card key={project.id} className="border-2 border-gray-200">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-xl font-bold text-gray-900">{project.name}</h3>
+                            <Badge variant={project.type === 'team' ? 'default' : 'secondary'}>
+                              {project.type === 'team' ? 'Team' : 'Personal'}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-600 mb-2">{project.description || "No description"}</p>
+                          <p className="text-sm text-gray-500">
+                            Archived on {new Date(project.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => handleRestoreProject(project.id)}
+                          variant="outline"
+                          className="shrink-0"
+                        >
+                          Restore
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

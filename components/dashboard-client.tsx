@@ -12,6 +12,8 @@ import Link from "next/link"
 import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut, Sparkles, Check, Home } from "lucide-react"
 import { useStripe } from "@/hooks/use-stripe"
 import { STRIPE_CONFIG } from "@/lib/stripe-config"
+import { useClerk } from "@clerk/nextjs"
+import { toast } from "sonner"
 
 interface User {
   id: string
@@ -31,6 +33,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   const router = useRouter()
+  const { signOut } = useClerk()
   const [name, setName] = useState(initialUser.name)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,13 +46,10 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
 
   async function handleSignOut() {
     try {
-      const response = await fetch('/api/auth/signout', { method: 'POST' })
-      if (response.ok) {
-        router.push("/")
-        router.refresh()
-      }
+      await signOut({ redirectUrl: '/' })
     } catch (error) {
       console.error('Sign out error:', error)
+      toast.error('Failed to sign out')
     }
   }
 

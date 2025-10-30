@@ -39,6 +39,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url })
   } catch (error) {
     console.error('Error creating portal session:', error)
+
+    // Handle Stripe-specific errors with helpful messages
+    if (error && typeof error === 'object' && 'type' in error) {
+      const stripeError = error as any
+
+      if (stripeError.code === 'customer_portal_configuration_not_found' ||
+          stripeError.message?.includes('No configuration provided')) {
+        return NextResponse.json(
+          {
+            error: 'Billing portal not configured. Please contact support.',
+            details: 'Customer portal needs to be set up in Stripe Dashboard'
+          },
+          { status: 503 }
+        )
+      }
+
+      // Return specific Stripe error message
+      return NextResponse.json(
+        {
+          error: stripeError.message || 'Failed to create portal session',
+          type: stripeError.type
+        },
+        { status: stripeError.statusCode || 500 }
+      )
+    }
+
+    // Generic error fallback
     return NextResponse.json(
       { error: 'Failed to create portal session' },
       { status: 500 }

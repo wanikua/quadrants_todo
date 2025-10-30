@@ -2,7 +2,7 @@
 
 import { db } from './index'
 import { projects, projectMembers, tasks, players, taskAssignments, lines, comments, userActivity } from './schema'
-import { eq, and, desc, gte, sql } from 'drizzle-orm'
+import { eq, and, desc, gte, sql, or, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getUserId } from '@/lib/auth'
 
@@ -359,18 +359,108 @@ export async function deleteTask(taskId: number) {
     const hasAccess = await getUserProjectAccess(userId, taskList[0].project_id)
     if (!hasAccess) return { success: false, error: 'Access denied' }
 
-    await db.delete(tasks).where(eq(tasks.id, taskId))
+    // Archive task instead of deleting
+    await db.update(tasks).set({ archived: true }).where(eq(tasks.id, taskId))
     revalidatePath(`/projects/${taskList[0].project_id}`)
     return { success: true }
   } catch (error) {
-    console.error('Error deleting task:', error)
-    return { success: false, error: 'Failed to delete task' }
+    console.error('Error archiving task:', error)
+    return { success: false, error: 'Failed to archive task' }
   }
 }
 
 export async function completeTask(taskId: number) {
   // Complete task has the same effect as delete - remove from map
   return await deleteTask(taskId)
+}
+
+export async function getArchivedTasks(projectId: string) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Check project access
+    const hasAccess = await getUserProjectAccess(userId, projectId)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    // Get archived tasks with assignments
+    const tasksWithAssignments = await db
+      .select({
+        id: tasks.id,
+        description: tasks.description,
+        urgency: tasks.urgency,
+        importance: tasks.importance,
+        created_at: tasks.created_at,
+        updated_at: tasks.updated_at,
+        player: {
+          id: players.id,
+          name: players.name,
+          color: players.color,
+        },
+      })
+      .from(tasks)
+      .leftJoin(taskAssignments, eq(tasks.id, taskAssignments.task_id))
+      .leftJoin(players, eq(taskAssignments.player_id, players.id))
+      .where(and(
+        eq(tasks.project_id, projectId),
+        eq(tasks.archived, true)
+      ))
+
+    // Group tasks by ID and collect assignees
+    const tasksMap = new Map()
+    for (const row of tasksWithAssignments) {
+      if (!tasksMap.has(row.id)) {
+        tasksMap.set(row.id, {
+          id: row.id,
+          description: row.description,
+          urgency: row.urgency,
+          importance: row.importance,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          assignees: [],
+        })
+      }
+      if (row.player?.id) {
+        tasksMap.get(row.id).assignees.push(row.player)
+      }
+    }
+
+    const archivedTasks = Array.from(tasksMap.values())
+    return { success: true, tasks: archivedTasks }
+  } catch (error) {
+    console.error('Error getting archived tasks:', error)
+    return { success: false, error: 'Failed to get archived tasks' }
+  }
+}
+
+export async function restoreTask(taskId: number) {
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Get task to check project access
+    const taskList = await db.select({ project_id: tasks.project_id }).from(tasks).where(eq(tasks.id, taskId))
+    if (taskList.length === 0) return { success: false, error: 'Task not found' }
+
+    const hasAccess = await getUserProjectAccess(userId, taskList[0].project_id)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    // Restore task by setting archived to false
+    await db.update(tasks).set({ archived: false }).where(eq(tasks.id, taskId))
+    revalidatePath(`/projects/${taskList[0].project_id}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error restoring task:', error)
+    return { success: false, error: 'Failed to restore task' }
+  }
 }
 
 // Player actions
@@ -546,7 +636,7 @@ export async function getProjectWithData(projectId: string) {
 
     const project = projectList[0]
 
-    // Get tasks with assignments
+    // Get tasks with assignments (exclude archived)
     const tasksWithAssignments = await db
       .select({
         id: tasks.id,
@@ -564,7 +654,10 @@ export async function getProjectWithData(projectId: string) {
       .from(tasks)
       .leftJoin(taskAssignments, eq(tasks.id, taskAssignments.task_id))
       .leftJoin(players, eq(taskAssignments.player_id, players.id))
-      .where(eq(tasks.project_id, projectId))
+      .where(and(
+        eq(tasks.project_id, projectId),
+        or(eq(tasks.archived, false), isNull(tasks.archived))
+      ))
 
     // Group tasks by ID and collect assignees
     const tasksMap = new Map()

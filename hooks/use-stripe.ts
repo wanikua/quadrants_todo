@@ -54,13 +54,15 @@ export function useStripe() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create portal session')
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to create portal session')
       }
 
       const { url } = await response.json()
       window.location.href = url
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      setError(errorMessage)
       console.error('Portal error:', err)
     } finally {
       setLoading(false)

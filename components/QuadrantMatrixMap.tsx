@@ -18,6 +18,7 @@ import type { TaskWithAssignees, Player, Line } from "@/app/types"
 import { updateTask, toggleLine, deleteLine, deleteTask, completeTask } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Trash2, Maximize2, Minimize2, CheckCircle2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface QuadrantMatrixMapProps {
   tasks: TaskWithAssignees[]
@@ -32,6 +33,7 @@ interface QuadrantMatrixMapProps {
   userName?: string
   projectType?: "personal" | "team"
   highestPriorityTaskId?: number | null
+  setTasks?: (updater: (prev: TaskWithAssignees[]) => TaskWithAssignees[]) => void
 }
 
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
@@ -47,6 +49,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   userName,
   projectType,
   highestPriorityTaskId,
+  setTasks,
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
@@ -120,14 +123,40 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     const x = ((e.clientX - rect.left) / rect.width) * 100
     const y = ((e.clientY - rect.top) / rect.height) * 100
 
-    const urgency = Math.max(0, Math.min(100, Math.round(x)))
-    const importance = Math.max(0, Math.min(100, Math.round(100 - y)))
+    // Limit coordinates to 95% to avoid edge issues
+    const urgency = Math.max(5, Math.min(95, Math.round(x)))
+    const importance = Math.max(5, Math.min(95, Math.round(100 - y)))
 
+    // Save old position for rollback
+    const oldUrgency = draggedTask.urgency
+    const oldImportance = draggedTask.importance
+
+    // Optimistic update - update UI immediately
+    if (setTasks) {
+      setTasks(prev => prev.map(t =>
+        t.id === draggedTask.id
+          ? { ...t, urgency, importance }
+          : t
+      ))
+    }
+
+    setDraggedTask(null)
+
+    // Sync to database in background
     const result = await updateTask(draggedTask.id, urgency, importance)
     if (result.success) {
       router.refresh()
+    } else {
+      // Rollback on failure
+      if (setTasks) {
+        setTasks(prev => prev.map(t =>
+          t.id === draggedTask.id
+            ? { ...t, urgency: oldUrgency, importance: oldImportance }
+            : t
+        ))
+      }
+      toast.error(result.error || "Failed to move task")
     }
-    setDraggedTask(null)
   }
 
   const handleMatrixMouseDown = (e: React.MouseEvent) => {
@@ -143,8 +172,9 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     const x = ((e.clientX - rect.left) / rect.width) * 100
     const y = ((e.clientY - rect.top) / rect.height) * 100
 
-    const urgency = Math.max(0, Math.min(100, x))
-    const importance = Math.max(0, Math.min(100, 100 - y))
+    // Limit coordinates to 95% to avoid edge issues
+    const urgency = Math.max(5, Math.min(95, x))
+    const importance = Math.max(5, Math.min(95, 100 - y))
 
     setMouseDownPos({ x: e.clientX, y: e.clientY })
     setIsLongPress(false)
@@ -207,8 +237,9 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     const x = ((touch.clientX - rect.left) / rect.width) * 100
     const y = ((touch.clientY - rect.top) / rect.height) * 100
 
-    const urgency = Math.max(0, Math.min(100, x))
-    const importance = Math.max(0, Math.min(100, 100 - y))
+    // Limit coordinates to 95% to avoid edge issues
+    const urgency = Math.max(5, Math.min(95, x))
+    const importance = Math.max(5, Math.min(95, 100 - y))
 
     setMouseDownPos({ x: touch.clientX, y: touch.clientY })
     setIsLongPress(false)
@@ -592,9 +623,11 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                       isHighestPriority={task.id === highestPriorityTaskId}
                     />
 
-                    {/* Task Description Tooltip */}
+                    {/* Task Description Tooltip - switches side based on position */}
                     {!isMobile && (
-                      <div className="absolute left-full top-0 ml-2 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border shadow-lg">
+                      <div className={`absolute top-0 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border shadow-lg ${
+                        task.urgency > 70 ? "right-full mr-2" : "left-full ml-2"
+                      }`}>
                         <div className="font-medium">{task.description}</div>
                         {task.assignees && task.assignees.length > 0 && (
                           <div className="text-muted-foreground">{task.assignees.map((p) => p.name).join(", ")}</div>
@@ -606,8 +639,14 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                     )}
                   </div>
 
-                  {/* Task Description Label */}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-card border border-border rounded px-2 py-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Task Description Label - adjusts position for edges */}
+                  <div className={`absolute top-full mt-1 bg-card border border-border rounded px-2 py-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity ${
+                    task.urgency > 70
+                      ? "right-0"
+                      : task.urgency < 30
+                      ? "left-0"
+                      : "left-1/2 transform -translate-x-1/2"
+                  }`}>
                     <div className={`text-xs font-medium text-center truncate ${isMobile ? "max-w-16" : "max-w-24"}`}>
                       {task.description}
                     </div>
@@ -620,9 +659,9 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           {/* Action Zones - Only visible when dragging a task */}
           {draggedTask && (
             <>
-              {/* Complete Zone - Left side */}
+              {/* Complete Zone - Left bottom corner */}
               <div
-                className={`absolute bottom-16 left-4 sm:bottom-20 sm:left-8 w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-dashed flex flex-col items-center justify-center gap-2 transition-all duration-300 shadow-2xl backdrop-blur-sm ${
+                className={`absolute bottom-4 left-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${
                   isOverComplete
                     ? "bg-green-500 border-green-600 scale-110 shadow-green-500/50"
                     : "bg-green-50/90 border-green-300 hover:bg-green-100/90 hover:scale-105"
@@ -632,15 +671,15 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                 onDragLeave={handleCompleteDragLeave}
                 onDrop={handleCompleteDrop}
               >
-                <CheckCircle2 className={`w-10 h-10 sm:w-12 sm:h-12 transition-all ${isOverComplete ? "text-white animate-bounce" : "text-green-500"}`} />
-                <span className={`text-sm sm:text-base font-bold ${isOverComplete ? "text-white" : "text-green-500"}`}>
-                  Complete
+                <CheckCircle2 className={`w-6 h-6 sm:w-8 sm:h-8 transition-all ${isOverComplete ? "text-white animate-bounce" : "text-green-500"}`} />
+                <span className={`text-xs font-bold ${isOverComplete ? "text-white" : "text-green-500"}`}>
+                  Done
                 </span>
               </div>
 
-              {/* Trash Zone - Right side */}
+              {/* Trash Zone - Right bottom corner */}
               <div
-                className={`absolute bottom-16 right-4 sm:bottom-20 sm:right-8 w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-dashed flex flex-col items-center justify-center gap-2 transition-all duration-300 shadow-2xl backdrop-blur-sm ${
+                className={`absolute bottom-4 right-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${
                   isOverTrash
                     ? "bg-red-500 border-red-600 scale-110 shadow-red-500/50"
                     : "bg-red-50/90 border-red-300 hover:bg-red-100/90 hover:scale-105"
@@ -650,8 +689,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                 onDragLeave={handleTrashDragLeave}
                 onDrop={handleTrashDrop}
               >
-                <Trash2 className={`w-10 h-10 sm:w-12 sm:h-12 transition-all ${isOverTrash ? "text-white animate-bounce" : "text-red-500"}`} />
-                <span className={`text-sm sm:text-base font-bold ${isOverTrash ? "text-white" : "text-red-500"}`}>
+                <Trash2 className={`w-6 h-6 sm:w-8 sm:h-8 transition-all ${isOverTrash ? "text-white animate-bounce" : "text-red-500"}`} />
+                <span className={`text-xs font-bold ${isOverTrash ? "text-white" : "text-red-500"}`}>
                   Delete
                 </span>
               </div>
@@ -681,10 +720,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
         </div>
       </CardContent>
 
-      {/* Help Button - positioned relative to card */}
+      {/* Help Button - positioned at right middle, aligned with archive button */}
       {!isFullscreen && (
         <button
-          className="fixed bottom-4 right-4 w-12 h-12 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 z-50"
+          className="fixed top-1/2 -translate-y-1/2 right-8 w-14 h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 z-50"
           onClick={(e) => {
             e.stopPropagation()
             setShowHelpDialog(true)

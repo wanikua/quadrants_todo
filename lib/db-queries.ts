@@ -27,8 +27,8 @@ export async function getUserProjects(userId: string) {
       (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
     FROM projects p
     LEFT JOIN project_members pm ON p.id = pm.project_id
-    WHERE p.owner_id = ${userId}
-       OR pm.user_id = ${userId}
+    WHERE (p.owner_id = ${userId} OR pm.user_id = ${userId})
+      AND (p.archived IS NULL OR p.archived = FALSE)
     ORDER BY p.created_at DESC
   `;
 }
