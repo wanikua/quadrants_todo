@@ -24,7 +24,7 @@
 ### 1. TypeScript类型错误修复
 
 #### Before (7 errors)
-```
+\`\`\`
 components/QuadrantMatrix.tsx(125,24): error TS2339: Property 'type' does not exist
 components/QuadrantMatrix.tsx(148,16): error TS2339: Property 'type' does not exist
 components/QuadrantMatrix.tsx(187,38): error TS2339: Property 'type' does not exist
@@ -32,20 +32,20 @@ components/QuadrantMatrix.tsx(211,38): error TS2339: Property 'type' does not ex
 components/QuadrantMatrix.tsx(235,38): error TS2339: Property 'type' does not exist
 components/QuadrantMatrix.tsx(259,38): error TS2339: Property 'type' does not exist
 components/QuadrantMatrix.tsx(314,22): error TS2339: Property 'type' does not exist
-```
+\`\`\`
 
 #### After (0 errors) ✅
-```bash
+\`\`\`bash
 $ npx tsc --noEmit
 # No errors!
-```
+\`\`\`
 
 ---
 
 ### 2. Schema-Types对齐修复
 
 #### Project Interface
-```typescript
+\`\`\`typescript
 // BEFORE
 export interface Project {
   id: string
@@ -69,10 +69,10 @@ export interface Project {
   created_at?: string
   updated_at?: string
 }
-```
+\`\`\`
 
 #### Task Interface
-```typescript
+\`\`\`typescript
 // BEFORE
 export interface Task {
   id: number
@@ -94,10 +94,10 @@ export interface Task {
   // ✅ 移除了completed
   // ...
 }
-```
+\`\`\`
 
 #### Player Interface
-```typescript
+\`\`\`typescript
 // BEFORE
 export interface Player {
   id: number
@@ -115,10 +115,10 @@ export interface Player {
   color: string
   created_at?: string
 }
-```
+\`\`\`
 
 #### UserActivity Interface (完全新增)
-```typescript
+\`\`\`typescript
 // ✅ 新增接口
 export interface UserActivity {
   id: number
@@ -126,7 +126,7 @@ export interface UserActivity {
   user_id: string
   last_seen: Date | string
 }
-```
+\`\`\`
 
 ---
 
