@@ -228,8 +228,7 @@ export default function HomePage() {
                   Stop wasting time <span className="text-underline-curve">deciding</span> what to do next
                 </h2>
                 <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
-                  Every task lands exactly where it should. <span className="text-highlight-purple">Urgent in the top right.</span> Important but not urgent on the left.
-                  Your next move is always <span className="text-highlight-yellow">obvious</span>.
+                  Every task lands exactly where it should. Your next move is always <span className="text-highlight-yellow">obvious</span>.
                 </p>
               </div>
             </ScrollReveal>
@@ -259,8 +258,8 @@ export default function HomePage() {
                   Built for <span className="text-highlight-purple">teams</span>, perfect for solo
                 </h2>
                 <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
-                  Assign tasks with colors. Track who&apos;s doing what. <span className="text-highlight-yellow">Share projects instantly</span>.
-                  Or use it alone—it&apos;s just as powerful for personal productivity.
+                  Assign tasks with colors. Track who&apos;s doing what. <span className="text-highlight-yellow">Share projects</span>.
+                  Or use it for personal productivity.
                 </p>
               </div>
             </ScrollReveal>
@@ -273,7 +272,7 @@ export default function HomePage() {
                     No tutorials needed. <span className="text-highlight-yellow">Start in seconds.</span>
                   </h2>
                   <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
-                    Long-press to create. Click to edit. That&apos;s it.
+                    Long-press to create. Click to edit.
                   </p>
                   <div className="pt-8">
                     <Link href="/sign-up">

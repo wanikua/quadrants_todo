@@ -102,12 +102,12 @@ export default function PrivacyPage() {
 
             <div className="bg-white border-[3px] border-black rounded-[20px] p-10">
               <h2 className="text-2xl font-bold text-black mb-4">
-                Contact <span className="text-highlight-yellow">Us</span>
+                Contact Us
               </h2>
               <p className="text-gray-700 leading-relaxed">
                 If you have any questions about this Privacy Policy, please contact us at{" "}
-                <a href="mailto:privacy@quadrants.app" className="font-bold text-black hover:text-purple-600 transition-colors">
-                  privacy@quadrants.app
+                <a href="mailto:contact@quadrants.ch" className="font-bold text-black hover:text-purple-600 transition-colors">
+                  contact@quadrants.ch
                 </a>
               </p>
             </div>

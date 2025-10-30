@@ -115,8 +115,8 @@ export default function TermsPage() {
               </h2>
               <p className="text-gray-700 leading-relaxed">
                 If you have any questions about these Terms, please contact us at{" "}
-                <a href="mailto:legal@quadrants.app" className="font-bold text-black hover:text-purple-600 transition-colors">
-                  legal@quadrants.app
+                <a href="mailto:contact@quadrants.ch" className="font-bold text-black hover:text-purple-600 transition-colors">
+                  contact@quadrants.ch
                 </a>
               </p>
             </div>

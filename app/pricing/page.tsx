@@ -101,18 +101,11 @@ export default function PricingPage() {
 
             {/* Pro Plan */}
             <div className="bg-black text-white border-[3px] border-black rounded-[20px] p-10 hover:shadow-2xl transition-all duration-[600ms] hover:-translate-y-2 relative">
-              {/* Popular Badge */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-yellow-400 text-black px-6 py-2 rounded-full text-sm font-bold">
-                  POPULAR
-                </span>
-              </div>
-
               <div className="space-y-8">
                 <div>
                   <h3 className="text-3xl font-bold mb-3">Pro</h3>
                   <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-6xl font-bold">$9</span>
+                    <span className="text-6xl font-bold">$9.9</span>
                     <span className="text-gray-300 text-xl">/month</span>
                   </div>
                   <p className="text-gray-300 text-lg">For power users and teams</p>
@@ -134,10 +127,6 @@ export default function PricingPage() {
                   <li className="flex items-start gap-3">
                     <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
                     <span className="text-lg">Priority support</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="w-6 h-6 text-yellow-400 mt-1 flex-shrink-0" />
-                    <span className="text-lg">Real-time sync</span>
                   </li>
                 </ul>
 
@@ -167,7 +156,7 @@ export default function PricingPage() {
               <div className="bg-white border-[3px] border-black rounded-[20px] p-8">
                 <h3 className="text-2xl font-bold text-black mb-4">What happens to my data if I downgrade?</h3>
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  Your data is always safe. If you downgrade from Pro to Free and have more than 3 projects, you&apos;ll be able to view all projects but can only edit your 3 most recent ones.
+                  Your data is always safe. Free users can have up to 3 projects. If you downgrade with more projects, you&apos;ll need to upgrade to create new ones.
                 </p>
               </div>
 
