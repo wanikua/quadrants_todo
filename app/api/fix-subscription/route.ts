@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
-import { db, sql } from "@/lib/database"
+import { sql } from "@/lib/database"
 
 export async function POST() {
   try {
@@ -10,16 +10,18 @@ export async function POST() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
+    if (!sql) {
+      return NextResponse.json({ error: "Database not configured" }, { status: 500 })
+    }
+
     // Fix subscription_status to be 'active' instead of 'pro'
-    await db.query(
-      sql`
-        UPDATE users
-        SET subscription_status = 'active'
-        WHERE id = ${user.id}
-        AND subscription_plan = 'pro'
-        AND subscription_status = 'pro'
-      `
-    )
+    await sql`
+      UPDATE users
+      SET subscription_status = 'active'
+      WHERE id = ${user.id}
+      AND subscription_plan = 'pro'
+      AND subscription_status = 'pro'
+    `
 
     return NextResponse.json({
       success: true,
