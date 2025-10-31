@@ -139,9 +139,15 @@ export default function QuadrantTodoClient({
   // Sync function to fetch latest data from server
   const syncData = useCallback(async () => {
     try {
+      console.log('🔄 [Sync] Fetching data from server...')
       const response = await fetch(`/api/projects/${projectId}/sync`)
       if (response.ok) {
         const result = await response.json()
+        console.log('✅ [Sync] Data received:', {
+          tasks: result.data?.tasks?.length || 0,
+          players: result.data?.players?.length || 0,
+          lines: result.data?.lines?.length || 0
+        })
         if (result.success && result.data) {
           // Update local state with server data
           setTasks(result.data.tasks || [])
@@ -149,9 +155,11 @@ export default function QuadrantTodoClient({
           setLines(result.data.lines || [])
           setLastSyncTime(new Date())
         }
+      } else {
+        console.error('❌ [Sync] Failed:', response.status, response.statusText)
       }
     } catch (error) {
-      console.error('Sync error:', error)
+      console.error('❌ [Sync] Error:', error)
     }
   }, [projectId])
 
@@ -177,17 +185,24 @@ export default function QuadrantTodoClient({
     }
   }, [projectType, projectId, isOfflineMode])
 
-  // Real-time sync - only when multiple users are active
+  // Real-time sync - always enabled for team projects
   useEffect(() => {
-    if (projectType === 'team' && !isOfflineMode && activeUserCount > 1) {
+    if (projectType === 'team' && !isOfflineMode) {
+      console.log('🚀 [Sync] Starting real-time sync, activeUserCount:', activeUserCount)
       let interval: NodeJS.Timeout | null = null
       let isPageVisible = true
+
+      // Determine sync interval based on user count
+      // Multiple users: 1 second (real-time)
+      // Single user: 3 seconds (still responsive but less resource intensive)
+      const syncInterval = activeUserCount > 1 ? 1000 : 3000
 
       // Check if page is visible
       const handleVisibilityChange = () => {
         isPageVisible = !document.hidden
 
         if (isPageVisible) {
+          console.log('👁️ [Sync] Page visible, resuming sync')
           // Immediately sync when page becomes visible
           syncData()
 
@@ -197,8 +212,9 @@ export default function QuadrantTodoClient({
             if (isPageVisible) {
               syncData()
             }
-          }, 1000) // Sync every 1 second when multiple users online - real-time!
+          }, syncInterval)
         } else {
+          console.log('👁️ [Sync] Page hidden, pausing sync')
           // Pause polling when page is hidden to save resources
           if (interval) clearInterval(interval)
         }
@@ -208,13 +224,18 @@ export default function QuadrantTodoClient({
       document.addEventListener('visibilitychange', handleVisibilityChange)
 
       // Start initial polling
+      console.log(`⏰ [Sync] Starting polling every ${syncInterval}ms`)
       interval = setInterval(() => {
         if (isPageVisible) {
           syncData()
         }
-      }, 1000) // Sync every 1 second - real-time!
+      }, syncInterval)
+
+      // Initial sync
+      syncData()
 
       return () => {
+        console.log('🛑 [Sync] Stopping sync')
         if (interval) clearInterval(interval)
         document.removeEventListener('visibilitychange', handleVisibilityChange)
       }

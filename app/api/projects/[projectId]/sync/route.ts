@@ -9,10 +9,10 @@ const sql = neon(process.env.DATABASE_URL!)
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const projectId = params.projectId
+    const { projectId } = await params
 
     // Get all tasks with their assignees
     const tasks = await sql`

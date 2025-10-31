@@ -11,10 +11,10 @@ const sql = neon(process.env.DATABASE_URL!)
 // POST: Acquire lock
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const projectId = params.projectId
+    const { projectId } = await params
     const { userId, userName } = await request.json()
 
     // Try to acquire lock
@@ -68,10 +68,10 @@ export async function POST(
 // DELETE: Release lock
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const projectId = params.projectId
+    const { projectId } = await params
 
     await sql`
       DELETE FROM organize_locks
@@ -94,10 +94,10 @@ export async function DELETE(
 // GET: Check lock status
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const projectId = params.projectId
+    const { projectId } = await params
 
     const existingLock = await sql`
       SELECT * FROM organize_locks
