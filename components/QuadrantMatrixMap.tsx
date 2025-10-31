@@ -97,17 +97,13 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   }, [isDrawingLine, selectedTaskForLine, draggedTask, isLongPress, onTaskDetailClick, onToggleDrawingMode])
 
   const handleToggleLine = async (fromTaskId: number, toTaskId: number) => {
-    const result = await toggleLine(projectId, fromTaskId, toTaskId)
-    if (result.success) {
-      router.refresh()
-    }
+    await toggleLine(projectId, fromTaskId, toTaskId)
+    // Rely on sync polling to update lines
   }
 
   const handleDeleteLine = async (lineId: number) => {
-    const result = await deleteLine(lineId)
-    if (result.success) {
-      router.refresh()
-    }
+    await deleteLine(lineId)
+    // Rely on sync polling to update lines
   }
 
   const handleTaskDragStart = (task: TaskWithAssignees, e: React.DragEvent) => {
@@ -169,9 +165,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
     // Sync to database in background
     const result = await updateTask(draggedTask.id, urgency, importance)
-    if (result.success) {
-      router.refresh()
-    } else {
+    if (!result.success) {
       // Rollback on failure
       if (setTasks) {
         setTasks(prev => prev.map(t =>
@@ -182,6 +176,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       }
       toast.error(result.error || "Failed to move task")
     }
+    // Don't call router.refresh() - rely on optimistic update and sync polling
 
     onDragEnd?.() // Resume sync after drop
   }
@@ -360,10 +355,18 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return
 
-    const result = await deleteTask(taskToDelete.id)
-    if (result.success) {
-      router.refresh()
+    // Optimistic update - remove task immediately
+    if (setTasks) {
+      setTasks(prev => prev.filter(t => t.id !== taskToDelete.id))
     }
+
+    const result = await deleteTask(taskToDelete.id)
+    if (!result.success) {
+      // Rollback on failure - will be restored by next sync
+      toast.error(result.error || "Failed to delete task")
+    }
+    // Rely on sync polling to update after delete
+
     setTaskToDelete(null)
     setShowDeleteConfirm(false)
   }
@@ -391,11 +394,20 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
     if (!draggedTask) return
 
-    const result = await completeTask(draggedTask.id)
-    if (result.success) {
-      router.refresh()
+    // Optimistic update - remove completed task immediately
+    if (setTasks) {
+      setTasks(prev => prev.filter(t => t.id !== draggedTask.id))
     }
+
+    const taskId = draggedTask.id
     setDraggedTask(null)
+
+    const result = await completeTask(taskId)
+    if (!result.success) {
+      toast.error(result.error || "Failed to complete task")
+      // Rely on sync polling to restore task on failure
+    }
+    // Rely on sync polling to update after complete
 
     onDragEnd?.() // Resume sync after drop
   }
