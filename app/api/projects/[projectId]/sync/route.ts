@@ -15,7 +15,7 @@ export async function GET(
     const { projectId } = await params
 
     // Get all tasks with their assignees
-    const tasks = await sql`
+    const tasksRaw = await sql`
       SELECT
         t.*,
         COALESCE(
@@ -35,6 +35,14 @@ export async function GET(
       GROUP BY t.id
       ORDER BY t.created_at DESC
     `
+
+    // Parse assignees JSON if it's a string
+    const tasks = tasksRaw.map((task: any) => ({
+      ...task,
+      assignees: typeof task.assignees === 'string'
+        ? JSON.parse(task.assignees)
+        : task.assignees
+    }))
 
     // Get all players
     const players = await sql`

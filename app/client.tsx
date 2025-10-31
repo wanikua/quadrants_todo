@@ -187,6 +187,8 @@ export default function QuadrantTodoClient({
 
   // Real-time sync - always enabled for team projects
   useEffect(() => {
+    console.log('🔍 [Sync] Effect triggered - projectType:', projectType, 'isOfflineMode:', isOfflineMode, 'activeUserCount:', activeUserCount)
+
     if (projectType === 'team' && !isOfflineMode) {
       console.log('🚀 [Sync] Starting real-time sync, activeUserCount:', activeUserCount)
       let interval: NodeJS.Timeout | null = null
@@ -196,6 +198,7 @@ export default function QuadrantTodoClient({
       // Multiple users: 1 second (real-time)
       // Single user: 3 seconds (still responsive but less resource intensive)
       const syncInterval = activeUserCount > 1 ? 1000 : 3000
+      console.log(`📊 [Sync] Using interval: ${syncInterval}ms (${activeUserCount > 1 ? 'multi-user' : 'single-user'} mode)`)
 
       // Check if page is visible
       const handleVisibilityChange = () => {
