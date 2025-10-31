@@ -16,7 +16,7 @@ export async function POST() {
 
     // First, ensure test user exists
     await sql`
-      INSERT INTO users (id, email, display_name)
+      INSERT INTO users (id, email, name)
       VALUES (${testUserId}, 'test@example.com', 'Test User')
       ON CONFLICT (id) DO NOTHING
     `

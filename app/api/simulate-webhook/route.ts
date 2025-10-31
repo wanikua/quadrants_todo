@@ -100,7 +100,7 @@ export async function GET(req: Request) {
 
     if (users.length === 0) {
       // List all users
-      const allUsers = await sql`SELECT id, email, display_name FROM users`
+      const allUsers = await sql`SELECT id, email, name FROM users`
 
       return NextResponse.json({
         success: false,

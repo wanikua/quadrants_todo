@@ -178,7 +178,7 @@ export async function getProjectMembers(projectId: number, userId: string) {
   }
 
   return await sql`
-    SELECT pm.*, u.email, u.display_name
+    SELECT pm.*, u.email, u.name
     FROM project_members pm
     JOIN users u ON pm.user_id = u.id
     WHERE pm.project_id = ${projectId}
@@ -246,7 +246,7 @@ export async function removeProjectMember(
  */
 export async function getUserById(userId: string) {
   const result = await sql`
-    SELECT id, email, display_name, subscription_status, created_at
+    SELECT id, email, name, subscription_status, created_at
     FROM users
     WHERE id = ${userId}
     LIMIT 1
@@ -259,14 +259,14 @@ export async function getUserById(userId: string) {
  */
 export async function updateUser(
   userId: string,
-  updates: { display_name?: string; email?: string }
+  updates: { name?: string; email?: string }
 ) {
   const setClauses = [];
   const values: any[] = [];
 
-  if (updates.display_name !== undefined) {
-    setClauses.push(`display_name = $${values.length + 1}`);
-    values.push(updates.display_name);
+  if (updates.name !== undefined) {
+    setClauses.push(`name = $${values.length + 1}`);
+    values.push(updates.name);
   }
   if (updates.email !== undefined) {
     setClauses.push(`email = $${values.length + 1}`);
@@ -283,7 +283,7 @@ export async function updateUser(
     UPDATE users
     SET ${setClauses.join(', ')}, updated_at = NOW()
     WHERE id = $${values.length}
-    RETURNING id, email, display_name, subscription_status, created_at, updated_at
+    RETURNING id, email, name, subscription_status, created_at, updated_at
   `;
 
   const result = await sql(query, values);
