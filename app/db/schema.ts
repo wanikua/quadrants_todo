@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, serial, varchar, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, serial, varchar, boolean, jsonb, real } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Projects table
@@ -146,5 +146,35 @@ export const commentsRelations = relations(comments, ({ one }: { one: any }) => 
   task: one(tasks, {
     fields: [comments.task_id],
     references: [tasks.id],
+  }),
+}))
+
+// AI Task Predictions table (for learning from user adjustments)
+export const taskPredictions = pgTable('task_predictions', {
+  id: serial('id').primaryKey(),
+  user_id: text('user_id').notNull(),
+  project_id: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  task_description: text('task_description').notNull(),
+  predicted_urgency: integer('predicted_urgency').notNull(),
+  predicted_importance: integer('predicted_importance').notNull(),
+  final_urgency: integer('final_urgency').notNull(),
+  final_importance: integer('final_importance').notNull(),
+  adjustment_delta: jsonb('adjustment_delta'), // { urgency_delta, importance_delta }
+  created_at: timestamp('created_at').defaultNow().notNull(),
+})
+
+// User Task Preferences table (for personalized predictions)
+export const userTaskPreferences = pgTable('user_task_preferences', {
+  user_id: text('user_id').primaryKey(),
+  avg_urgency_bias: real('avg_urgency_bias').default(0),
+  avg_importance_bias: real('avg_importance_bias').default(0),
+  keyword_patterns: jsonb('keyword_patterns'), // { "urgent": { urgency: 80 }, "important": { importance: 90 } }
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const taskPredictionsRelations = relations(taskPredictions, ({ one }: { one: any }) => ({
+  project: one(projects, {
+    fields: [taskPredictions.project_id],
+    references: [projects.id],
   }),
 }))

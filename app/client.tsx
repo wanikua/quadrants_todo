@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown, Check, Edit } from "lucide-react"
+import { Map, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown, Check, Edit, Sparkles } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import TaskSegment from "@/components/TaskSegment"
+import { BulkTaskInput } from "@/components/BulkTaskInput"
 import { toast } from "sonner"
 
 interface QuadrantTodoClientProps {
@@ -69,6 +70,7 @@ export default function QuadrantTodoClient({
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null)
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
+  const [isBulkAddOpen, setIsBulkAddOpen] = useState(false)
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -604,6 +606,10 @@ export default function QuadrantTodoClient({
                 <Plus className="h-4 w-4 mr-2" />
                 Add Task
               </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setIsBulkAddOpen(true)}>
+                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                Bulk Add with AI
+              </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer" onClick={handleDrawingToggle}>
                 <LinkIcon className="h-4 w-4 mr-2" />
                 {isDrawingLine ? "Cancel Connection" : "Connect Tasks"}
@@ -1100,6 +1106,15 @@ export default function QuadrantTodoClient({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bulk Task Creation with AI */}
+        <BulkTaskInput
+          projectId={projectId}
+          players={players}
+          onTasksCreated={() => router.refresh()}
+          open={isBulkAddOpen}
+          onOpenChange={setIsBulkAddOpen}
+        />
       </div>
     </div>
   )
