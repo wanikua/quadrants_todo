@@ -84,6 +84,7 @@ export default function QuadrantTodoClient({
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
+  const [isSyncPaused, setIsSyncPaused] = useState(false)
 
   // Project editing state
   const [isEditingProject, setIsEditingProject] = useState(false)
@@ -138,6 +139,12 @@ export default function QuadrantTodoClient({
 
   // Sync function to fetch latest data from server
   const syncData = useCallback(async () => {
+    // Skip sync if paused (during user interactions like dragging)
+    if (isSyncPaused) {
+      console.log('⏸️ [Sync] Paused, skipping...')
+      return
+    }
+
     try {
       console.log('🔄 [Sync] Fetching data from server...')
       const response = await fetch(`/api/projects/${projectId}/sync`)
@@ -161,7 +168,7 @@ export default function QuadrantTodoClient({
     } catch (error) {
       console.error('❌ [Sync] Error:', error)
     }
-  }, [projectId])
+  }, [projectId, isSyncPaused])
 
   // Check for active users - only enables sync if multiple users detected
   useEffect(() => {
@@ -1021,6 +1028,8 @@ export default function QuadrantTodoClient({
               originalTaskPositions={originalTaskPositions}
               onAcceptOrganize={handleAcceptOrganize}
               onRevertOrganize={handleRevertOrganize}
+              onDragStart={() => setIsSyncPaused(true)}
+              onDragEnd={() => setIsSyncPaused(false)}
             />
           </TabsContent>
 

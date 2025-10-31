@@ -40,6 +40,8 @@ interface QuadrantMatrixMapProps {
   originalTaskPositions?: Map<number, { urgency: number; importance: number }>
   onAcceptOrganize?: () => void
   onRevertOrganize?: () => void
+  onDragStart?: () => void
+  onDragEnd?: () => void
 }
 
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
@@ -61,6 +63,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   originalTaskPositions,
   onAcceptOrganize,
   onRevertOrganize,
+  onDragStart,
+  onDragEnd,
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
@@ -111,6 +115,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       e.preventDefault()
       return
     }
+    onDragStart?.() // Pause sync during drag
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = "move"
     e.dataTransfer.setData("text/plain", task.id.toString())
@@ -118,6 +123,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
   const handleTaskDragEnd = () => {
     setDraggedTask(null)
+    onDragEnd?.() // Resume sync after drag
   }
 
   const handleMatrixDragOver = (e: React.DragEvent) => {
@@ -176,6 +182,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       }
       toast.error(result.error || "Failed to move task")
     }
+
+    onDragEnd?.() // Resume sync after drop
   }
 
   const handleMatrixMouseDown = (e: React.MouseEvent) => {
@@ -345,6 +353,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     setTaskToDelete(draggedTask)
     setShowDeleteConfirm(true)
     setDraggedTask(null)
+
+    onDragEnd?.() // Resume sync after drop
   }
 
   const handleConfirmDelete = async () => {
@@ -386,6 +396,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       router.refresh()
     }
     setDraggedTask(null)
+
+    onDragEnd?.() // Resume sync after drop
   }
 
   // Fullscreen handlers - Use CSS instead of Fullscreen API to avoid Dialog hiding
