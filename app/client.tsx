@@ -195,9 +195,9 @@ export default function QuadrantTodoClient({
       let isPageVisible = true
 
       // Determine sync interval based on user count
-      // Multiple users: 1 second (real-time)
-      // Single user: 3 seconds (still responsive but less resource intensive)
-      const syncInterval = activeUserCount > 1 ? 1000 : 3000
+      // Multiple users: 500ms (real-time, ultra responsive)
+      // Single user: 2 seconds (still responsive but less resource intensive)
+      const syncInterval = activeUserCount > 1 ? 500 : 2000
       console.log(`📊 [Sync] Using interval: ${syncInterval}ms (${activeUserCount > 1 ? 'multi-user' : 'single-user'} mode)`)
 
       // Check if page is visible
