@@ -53,7 +53,7 @@ export async function GET(
 
     // Get all lines
     const lines = await sql`
-      SELECT * FROM task_lines
+      SELECT * FROM lines
       WHERE project_id = ${projectId}
       ORDER BY created_at ASC
     `
