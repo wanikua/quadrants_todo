@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import TaskSegment from "@/components/TaskSegment"
 import { BulkTaskInput } from "@/components/BulkTaskInput"
+import { ManageMembersDialog } from "@/components/ManageMembersDialog"
 import { toast } from "sonner"
 
 interface QuadrantTodoClientProps {
@@ -81,6 +82,7 @@ export default function QuadrantTodoClient({
   const [taskToDelete, setTaskToDelete] = useState<TaskWithAssignees | null>(null)
   const [deleteTaskDialogOpen, setDeleteTaskDialogOpen] = useState(false)
   const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
+  const [isManageMembersOpen, setIsManageMembersOpen] = useState(false)
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
@@ -543,6 +545,32 @@ export default function QuadrantTodoClient({
     }
   }
 
+  const handleLeaveProject = async () => {
+    if (!confirm(`Are you sure you want to leave "${projectName}"? All your task assignments will be removed.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/leave`, {
+        method: "POST",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast.error(data.error || "Failed to leave project")
+        return
+      }
+
+      toast.success("Successfully left the project")
+      router.push("/projects")
+      router.refresh()
+    } catch (error) {
+      toast.error("Failed to leave project")
+      console.error(error)
+    }
+  }
+
   const handleSaveProjectEdit = async () => {
     if (!editedProjectName.trim()) {
       toast.error("Project name cannot be empty")
@@ -950,6 +978,17 @@ export default function QuadrantTodoClient({
                 <>
                   <DropdownMenuSeparator />
 
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Team Management</DropdownMenuLabel>
+
+                  {(userRole === "owner" || userRole === "admin") && (
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManageMembersOpen(true)}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Members
+                    </DropdownMenuItem>
+                  )}
+
+                  <DropdownMenuSeparator />
+
                   <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
                   <div className="px-2 py-2">
                     <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
@@ -1003,12 +1042,7 @@ export default function QuadrantTodoClient({
               ) : (
                 <DropdownMenuItem
                   className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                  onClick={() => {
-                    if (confirm("Are you sure you want to leave this project?")) {
-                      // TODO: Implement leave project functionality
-                      toast.info("Leave project functionality coming soon")
-                    }
-                  }}
+                  onClick={handleLeaveProject}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Leave Project
@@ -1503,6 +1537,17 @@ export default function QuadrantTodoClient({
           projectType={projectType}
           userName={userName}
         />
+
+        {/* Manage Members Dialog */}
+        {projectType === "team" && (userRole === "owner" || userRole === "admin") && (
+          <ManageMembersDialog
+            open={isManageMembersOpen}
+            onOpenChange={setIsManageMembersOpen}
+            projectId={projectId}
+            currentUserRole={userRole || "member"}
+            onMemberRemoved={() => router.refresh()}
+          />
+        )}
       </div>
     </div>
   )
