@@ -132,7 +132,13 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
       toast.success(`Successfully joined ${result.projectName}!`)
       setInviteCode("")
       setJoinDialogOpen(false)
-      router.refresh()
+
+      // Navigate directly to the project instead of refreshing
+      if (result.projectId) {
+        router.push(`/projects/${result.projectId}`)
+      } else {
+        router.refresh()
+      }
     } catch (error) {
       toast.error("Failed to join project")
       console.error(error)
