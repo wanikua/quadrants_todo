@@ -110,19 +110,18 @@ body: JSON.stringify({
 ### 方法2：使用 curl 测试
 
 ```bash
-curl -X POST https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation \
-  -H "Content-Type: application/json" \
+# 使用国际版API（推荐，更好的全球访问）
+curl -X POST https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "model": "qwen-plus",
-    "input": {
-      "messages": [
-        {
-          "role": "user",
-          "content": "你好"
-        }
-      ]
-    }
+    "messages": [
+      {
+        "role": "user",
+        "content": "你好"
+      }
+    ]
   }'
 ```
 

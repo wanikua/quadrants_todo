@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
           .where(eq(userTaskPreferences.user_id, user.id))
         userPreferences = prefs
       } catch (error) {
-        console.log('No user preferences found, using defaults')
+        // Silently use defaults
       }
     }
 
@@ -69,12 +69,16 @@ async function predictTaskPriorities(
   const QWEN_API_KEY = process.env.QWEN_API_KEY
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 
+  // Silently check for API keys
+
   // Try Qwen first (preferred for cost and Chinese support)
   if (QWEN_API_KEY) {
     try {
-      return await predictWithQwen(tasks, userPreferences, QWEN_API_KEY)
+      const result = await predictWithQwen(tasks, userPreferences, QWEN_API_KEY)
+      console.log('✅ Qwen API 调用成功')
+      return result
     } catch (error) {
-      console.error('Qwen API error, falling back:', error)
+      console.log('❌ Qwen API 失败，使用 fallback')
     }
   }
 
@@ -83,12 +87,11 @@ async function predictTaskPriorities(
     try {
       return await predictWithClaude(tasks, userPreferences, ANTHROPIC_API_KEY)
     } catch (error) {
-      console.error('Claude API error, falling back:', error)
+      // Silently fallback to heuristics
     }
   }
 
   // Final fallback: Use simple heuristics
-  console.warn('No AI API configured, using heuristic predictions')
   return tasks.map(task => predictWithHeuristics(task, userPreferences))
 }
 
@@ -101,60 +104,73 @@ async function predictWithQwen(
   apiKey: string
 ): Promise<TaskPrediction[]> {
   const userBias = userPreferences
-    ? `注意：该用户通常将紧急度调整 ${userPreferences.avg_urgency_bias?.toFixed(0) || 0}%，重要度调整 ${userPreferences.avg_importance_bias?.toFixed(0) || 0}%。`
+    ? `\n注意：该用户历史偏好显示，他们通常将紧急度调整 ${userPreferences.avg_urgency_bias?.toFixed(0) || 0}%，重要度调整 ${userPreferences.avg_importance_bias?.toFixed(0) || 0}%。请参考这个偏好进行预测。`
     : ''
 
-  const prompt = `分析这些任务并预测它们的紧急度（0-100）和重要度（0-100）。
+  const prompt = `你是一个专业的任务优先级分析助手，基于艾森豪威尔矩阵（Eisenhower Matrix）为用户分析任务的紧急度和重要度。
 
-紧急度：任务有多紧迫？是否有截止日期或时间压力？
-重要度：任务对目标有多关键？长期影响如何？
+评分标准：
+- 紧急度（0-100）：评估任务的时间敏感性
+  * 90-100：立即处理，有明确的紧迫截止日期
+  * 70-89：短期内需要完成，有时间压力
+  * 50-69：中等时间敏感性
+  * 30-49：可以稍后处理
+  * 0-29：没有明确时间限制
 
+- 重要度（0-100）：评估任务的战略价值和长期影响
+  * 90-100：核心目标，对成功至关重要
+  * 70-89：重要任务，有显著影响
+  * 50-69：有价值但非关键
+  * 30-49：次要任务
+  * 0-29：可选或低价值任务
+
+关键词识别：
+- 高紧急度：紧急、立即、今天、现在、ASAP、马上、bug、故障、宕机
+- 高重要度：关键、核心、必须、发布、上线、战略、重要
+- 低紧急度：考虑、未来、有空、someday
+- 低重要度：优化、美化、微调、可选
 ${userBias}
+
+请分析以下任务列表，为每个任务预测紧急度和重要度（0-100），并提供简短的reasoning说明。
 
 任务列表：
 ${tasks.map((task, i) => `${i + 1}. ${task}`).join('\n')}
 
-只返回有效的JSON数组，格式如下：
-[{"urgency": 80, "importance": 90, "reasoning": "简短说明"}, ...]
+只返回严格的JSON数组格式，不要添加任何解释文字：
+[{"urgency": 80, "importance": 90, "reasoning": "简短说明"}, ...]`
 
-不要包含其他文本、markdown或格式。只返回纯JSON数组。`
-
-  const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+  // Use international endpoint for better global access
+  const response = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'qwen-plus', // qwen-turbo (fastest/cheapest), qwen-plus (balanced), qwen-max (best)
-      input: {
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      },
-      parameters: {
-        result_format: 'message',
-        temperature: 0.3 // Lower temperature for more consistent predictions
-      }
+      model: 'qwen-plus',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.9,
+      top_p: 0.8
     })
   })
 
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Qwen API error: ${response.status} - ${errorText}`)
+    throw new Error(`Qwen API error: ${response.status}`)
   }
 
   const data = await response.json()
 
-  // Check for API errors
-  if (data.code) {
-    throw new Error(`Qwen API error: ${data.code} - ${data.message}`)
+  // Check for API errors (compatible mode uses OpenAI format)
+  if (data.error) {
+    throw new Error('Qwen API error')
   }
 
-  const content = data.output.choices[0].message.content
+  const content = data.choices[0].message.content
 
   // Parse JSON response
   let predictions: TaskPrediction[]
@@ -164,7 +180,6 @@ ${tasks.map((task, i) => `${i + 1}. ${task}`).join('\n')}
     const jsonStr = jsonMatch ? jsonMatch[0] : content
     predictions = JSON.parse(jsonStr)
   } catch (parseError) {
-    console.error('Failed to parse Qwen response:', content)
     throw new Error('Invalid AI response format')
   }
 
@@ -225,7 +240,7 @@ Do not include any other text, markdown, or formatting. Just the raw JSON array.
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
       messages: [
         {
@@ -248,7 +263,6 @@ Do not include any other text, markdown, or formatting. Just the raw JSON array.
   try {
     predictions = JSON.parse(content)
   } catch (parseError) {
-    console.error('Failed to parse Claude response:', content)
     throw new Error('Invalid AI response format')
   }
 

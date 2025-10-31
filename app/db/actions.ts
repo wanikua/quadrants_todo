@@ -304,16 +304,21 @@ export async function updateTask(taskId: number, urgency: number, importance: nu
 
   try {
     // Get task to check project access
-    const taskList = await db.select({ project_id: tasks.project_id }).from(tasks).where(eq(tasks.id, taskId))
+    const taskList = await db.select({ project_id: tasks.project_id, description: tasks.description }).from(tasks).where(eq(tasks.id, taskId))
     if (taskList.length === 0) return { success: false, error: 'Task not found' }
 
     const hasAccess = await getUserProjectAccess(userId, taskList[0].project_id)
     if (!hasAccess) return { success: false, error: 'Access denied' }
 
-    // Build update object
-    const updateData: any = { urgency, importance, updated_at: new Date() }
-    if (description !== undefined) {
-      updateData.description = description
+    // CRITICAL: Always include all fields to avoid Drizzle ORM field/value mismatch
+    // If description is not provided, use the existing description from database
+    const finalDescription = description !== undefined ? description : taskList[0].description
+
+    const updateData = {
+      description: finalDescription,
+      urgency,
+      importance,
+      updated_at: new Date()
     }
 
     // Update task
@@ -359,19 +364,40 @@ export async function deleteTask(taskId: number) {
     const hasAccess = await getUserProjectAccess(userId, taskList[0].project_id)
     if (!hasAccess) return { success: false, error: 'Access denied' }
 
-    // Archive task instead of deleting
-    await db.update(tasks).set({ archived: true }).where(eq(tasks.id, taskId))
+    // Permanently delete the task
+    await db.delete(tasks).where(eq(tasks.id, taskId))
     revalidatePath(`/projects/${taskList[0].project_id}`)
     return { success: true }
   } catch (error) {
-    console.error('Error archiving task:', error)
-    return { success: false, error: 'Failed to archive task' }
+    console.error('Error deleting task:', error)
+    return { success: false, error: 'Failed to delete task' }
   }
 }
 
 export async function completeTask(taskId: number) {
-  // Complete task has the same effect as delete - remove from map
-  return await deleteTask(taskId)
+  const userId = await getUserId()
+  if (!userId) return { success: false, error: 'Not authenticated' }
+
+  if (!db) {
+    return { success: false, error: 'Database not available' }
+  }
+
+  try {
+    // Get task to check project access
+    const taskList = await db.select({ project_id: tasks.project_id }).from(tasks).where(eq(tasks.id, taskId))
+    if (taskList.length === 0) return { success: false, error: 'Task not found' }
+
+    const hasAccess = await getUserProjectAccess(userId, taskList[0].project_id)
+    if (!hasAccess) return { success: false, error: 'Access denied' }
+
+    // Archive task (complete = archive, not delete)
+    await db.update(tasks).set({ archived: true }).where(eq(tasks.id, taskId))
+    revalidatePath(`/projects/${taskList[0].project_id}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error completing task:', error)
+    return { success: false, error: 'Failed to complete task' }
+  }
 }
 
 export async function getArchivedTasks(projectId: string) {
@@ -615,6 +641,39 @@ export async function getUserProjectAccess(userId: string, projectId: string): P
   } catch (error) {
     console.error('Error checking project access:', error)
     return false
+  }
+}
+
+export async function getUserProjectRole(userId: string, projectId: string): Promise<'owner' | 'admin' | 'member' | null> {
+  if (!db) {
+    return null
+  }
+
+  try {
+    // Check if user is the project owner
+    const ownedProjects = await db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.owner_id, userId)))
+
+    if (ownedProjects.length > 0) {
+      return 'owner'
+    }
+
+    // Check project_members table for role
+    const members = await db
+      .select({ role: projectMembers.role })
+      .from(projectMembers)
+      .where(and(eq(projectMembers.project_id, projectId), eq(projectMembers.user_id, userId)))
+
+    if (members.length > 0) {
+      return members[0].role as 'owner' | 'admin' | 'member'
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error getting user project role:', error)
+    return null
   }
 }
 

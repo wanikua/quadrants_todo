@@ -28,6 +28,8 @@ export const tasks = pgTable('tasks', {
   description: text('description').notNull(),
   urgency: integer('urgency').notNull(),
   importance: integer('importance').notNull(),
+  predicted_urgency: integer('predicted_urgency'), // AI predicted urgency for learning
+  predicted_importance: integer('predicted_importance'), // AI predicted importance for learning
   archived: boolean('archived').default(false),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),

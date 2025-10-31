@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { ProjectTaskManager } from "@/components/project-task-manager"
 import { DatabaseConfigWarning } from "@/components/database-config-warning"
-import { getProjectWithData, getUserProjectAccess, fixPlayerNames } from "@/app/db/actions"
+import { getProjectWithData, getUserProjectAccess, getUserProjectRole, fixPlayerNames } from "@/app/db/actions"
 import { initializeProjectPlayers } from "@/app/db/initialize-project"
 import { requireAuth } from "@/lib/auth"
 
@@ -65,9 +65,15 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       }
     }
 
+    // Get user's role in this project
+    const userRole = await getUserProjectRole(user.id, projectId)
+
     return (
       <ProjectTaskManager
-        project={projectData.project as any}
+        project={{
+          ...projectData.project,
+          role: userRole || 'member'
+        } as any}
         initialTasks={projectData.tasks}
         initialPlayers={projectData.players}
         initialLines={projectData.lines}

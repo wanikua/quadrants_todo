@@ -72,7 +72,7 @@ export default function ContactPage() {
             </p>
 
             <a
-              href="mailto:hello@quadrants.app"
+              href="mailto:contact@quadrants.ch"
               className="inline-block bg-black hover:bg-gray-800 text-white px-12 py-6 text-xl rounded-[20px] font-bold transition-all duration-[600ms] shadow-xl hover:shadow-2xl hover:scale-[1.05]"
             >
               contact@quadrants.ch

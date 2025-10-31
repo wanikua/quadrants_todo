@@ -122,16 +122,7 @@ export function QuadrantMatrix({
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Help
               </Button>
-              {project.type === 'team' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAddingPlayer(true)}
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Add Player
-                </Button>
-              )}
+              {/* Players are automatically created when users join the project */}
               <Button
                 size="sm"
                 onClick={() => setIsAddingTask(true)}

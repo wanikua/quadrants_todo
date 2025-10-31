@@ -3,12 +3,12 @@
 import { useState, useCallback, useMemo, useEffect } from "react"
 import type { TaskWithAssignees, Player, Line, Project } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
-import { createTask, deleteTask, updateTask as updateTaskAction, createPlayer, deletePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount, getArchivedTasks } from "@/app/db/actions"
+import { createTask, deleteTask, updateTask as updateTaskAction, deletePlayer, updatePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount, getArchivedTasks } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown, Check, Edit, Sparkles } from "lucide-react"
+import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown, Check, Edit, Sparkles, LogOut } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -47,6 +47,8 @@ interface QuadrantTodoClientProps {
   projectType: "personal" | "team"
   userName?: string
   projectName?: string
+  userRole?: "owner" | "admin" | "member"
+  userId?: string
 }
 
 export default function QuadrantTodoClient({
@@ -58,6 +60,8 @@ export default function QuadrantTodoClient({
   projectType,
   userName,
   projectName,
+  userRole,
+  userId,
 }: QuadrantTodoClientProps) {
   const router = useRouter()
 
@@ -74,11 +78,10 @@ export default function QuadrantTodoClient({
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<TaskWithAssignees | null>(null)
+  const [deleteTaskDialogOpen, setDeleteTaskDialogOpen] = useState(false)
   const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
-  const [newPlayerData, setNewPlayerData] = useState({
-    name: "",
-    color: "#3b82f6", // Default blue color
-  })
+  const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
 
@@ -88,6 +91,10 @@ export default function QuadrantTodoClient({
   const [editedProjectDescription, setEditedProjectDescription] = useState("")
   const [isArchiving, setIsArchiving] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+
+  // One-click organize state
+  const [isOrganizing, setIsOrganizing] = useState(false)
+  const [originalTaskPositions, setOriginalTaskPositions] = useState<Map<number, { urgency: number; importance: number }>>(new Map())
 
   // Sync initial data when props change
   useEffect(() => {
@@ -315,8 +322,9 @@ export default function QuadrantTodoClient({
 
   const handleTaskUpdate = async (taskId: number, description: string, urgency: number, importance: number, assigneeIds: number[]) => {
     // Optimistic update: Update task immediately in UI
+    const originalTask = tasks.find(t => t.id === taskId)!
     const updatedTask = {
-      ...tasks.find(t => t.id === taskId)!,
+      ...originalTask,
       description,
       urgency,
       importance,
@@ -337,6 +345,21 @@ export default function QuadrantTodoClient({
     if (result.success) {
       setLastSyncTime(new Date())
       toast.success("Task updated successfully")
+
+      // Record learning data if urgency or importance changed significantly
+      if (Math.abs(urgency - originalTask.urgency) >= 5 || Math.abs(importance - originalTask.importance) >= 5) {
+        // Call learning API in background (don't wait)
+        fetch('/api/ai/learn-from-adjustment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId,
+            newUrgency: urgency,
+            newImportance: importance
+          })
+        }).catch(err => console.error('Failed to record learning:', err))
+      }
+
       // Refresh to get latest data from server
       router.refresh()
     } else {
@@ -346,20 +369,36 @@ export default function QuadrantTodoClient({
     }
   }
 
-  const handleTaskDelete = async (taskId: number) => {
+  const handleTaskDelete = (taskId: number) => {
+    // Find the task to delete
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    // Show confirmation dialog
+    setTaskToDelete(task)
+    setDeleteTaskDialogOpen(true)
+  }
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return
+
     // Optimistic update: Remove task immediately from UI
-    setTasks(prev => prev.filter(task => task.id !== taskId))
+    setTasks(prev => prev.filter(task => task.id !== taskToDelete.id))
     setIsTaskDetailOpen(false)
+    setDeleteTaskDialogOpen(false)
 
     // Sync to database in background
-    const result = await deleteTask(taskId)
+    const result = await deleteTask(taskToDelete.id)
     if (result.success) {
       setLastSyncTime(new Date())
+      toast.success("Task deleted successfully")
     } else {
       // Refresh to rollback on error
       router.refresh()
       toast.error(result.error || "Failed to delete task")
     }
+
+    setTaskToDelete(null)
   }
 
   const handleSubmitTask = async () => {
@@ -479,34 +518,188 @@ export default function QuadrantTodoClient({
     }
   }
 
-  const handleCreatePlayer = async () => {
-    if (!newPlayerData.name.trim()) {
-      toast.error("Please enter a player name")
+  // One-click organize: intelligently redistribute tasks using AI
+  const handleOrganizeTasks = async () => {
+    console.log('🔵 handleOrganizeTasks called, tasks.length:', tasks.length, 'isOrganizing:', isOrganizing)
+
+    // Prevent organizing if already in organize mode
+    if (isOrganizing) {
+      console.log('⚠️ Already in organize mode, ignoring request')
+      toast.warning("Please accept or revert current changes first")
       return
     }
 
-    // Optimistic update: Add player immediately
-    const tempId = Date.now()
-    const tempPlayer: Player = {
-      id: tempId,
-      name: newPlayerData.name,
-      color: newPlayerData.color,
-      created_at: new Date().toISOString(),
-      project_id: projectId
+    if (tasks.length === 0) {
+      toast.warning("No tasks to organize")
+      return
     }
-    setPlayers(prev => [...prev, tempPlayer])
 
-    const result = await createPlayer(projectId, newPlayerData.name, newPlayerData.color)
-    if (result.success) {
-      toast.success("Player created successfully")
-      setNewPlayerData({ name: "", color: "#3b82f6" })
-      router.refresh()
-      setLastSyncTime(new Date())
-    } else {
-      // Rollback on error
-      setPlayers(prev => prev.filter(p => p.id !== tempId))
-      toast.error(result.error || "Failed to create player")
+    // Save original positions
+    const originalPositions = new Map<number, { urgency: number; importance: number }>()
+    tasks.forEach(task => {
+      originalPositions.set(task.id, { urgency: task.urgency, importance: task.importance })
+    })
+    setOriginalTaskPositions(originalPositions)
+    console.log('🔵 Original positions saved:', originalPositions.size, 'tasks')
+
+    toast.info("Organizing tasks...")
+
+    try {
+      const requestBody = {
+        tasks: tasks.map(t => ({
+          id: t.id,
+          description: t.description,
+          urgency: t.urgency,
+          importance: t.importance
+        }))
+      }
+      console.log('🔵 Calling API with', requestBody.tasks.length, 'tasks')
+      console.log('🔵 Task positions before:', requestBody.tasks.map(t => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
+
+      // Call AI API to organize tasks
+      const response = await fetch('/api/ai/organize-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      })
+
+      console.log('🔵 API response status:', response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('🔴 API error:', response.status, errorText)
+        throw new Error(`Failed to organize tasks: ${response.status}`)
+      }
+
+      const responseData = await response.json()
+      console.log('🔵 API response data:', responseData)
+      const { organizedTasks } = responseData
+
+      console.log('🔵 Organized tasks received:', organizedTasks.length)
+      console.log('🔵 Task positions after:', organizedTasks.map((t: any) => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
+
+      // Apply organized positions to tasks
+      const updatedTasks = tasks.map(task => {
+        const organized = organizedTasks.find((o: any) => o.id === task.id)
+        if (organized) {
+          return {
+            ...task,
+            urgency: Math.round(organized.urgency),
+            importance: Math.round(organized.importance)
+          }
+        }
+        return task
+      })
+
+      console.log('🔵 Setting', updatedTasks.length, 'updated tasks')
+      setTasks(updatedTasks)
+      setIsOrganizing(true)
+      toast.success("Tasks organized! Review changes and Accept or Revert.")
+    } catch (error) {
+      console.error('🔴 Organization error:', error)
+      toast.error('Failed to organize tasks. Please try again.')
+      setOriginalTaskPositions(new Map())
     }
+  }
+
+  const handleAcceptOrganize = async () => {
+    console.log('🟢 Accepting organize changes...')
+
+    // Only update tasks that actually moved
+    const tasksToUpdate = tasks.filter(task => {
+      const original = originalTaskPositions.get(task.id)
+      if (!original) return false
+      return original.urgency !== task.urgency || original.importance !== task.importance
+    })
+
+    console.log(`📊 Updating ${tasksToUpdate.length} out of ${tasks.length} tasks`)
+
+    if (tasksToUpdate.length === 0) {
+      console.log('⚠️ No tasks to update')
+      setOriginalTaskPositions(new Map())
+      setIsOrganizing(false)
+      toast.info("No changes to save")
+      return
+    }
+
+    // Immediately update UI for instant feedback
+    const updatedTasks = tasks.map(task => {
+      const wasMoved = tasksToUpdate.some(t => t.id === task.id)
+      if (wasMoved) {
+        return { ...task, updated_at: new Date() }
+      }
+      return task
+    })
+
+    setTasks(updatedTasks)
+    setOriginalTaskPositions(new Map())
+    setIsOrganizing(false)
+    setLastSyncTime(new Date())
+    toast.success(`Saving ${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? 's' : ''}...`)
+
+    // Save to database in background
+    const updatePromises = tasksToUpdate.map(task =>
+      updateTaskAction(task.id, task.urgency, task.importance, task.description)
+    )
+
+    try {
+      await Promise.all(updatePromises)
+      console.log('🟢 Organization changes saved successfully')
+    } catch (error) {
+      console.error("🔴 Failed to save organization:", error)
+      toast.error("Failed to save changes to database")
+    }
+  }
+
+  const handleRevertOrganize = () => {
+    // Restore original positions
+    const revertedTasks = tasks.map(task => {
+      const original = originalTaskPositions.get(task.id)
+      if (original) {
+        return { ...task, urgency: original.urgency, importance: original.importance }
+      }
+      return task
+    })
+
+    setTasks(revertedTasks)
+    setOriginalTaskPositions(new Map())
+    setIsOrganizing(false)
+    toast.info("Changes reverted")
+  }
+
+  // Algorithm to organize tasks and spread out overlaps
+  function organizeTasks(tasks: TaskWithAssignees[]): TaskWithAssignees[] {
+    const organized = [...tasks]
+    const positionMap = new Map<string, TaskWithAssignees[]>()
+
+    // Group tasks by similar positions (within 5% tolerance)
+    organized.forEach(task => {
+      const key = `${Math.round(task.urgency / 5)}_${Math.round(task.importance / 5)}`
+      if (!positionMap.has(key)) {
+        positionMap.set(key, [])
+      }
+      positionMap.get(key)!.push(task)
+    })
+
+    // Spread out overlapping tasks
+    positionMap.forEach((groupTasks, key) => {
+      if (groupTasks.length > 1) {
+        // Calculate spread based on number of tasks
+        const spreadRadius = Math.min(15, 5 + groupTasks.length * 2)
+        const angleStep = (2 * Math.PI) / groupTasks.length
+
+        groupTasks.forEach((task, index) => {
+          const angle = angleStep * index
+          const offsetX = Math.cos(angle) * spreadRadius
+          const offsetY = Math.sin(angle) * spreadRadius
+
+          task.urgency = Math.max(0, Math.min(100, task.urgency + offsetX))
+          task.importance = Math.max(0, Math.min(100, task.importance + offsetY))
+        })
+      }
+    })
+
+    return organized
   }
 
   const handleDeletePlayer = async (playerId: number, playerName: string) => {
@@ -571,6 +764,7 @@ export default function QuadrantTodoClient({
           </div>
         </div>
 
+
         {/* Project Header with Settings */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
@@ -578,14 +772,20 @@ export default function QuadrantTodoClient({
             <Edit className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-                <ChevronDown className="w-4 h-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsBulkAddOpen(true)}>
+              <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
+              Bulk Add
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>Settings</DropdownMenuLabel>
               <div className="px-2 py-1 text-xs text-muted-foreground">Manage your team and tasks</div>
@@ -605,10 +805,6 @@ export default function QuadrantTodoClient({
               }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Task
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => setIsBulkAddOpen(true)}>
-                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
-                Bulk Add with AI
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer" onClick={handleDrawingToggle}>
                 <LinkIcon className="h-4 w-4 mr-2" />
@@ -645,37 +841,54 @@ export default function QuadrantTodoClient({
                   <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Manage Players</DropdownMenuLabel>
                   <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
                     <Users className="h-4 w-4 mr-2" />
-                    View & Manage Players
+                    {userRole === "owner" ? "View & Manage Players" : "View Players"}
                   </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
                 </>
               )}
 
               <DropdownMenuSeparator />
 
               <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Project Actions</DropdownMenuLabel>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
-                <Check className="h-4 w-4 mr-2" />
-                Archive Project
-              </DropdownMenuItem>
 
-              <DropdownMenuItem
-                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Project
-              </DropdownMenuItem>
+              {userRole === "owner" ? (
+                <>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Archive Project
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Project
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to leave this project?")) {
+                      // TODO: Implement leave project functionality
+                      toast.info("Leave project functionality coming soon")
+                    }
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Leave Project
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
 
         {/* Tabs for Map/List View */}
         <Tabs defaultValue="map" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-12 sm:h-10">
             <TabsTrigger value="map" className="flex items-center justify-center">
-              <Map className="w-5 h-5" />
+              <MapIcon className="w-5 h-5" />
             </TabsTrigger>
             <TabsTrigger value="list" className="flex items-center justify-center">
               <List className="w-5 h-5" />
@@ -720,6 +933,11 @@ export default function QuadrantTodoClient({
               projectType={projectType}
               highestPriorityTaskId={highestPriorityTaskId}
               setTasks={setTasks}
+              onOrganizeTasks={handleOrganizeTasks}
+              isOrganizing={isOrganizing}
+              originalTaskPositions={originalTaskPositions}
+              onAcceptOrganize={handleAcceptOrganize}
+              onRevertOrganize={handleRevertOrganize}
             />
           </TabsContent>
 
@@ -751,6 +969,12 @@ export default function QuadrantTodoClient({
                             userName={userName}
                             projectType={projectType}
                             isHighestPriority={task.id === highestPriorityTaskId}
+                            hasMoved={
+                              isOrganizing &&
+                              originalTaskPositions.has(task.id) &&
+                              (originalTaskPositions.get(task.id)!.urgency !== task.urgency ||
+                                originalTaskPositions.get(task.id)!.importance !== task.importance)
+                            }
                           />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm sm:text-base truncate">{task.description}</p>
@@ -934,96 +1158,83 @@ export default function QuadrantTodoClient({
         <Dialog open={isManagePlayersOpen} onOpenChange={setIsManagePlayersOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Manage Players</DialogTitle>
+              <DialogTitle>Project Members</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {/* Current Players List */}
+              {/* Players List */}
               <div>
-                <Label className="text-sm font-medium">Current Players ({players.length})</Label>
-                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                <p className="text-sm text-muted-foreground mb-3">
+                  {userRole === "owner"
+                    ? "Members are automatically created when they join the project. Click the color dot to change a member's color."
+                    : "Project members list"}
+                </p>
+                <div className="mt-2 space-y-3 max-h-[400px] overflow-y-auto">
                   {players.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No players yet</p>
+                    <p className="text-sm text-muted-foreground text-center py-4">No members yet</p>
                   ) : (
                     players.map((player) => (
-                      <div key={player.id} className="flex items-center justify-between p-2 border rounded-lg hover:bg-accent">
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full border-2 border-white shadow" style={{ backgroundColor: player.color }} />
-                          <span className="text-sm font-medium">{player.name}</span>
+                      <div key={player.id} className="p-3 border rounded-lg">
+                        <div className="flex items-center gap-3 mb-2">
+                          {userRole === "owner" ? (
+                            <button
+                              onClick={() => setEditingPlayerId(editingPlayerId === player.id ? null : player.id)}
+                              className="w-6 h-6 rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform cursor-pointer"
+                              style={{ backgroundColor: player.color }}
+                              title="Click to change color"
+                            />
+                          ) : (
+                            <div
+                              className="w-6 h-6 rounded-full border-2 border-white shadow-md"
+                              style={{ backgroundColor: player.color }}
+                            />
+                          )}
+                          <span className="text-sm font-medium flex-1">{player.name}</span>
+                          {userRole === "owner" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePlayer(player.id, player.name)}
+                              className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Delete member"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeletePlayer(player.id, player.name)}
-                          className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+
+                        {/* Color Picker - shown when editing (owner only) */}
+                        {userRole === "owner" && editingPlayerId === player.id && (
+                          <div className="mt-3 p-3 bg-muted/50 rounded-md">
+                            <p className="text-xs text-muted-foreground mb-2">Choose new color:</p>
+                            <div className="grid grid-cols-8 gap-2">
+                              {['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'].map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={async () => {
+                                    setPlayers(prev => prev.map(p =>
+                                      p.id === player.id ? { ...p, color } : p
+                                    ))
+                                    await updatePlayer(player.id, player.name, color)
+                                    setEditingPlayerId(null)
+                                  }}
+                                  className="w-8 h-8 rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform"
+                                  style={{ backgroundColor: color }}
+                                  title={color}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
-                </div>
-              </div>
-
-              {/* Add New Player Form */}
-              <div className="border-t pt-4">
-                <Label className="text-sm font-medium">Add New Player</Label>
-                <div className="mt-2 space-y-3">
-                  <div>
-                    <Label htmlFor="player-name" className="text-xs text-muted-foreground">Player Name</Label>
-                    <Input
-                      id="player-name"
-                      value={newPlayerData.name}
-                      onChange={(e) => setNewPlayerData({ ...newPlayerData, name: e.target.value })}
-                      placeholder="Enter player name..."
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Choose Color</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {[
-                        "#ef4444", // red
-                        "#f97316", // orange
-                        "#f59e0b", // amber
-                        "#eab308", // yellow
-                        "#84cc16", // lime
-                        "#22c55e", // green
-                        "#10b981", // emerald
-                        "#14b8a6", // teal
-                        "#06b6d4", // cyan
-                        "#0ea5e9", // sky
-                        "#3b82f6", // blue
-                        "#6366f1", // indigo
-                        "#8b5cf6", // violet
-                        "#a855f7", // purple
-                        "#d946ef", // fuchsia
-                        "#ec4899", // pink
-                      ].map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          className={`w-8 h-8 rounded-full border-2 transition-all ${
-                            newPlayerData.color === color ? "border-foreground scale-110" : "border-white hover:scale-105"
-                          }`}
-                          style={{ backgroundColor: color }}
-                          onClick={() => setNewPlayerData({ ...newPlayerData, color })}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button onClick={handleCreatePlayer} disabled={!newPlayerData.name.trim()} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Player
-                  </Button>
                 </div>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
+        {/* Delete Project Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -1041,6 +1252,28 @@ export default function QuadrantTodoClient({
                 className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               >
                 {isDeleting ? "Deleting..." : "Delete Project"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Task Confirmation Dialog */}
+        <AlertDialog open={deleteTaskDialogOpen} onOpenChange={setDeleteTaskDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Task Deletion?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {taskToDelete && (
+                  <>
+                    Are you sure you want to permanently delete the task <strong>&quot;{taskToDelete.description}&quot;</strong>? This action cannot be undone.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setTaskToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteTask} className="bg-red-600 hover:bg-red-700">
+                Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -1114,6 +1347,8 @@ export default function QuadrantTodoClient({
           onTasksCreated={() => router.refresh()}
           open={isBulkAddOpen}
           onOpenChange={setIsBulkAddOpen}
+          projectType={projectType}
+          userName={userName}
         />
       </div>
     </div>

@@ -1,7 +1,8 @@
 "use client"
-
+// Task visualization with Eisenhower Matrix
 import React, { useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -17,7 +18,7 @@ import TaskSegment from "@/components/TaskSegment"
 import type { TaskWithAssignees, Player, Line } from "@/app/types"
 import { updateTask, toggleLine, deleteLine, deleteTask, completeTask } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
-import { Trash2, Maximize2, Minimize2, CheckCircle2 } from "lucide-react"
+import { Trash2, Maximize2, Minimize2, CheckCircle2, Check, X, Sparkles, LayoutGrid } from "lucide-react"
 import { toast } from "sonner"
 
 interface QuadrantMatrixMapProps {
@@ -34,6 +35,11 @@ interface QuadrantMatrixMapProps {
   projectType?: "personal" | "team"
   highestPriorityTaskId?: number | null
   setTasks?: (updater: (prev: TaskWithAssignees[]) => TaskWithAssignees[]) => void
+  onOrganizeTasks?: () => void
+  isOrganizing?: boolean
+  originalTaskPositions?: Map<number, { urgency: number; importance: number }>
+  onAcceptOrganize?: () => void
+  onRevertOrganize?: () => void
 }
 
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
@@ -50,6 +56,11 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   projectType,
   highestPriorityTaskId,
   setTasks,
+  onOrganizeTasks,
+  isOrganizing,
+  originalTaskPositions,
+  onAcceptOrganize,
+  onRevertOrganize,
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
@@ -120,12 +131,20 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     if (!draggedTask) return
 
     const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+    const taskSize = isMobile ? 40 : 60
+    const offset = taskSize / 2
+    const marginX = offset + (isMobile ? 25 : 40)
+    const marginY = offset + (isMobile ? 35 : 50)
 
-    // Limit coordinates to 95% to avoid edge issues
-    const urgency = Math.max(5, Math.min(95, Math.round(x)))
-    const importance = Math.max(5, Math.min(95, Math.round(100 - y)))
+    const effectiveWidth = rect.width - (marginX * 2)
+    const effectiveHeight = rect.height - (marginY * 2)
+
+    const x = ((e.clientX - rect.left - marginX) / effectiveWidth) * 100
+    const y = ((e.clientY - rect.top - marginY) / effectiveHeight) * 100
+
+    // Allow full range 0-100 for urgency and importance
+    const urgency = Math.max(0, Math.min(100, Math.round(x)))
+    const importance = Math.max(0, Math.min(100, Math.round(100 - y)))
 
     // Save old position for rollback
     const oldUrgency = draggedTask.urgency
@@ -169,12 +188,20 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     }
 
     const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+    const taskSize = isMobile ? 40 : 60
+    const offset = taskSize / 2
+    const marginX = offset + (isMobile ? 25 : 40)
+    const marginY = offset + (isMobile ? 35 : 50)
 
-    // Limit coordinates to 95% to avoid edge issues
-    const urgency = Math.max(5, Math.min(95, x))
-    const importance = Math.max(5, Math.min(95, 100 - y))
+    const effectiveWidth = rect.width - (marginX * 2)
+    const effectiveHeight = rect.height - (marginY * 2)
+
+    const x = ((e.clientX - rect.left - marginX) / effectiveWidth) * 100
+    const y = ((e.clientY - rect.top - marginY) / effectiveHeight) * 100
+
+    // Allow full range 0-100 for urgency and importance
+    const urgency = Math.max(0, Math.min(100, x))
+    const importance = Math.max(0, Math.min(100, 100 - y))
 
     setMouseDownPos({ x: e.clientX, y: e.clientY })
     setIsLongPress(false)
@@ -234,12 +261,20 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     if (!touch) return
 
     const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((touch.clientX - rect.left) / rect.width) * 100
-    const y = ((touch.clientY - rect.top) / rect.height) * 100
+    const taskSize = isMobile ? 40 : 60
+    const offset = taskSize / 2
+    const marginX = offset + (isMobile ? 25 : 40)
+    const marginY = offset + (isMobile ? 35 : 50)
 
-    // Limit coordinates to 95% to avoid edge issues
-    const urgency = Math.max(5, Math.min(95, x))
-    const importance = Math.max(5, Math.min(95, 100 - y))
+    const effectiveWidth = rect.width - (marginX * 2)
+    const effectiveHeight = rect.height - (marginY * 2)
+
+    const x = ((touch.clientX - rect.left - marginX) / effectiveWidth) * 100
+    const y = ((touch.clientY - rect.top - marginY) / effectiveHeight) * 100
+
+    // Allow full range 0-100 for urgency and importance
+    const urgency = Math.max(0, Math.min(100, x))
+    const importance = Math.max(0, Math.min(100, 100 - y))
 
     setMouseDownPos({ x: touch.clientX, y: touch.clientY })
     setIsLongPress(false)
@@ -403,7 +438,66 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
       {!isFullscreen && (
         <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6">
-          <div className="flex items-center justify-end mb-2">
+          {/* Organize Mode Banner */}
+          {isOrganizing && onAcceptOrganize && onRevertOrganize && originalTaskPositions && (
+            <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-950 border-2 border-purple-300 dark:border-purple-700 rounded-lg">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-purple-900 dark:text-purple-100">Preview Mode</h3>
+                  <p className="text-sm text-purple-700 dark:text-purple-300">
+                    {(() => {
+                      const movedCount = tasks.filter(task => {
+                        const original = originalTaskPositions.get(task.id)
+                        if (!original) return false
+                        return original.urgency !== task.urgency || original.importance !== task.importance
+                      }).length
+                      return movedCount > 0
+                        ? `${movedCount} task${movedCount > 1 ? 's' : ''} repositioned. Accept to save or Revert to cancel.`
+                        : 'Review the organized layout. Accept to save or Revert to cancel.'
+                    })()}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={onRevertOrganize} variant="outline" size="sm">
+                    <X className="w-4 h-4 mr-2" />
+                    Revert
+                  </Button>
+                  <Button onClick={onAcceptOrganize} size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Check className="w-4 h-4 mr-2" />
+                    Accept
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 mb-2">
+            {onOrganizeTasks && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOrganizeTasks()
+                }}
+                disabled={tasks.length === 0 || isOrganizing}
+                className="flex items-center justify-center gap-1.5 px-3 h-8 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm font-medium group"
+                title="AI Organize tasks"
+              >
+                <LayoutGrid className="w-3.5 h-3.5 group-hover:scale-110 transition-transform duration-300" />
+                Organize
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowHelpDialog(true)
+              }}
+              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200 hover:scale-110"
+              title="Help & Instructions"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              </svg>
+            </button>
             <button
               onClick={toggleFullscreen}
               className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200 hover:scale-110"
@@ -584,14 +678,17 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
             })}
           </svg>
 
-          {/* Tasks */}
-          <div className="absolute inset-0 p-8" style={{ zIndex: 3 }}>
+          {/* Tasks - positioned within safe area to prevent edge clipping */}
+          <div className="absolute inset-0" style={{ zIndex: 15 }}>
             {tasks.map((task) => {
               const x = task.urgency
               const y = 100 - task.importance
               const isSelected = selectedTaskForLine === task.id
               const taskSize = isMobile ? 40 : 60
               const offset = taskSize / 2
+              // Add larger margin to prevent clipping and ensure draggability in corners
+              const marginX = offset + (isMobile ? 25 : 40)
+              const marginY = offset + (isMobile ? 35 : 50) // Extra margin at bottom for action zones
 
               return (
                 <div
@@ -605,8 +702,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                       : "hover:ring-2 hover:ring-primary hover:scale-105 cursor-grab"
                   } ${isSelected ? "ring-2 ring-primary" : ""}`}
                   style={{
-                    left: `calc(${x}% - ${offset}px)`,
-                    top: `calc(${y}% - ${offset}px)`,
+                    left: `calc(${marginX}px + (100% - ${marginX * 2}px) * ${x / 100} - ${offset}px)`,
+                    top: `calc(${marginY}px + (100% - ${marginY * 2}px) * ${y / 100} - ${offset}px)`,
                     transform: "translate(0, 0)",
                   }}
                   draggable={!isDrawingLine && !isMobile}
@@ -666,7 +763,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                     ? "bg-green-500 border-green-600 scale-110 shadow-green-500/50"
                     : "bg-green-50/90 border-green-300 hover:bg-green-100/90 hover:scale-105"
                 }`}
-                style={{ zIndex: 10, pointerEvents: "auto" }}
+                style={{ zIndex: 20, pointerEvents: "auto" }}
                 onDragOver={handleCompleteDragOver}
                 onDragLeave={handleCompleteDragLeave}
                 onDrop={handleCompleteDrop}
@@ -684,7 +781,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                     ? "bg-red-500 border-red-600 scale-110 shadow-red-500/50"
                     : "bg-red-50/90 border-red-300 hover:bg-red-100/90 hover:scale-105"
                 }`}
-                style={{ zIndex: 10, pointerEvents: "auto" }}
+                style={{ zIndex: 20, pointerEvents: "auto" }}
                 onDragOver={handleTrashDragOver}
                 onDragLeave={handleTrashDragLeave}
                 onDrop={handleTrashDrop}
@@ -719,22 +816,6 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           </div>
         </div>
       </CardContent>
-
-      {/* Help Button - positioned at right middle, aligned with archive button */}
-      {!isFullscreen && (
-        <button
-          className="fixed top-1/2 -translate-y-1/2 right-8 w-14 h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 z-50"
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowHelpDialog(true)
-          }}
-          title="Help & Instructions"
-        >
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-          </svg>
-        </button>
-      )}
 
       {/* Help Dialog */}
       <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
@@ -775,19 +856,19 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除任务？</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Delete Task?</AlertDialogTitle>
             <AlertDialogDescription>
               {taskToDelete && (
                 <>
-                  你确定要删除任务 <strong>&quot;{taskToDelete.description}&quot;</strong> 吗？此操作无法撤销。
+                  Are you sure you want to delete task <strong>&quot;{taskToDelete.description}&quot;</strong>? This action cannot be undone.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>取消</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
-              删除
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

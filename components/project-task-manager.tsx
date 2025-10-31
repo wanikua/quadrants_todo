@@ -162,6 +162,8 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         projectType={project.type}
         userName={user?.name}
         projectName={project.name}
+        userRole={project.role}
+        userId={user?.id}
       />
 
       {/* Floating Archives Button */}
@@ -227,7 +229,7 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                             </div>
                           )}
                           <p className="text-sm text-gray-500 mt-2">
-                            Created {new Date(task.created_at).toLocaleDateString()}
+                            Created {new Date(task.created_at).toLocaleDateString('en-GB')}
                           </p>
                         </div>
                         <Button

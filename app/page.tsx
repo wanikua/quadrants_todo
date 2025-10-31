@@ -48,7 +48,7 @@ export default function HomePage() {
         <div className="absolute top-1/4 -right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-blue-200/30 via-purple-200/30 to-transparent rounded-full blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      {/* Gradient fade to white near header - Positioned with content */}
+      {/* Gradient fade near header - Positioned with content */}
       <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-white via-white to-transparent pointer-events-none z-10"></div>
 
       {/* Floating decorative circles */}
@@ -59,7 +59,7 @@ export default function HomePage() {
         <div className="absolute bottom-[25%] left-[12%] w-18 h-18 rounded-full bg-blue-300 opacity-25 animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
       </div>
 
-      {/* Header - Fully white background for better logo display */}
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b-[3px] border-black/10">
         <div className="w-full px-[4%] md:px-[10%]">
           <div className="h-24 flex items-center justify-between">
@@ -196,9 +196,9 @@ export default function HomePage() {
                 <div className="w-16 h-16 rounded-[20px] bg-black flex items-center justify-center group-hover:bg-yellow-500 transition-all duration-[600ms] group-hover:scale-110 group-hover:rotate-3">
                   <div className="w-8 h-8 rounded-[10px] bg-white group-hover:animate-pulse"></div>
                 </div>
-                <h3 className="text-2xl font-bold text-black leading-tight mt-6">Priority</h3>
+                <h3 className="text-2xl font-bold text-black leading-tight mt-6">Smart Organize</h3>
                 <p className="text-gray-700 leading-relaxed text-lg mt-6">
-                  First thing todo? <span className="text-highlight-yellow">The matrix decides for you.</span>
+                  AI learns your task habits. <span className="text-highlight-yellow">One click optimizes everything.</span>
                 </p>
               </div>
             </div>
@@ -251,7 +251,26 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* Section 3: Team Collaboration */}
+            {/* Section 3: Smart Features */}
+            <ScrollReveal animation="fade-scale" delay={100}>
+              <div className="relative bg-gradient-to-br from-yellow-50 to-orange-50 rounded-[20px] p-16 md:p-24 overflow-hidden border-[3px] border-black shadow-xl">
+                {/* Decorative shapes */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-yellow-200/30 to-orange-200/30 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-3xl"></div>
+
+                <div className="max-w-4xl mx-auto space-y-8 relative z-10">
+                  <h2 className="text-4xl md:text-6xl font-bold text-black leading-[1.1]">
+                    Intelligence that <span className="text-highlight-yellow">adapts to you</span>
+                  </h2>
+                  <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
+                    AI learns your task patterns and preferences. Paste multiple tasks at once—AI analyzes and assigns optimal urgency and importance for each one.
+                    <span className="text-highlight-purple"> Your priorities stay intact. Preview, accept, or revert. You're always in control.</span>
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* Section 4: Team Collaboration */}
             <ScrollReveal animation="fade-in-up" delay={100}>
               <div className="text-center max-w-4xl mx-auto space-y-8">
                 <h2 className="text-4xl md:text-6xl font-bold text-black leading-[1.1]">
@@ -264,7 +283,7 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* Section 4: No Learning Curve */}
+            {/* Section 5: No Learning Curve */}
             <ScrollReveal animation="slide-up" delay={100}>
               <div className="relative bg-black rounded-[20px] p-16 md:p-24 text-center overflow-hidden shadow-2xl">
                 <div className="max-w-4xl mx-auto space-y-10">

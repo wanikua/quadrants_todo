@@ -281,14 +281,14 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Users className="w-4 h-4" />
-            Assigned Players ({isEditing ? editAssignees.length : task.assignees.filter(p => !p.name.startsWith('User ')).length})
+            Assigned Members ({isEditing ? editAssignees.length : task.assignees.filter(p => !p.name.startsWith('User ')).length})
           </div>
 
           {isEditing ? (
             <div className="space-y-3">
               <Select onValueChange={handlePlayerSelect}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select players to assign" />
+                  <SelectValue placeholder="Select members to assign" />
                 </SelectTrigger>
                 <SelectContent>
                   {players
@@ -385,7 +385,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
 
         {/* Comments List */}
         {task.comments && task.comments.length > 0 ? (
-          <ScrollArea className="max-h-48">
+          <ScrollArea className="max-h-[400px]">
             <div className="space-y-2">
               {task.comments.map((comment) => (
                 <div key={comment.id} className="p-3 bg-muted rounded-lg">
@@ -414,7 +414,7 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
             </div>
           </ScrollArea>
         ) : (
-          <p className="text-muted-foreground text-center py-8">No comments yet. Be the first to comment!</p>
+          <p className="text-muted-foreground text-center py-8">No comments yet. Be the first to add one!</p>
         )}
       </div>
 

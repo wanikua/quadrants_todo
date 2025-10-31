@@ -58,12 +58,14 @@ export async function POST(request: NextRequest) {
     let createdCount = 0
     for (const taskInput of tasksToCreate) {
       try {
-        // Create task
+        // Create task with predicted values for learning
         const [newTask] = await db.insert(tasks).values({
           project_id: projectId,
           description: taskInput.description,
           urgency: taskInput.urgency,
           importance: taskInput.importance,
+          predicted_urgency: taskInput.predictedUrgency,
+          predicted_importance: taskInput.predictedImportance,
         }).returning()
 
         // Assign to players

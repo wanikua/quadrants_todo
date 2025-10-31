@@ -20,44 +20,61 @@ This file contains configuration and context for Claude Code to better understan
    - Automatic quadrant classification: Important & Urgent, Important & Not Urgent, etc.
    - Task detail dialog with comprehensive editing capabilities
    - Batch operations and optimized state management
+   - AI-powered bulk add and task organization features
 
-3. **Player/Team Management** 
+3. **Bulk Add Tasks (AI-Powered)**
+   - Paste multiple tasks at once (line-separated text input)
+   - AI automatically assigns urgency and importance values for each task
+   - Smart positioning to avoid overlaps from the start
+   - Instant task creation with optimized database operations
+   - Perfect for quickly migrating task lists or brainstorming sessions
+
+4. **AI-Powered Task Organization**
+   - Intelligent task repositioning using physics-based repulsion algorithm
+   - Automatically spreads overlapping tasks for better visual clarity
+   - Maintains center point at matrix origin (50, 50) through normalization
+   - Preserves relative priority order of tasks
+   - Preview mode to review changes before applying
+   - One-click accept or revert functionality
+   - Optimized for instant UI feedback with background database saves
+
+5. **Player/Team Management** 
    - Create and manage team members with unique colors
    - Assign multiple players to tasks
    - Visual color-coding throughout the interface
    - Player deletion with automatic task reassignment handling
 
-4. **Task Relationships**
+6. **Task Relationships**
    - Draw connecting lines between related tasks
    - Toggle drawing mode to visually map task dependencies
    - Click-based line creation with automatic arrow styling
    - Line deletion capabilities
 
-5. **Comments System**
+7. **Comments System**
    - Add threaded comments to tasks
    - Author attribution with timestamps
    - Comment deletion functionality
    - Integrated into task detail views
 
-6. **Database Integration**
+8. **Database Integration**
    - PostgreSQL database via Neon for persistent storage
    - Automatic database initialization and schema setup
    - Graceful fallback to offline mode when database unavailable
    - Real-time data synchronization
 
-7. **Offline Mode**
+9. **Offline Mode**
    - Local storage persistence when database is unavailable
    - Full functionality maintained without server connection
    - Data import/export capabilities via localStorage
    - Seamless mode switching
 
-8. **Responsive Design**
+10. **Responsive Design**
    - Mobile-first responsive layout
    - Touch-optimized interactions for mobile devices
    - Adaptive UI components (Sheet vs Dialog based on screen size)
    - Optimized performance for various device types
 
-9. **Access Control**
+11. **Access Control**
    - Simple access code authentication system
    - Session persistence via localStorage
    - Logout functionality with data cleanup

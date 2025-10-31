@@ -381,7 +381,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                 </div>
                 <div className="flex justify-between items-center p-4 bg-gray-50 rounded-[10px]">
                   <span className="text-gray-700 font-medium">Member since:</span>
-                  <span className="text-black font-bold">{new Date(initialUser.created_at).toLocaleDateString()}</span>
+                  <span className="text-black font-bold">{new Date(initialUser.created_at).toLocaleDateString('en-GB')}</span>
                 </div>
               </div>
             </CardContent>

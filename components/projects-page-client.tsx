@@ -238,7 +238,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
         <div className="mb-12 flex gap-4">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full">
                 <Plus className="mr-2 h-4 w-4" />
                 New Project
               </Button>
@@ -282,7 +282,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full" disabled={isCreating}>
+                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full" disabled={isCreating}>
                   {isCreating ? "Creating..." : "Create Project"}
                 </Button>
               </form>
@@ -320,7 +320,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full"
                   disabled={isJoining}
                 >
                   {isJoining ? "Joining..." : "Join Project"}
@@ -358,8 +358,8 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
                     <div className="flex items-center justify-between text-sm">
-                      <p className="text-gray-600 font-medium" suppressHydrationWarning>
-                        Created {new Date(project.created_at).toLocaleDateString()}
+                      <p className="text-gray-600 font-medium">
+                        Created {new Date(project.created_at).toLocaleDateString('en-GB')}
                       </p>
                       {project.type === 'team' && project.member_count && (
                         <div className="flex items-center gap-2 text-black font-bold">
@@ -425,7 +425,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                           </div>
                           <p className="text-gray-600 mb-2">{project.description || "No description"}</p>
                           <p className="text-sm text-gray-500">
-                            Archived on {new Date(project.created_at).toLocaleDateString()}
+                            Archived on {new Date(project.created_at).toLocaleDateString('en-GB')}
                           </p>
                         </div>
                         <Button

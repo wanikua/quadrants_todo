@@ -5,7 +5,7 @@ import { getUserProjects } from "@/lib/db-queries"
 export default async function ProjectsPage() {
   const user = await requireAuth()
 
-  // 使用优化的查询函数，获取用户拥有的和参与的所有项目
+  // Use optimized query function to get all projects owned by and participated by the user
   const projects = await getUserProjects(user.id)
 
   return <ProjectsPageClient initialProjects={projects as any} user={user} />
