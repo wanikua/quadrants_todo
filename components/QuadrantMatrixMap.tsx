@@ -178,7 +178,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     }
     // Don't call router.refresh() - rely on optimistic update and sync polling
 
-    onDragEnd?.() // Resume sync after drop
+    // Small delay before resuming sync to ensure DB transaction is committed
+    setTimeout(() => {
+      onDragEnd?.() // Resume sync after drop
+    }, 200)
   }
 
   const handleMatrixMouseDown = (e: React.MouseEvent) => {
@@ -349,7 +352,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     setShowDeleteConfirm(true)
     setDraggedTask(null)
 
-    onDragEnd?.() // Resume sync after drop
+    // Resume sync immediately for trash drop (no DB operation yet)
+    onDragEnd?.()
   }
 
   const handleConfirmDelete = async () => {
@@ -409,7 +413,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     }
     // Rely on sync polling to update after complete
 
-    onDragEnd?.() // Resume sync after drop
+    // Small delay before resuming sync to ensure DB transaction is committed
+    setTimeout(() => {
+      onDragEnd?.() // Resume sync after drop
+    }, 200)
   }
 
   // Fullscreen handlers - Use CSS instead of Fullscreen API to avoid Dialog hiding
