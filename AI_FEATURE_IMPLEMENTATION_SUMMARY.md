@@ -50,15 +50,15 @@
 **API端点：** `POST /api/ai/predict-tasks`
 
 **输入：**
-```json
+\`\`\`json
 {
   "tasks": ["任务描述1", "任务描述2"],
   "projectId": "proj_xxx"
 }
-```
+\`\`\`
 
 **输出：**
-```json
+\`\`\`json
 [
   {
     "description": "任务描述1",
@@ -67,7 +67,7 @@
     "reasoning": "说明"
   }
 ]
-```
+\`\`\`
 
 ### 5. 批量创建API ✅
 
@@ -114,10 +114,10 @@
 - `.env.example` - 示例配置文件
 
 **新增变量：**
-```bash
+\`\`\`bash
 QWEN_API_KEY=         # 主要方案
 ANTHROPIC_API_KEY=    # 备用方案
-```
+\`\`\`
 
 ### 9. 文档 ✅
 
@@ -198,15 +198,15 @@ ANTHROPIC_API_KEY=    # 备用方案
 ## 🚀 使用流程
 
 1. **配置API Key**
-   ```bash
+   \`\`\`bash
    # .env.local
    QWEN_API_KEY=sk-your-key
-   ```
+   \`\`\`
 
 2. **重启服务器**
-   ```bash
+   \`\`\`bash
    npm run dev
-   ```
+   \`\`\`
 
 3. **使用功能**
    - 打开项目
@@ -224,7 +224,7 @@ ANTHROPIC_API_KEY=    # 备用方案
 ## 📝 文件清单
 
 ### 新增文件
-```
+\`\`\`
 components/
   BulkTaskInput.tsx                    # UI组件
 
@@ -242,14 +242,14 @@ docs/
   AI_FEATURE_IMPLEMENTATION_SUMMARY.md # 本文件
 
 .env.example                           # 环境变量示例
-```
+\`\`\`
 
 ### 修改文件
-```
+\`\`\`
 app/db/schema.ts                       # 新增2个表
 app/client.tsx                         # 集成UI组件
 .env.local                             # 添加API key配置
-```
+\`\`\`
 
 ## ✅ 测试检查清单
 

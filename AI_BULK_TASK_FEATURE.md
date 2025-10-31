@@ -22,12 +22,12 @@ This feature allows users to quickly create multiple tasks at once by pasting th
    - Select "Bulk Add with AI" ✨
 
 2. **Enter Your Tasks**
-   ```
+   \`\`\`
    Fix login bug @alice
    Review pull request @bob
    Update documentation
    Deploy to production @alice @bob
-   ```
+   \`\`\`
 
 3. **AI Analysis**
    - Click "Analyze Tasks with AI"
@@ -83,7 +83,7 @@ If `ANTHROPIC_API_KEY` is not configured, the system uses keyword-based heuristi
 
 ### Database Schema
 
-```sql
+\`\`\`sql
 -- Stores AI predictions and user adjustments for learning
 CREATE TABLE task_predictions (
   id SERIAL PRIMARY KEY,
@@ -106,7 +106,7 @@ CREATE TABLE user_task_preferences (
   keyword_patterns JSONB,
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 ### API Endpoints
 
@@ -131,7 +131,7 @@ CREATE TABLE user_task_preferences (
 
 ### Required Environment Variables
 
-```bash
+\`\`\`bash
 # Primary: Qwen API (阿里云通义千问) - Recommended
 QWEN_API_KEY=your_qwen_api_key
 
@@ -140,7 +140,7 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # The system will try Qwen first, then Claude, then keyword heuristics
 # At least one API key is recommended for best results
-```
+\`\`\`
 
 ### Get a Qwen API Key (Recommended)
 
@@ -149,9 +149,9 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 3. Navigate to API-KEY management
 4. Create a new API key
 5. Add to `.env.local`:
-   ```bash
+   \`\`\`bash
    QWEN_API_KEY=sk-your-key-here
-   ```
+   \`\`\`
 
 ### Get an Anthropic API Key (Optional Fallback)
 
@@ -160,9 +160,9 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 3. Navigate to API Keys
 4. Create a new API key
 5. Add to `.env.local`:
-   ```bash
+   \`\`\`bash
    ANTHROPIC_API_KEY=sk-ant-your-key-here
-   ```
+   \`\`\`
 
 ### Cost Considerations
 
@@ -184,14 +184,14 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 
 ### Example Input
 
-```
+\`\`\`
 Fix critical login bug - users can't access dashboard @alice
 Review and merge payment integration PR @bob
 Update API documentation for v2 endpoints
 Plan Q2 roadmap meeting
 Deploy staging environment @alice @bob
 Refactor authentication middleware
-```
+\`\`\`
 
 ### AI Predictions
 

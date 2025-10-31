@@ -37,28 +37,28 @@
 
 在项目根目录的 `.env.local` 文件中添加：
 
-```bash
+\`\`\`bash
 QWEN_API_KEY=sk-your-actual-key-here
-```
+\`\`\`
 
 ### 5. 重启开发服务器
 
-```bash
+\`\`\`bash
 # 停止当前服务器 (Ctrl+C)
 # 然后重新启动
 npm run dev
-```
+\`\`\`
 
 ## 模型选择
 
 在 `/app/api/ai/predict-tasks/route.ts` 中，可以修改使用的模型：
 
-```typescript
+\`\`\`typescript
 body: JSON.stringify({
   model: 'qwen-plus', // 改为以下任一模型
   // ...
 })
-```
+\`\`\`
 
 ### 可选模型对比
 
@@ -81,17 +81,17 @@ body: JSON.stringify({
 ### 示例费用（使用 qwen-plus）
 
 **单次批量创建任务（10个任务）：**
-```
+\`\`\`
 输入：约 500 tokens（prompt + 10个任务描述）
 输出：约 500 tokens（10个预测结果）
 总计：1000 tokens ≈ ¥0.004 = $0.0006
-```
+\`\`\`
 
 **月度使用（每天创建5次批量任务）：**
-```
+\`\`\`
 每天：5次 × ¥0.004 = ¥0.02
 每月：¥0.02 × 30 = ¥0.60 = $0.09
-```
+\`\`\`
 
 ### 免费额度
 
@@ -109,7 +109,7 @@ body: JSON.stringify({
 
 ### 方法2：使用 curl 测试
 
-```bash
+\`\`\`bash
 # 使用国际版API（推荐，更好的全球访问）
 curl -X POST https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
@@ -123,7 +123,7 @@ curl -X POST https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/complet
       }
     ]
   }'
-```
+\`\`\`
 
 ### 方法3：在项目中测试
 
