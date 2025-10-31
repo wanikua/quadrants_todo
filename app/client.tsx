@@ -978,17 +978,6 @@ export default function QuadrantTodoClient({
                 <>
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Team Management</DropdownMenuLabel>
-
-                  {(userRole === "owner" || userRole === "admin") && (
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManageMembersOpen(true)}>
-                      <Users className="h-4 w-4 mr-2" />
-                      Manage Members
-                    </DropdownMenuItem>
-                  )}
-
-                  <DropdownMenuSeparator />
-
                   <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
                   <div className="px-2 py-2">
                     <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
@@ -1012,10 +1001,18 @@ export default function QuadrantTodoClient({
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Manage Players</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Team Management</DropdownMenuLabel>
+
+                  {(userRole === "owner" || userRole === "admin") && (
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManageMembersOpen(true)}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Members
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
                     <Users className="h-4 w-4 mr-2" />
-                    {userRole === "owner" ? "View & Manage Players" : "View Players"}
+                    {userRole === "owner" ? "Manage Players" : "View Players"}
                   </DropdownMenuItem>
                 </>
               )}
