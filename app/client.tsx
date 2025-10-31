@@ -136,6 +136,25 @@ export default function QuadrantTodoClient({
     }
   }, [projectType, projectId, isOfflineMode])
 
+  // Sync function to fetch latest data from server
+  const syncData = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/sync`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          // Update local state with server data
+          setTasks(result.data.tasks || [])
+          setPlayers(result.data.players || [])
+          setLines(result.data.lines || [])
+          setLastSyncTime(new Date())
+        }
+      }
+    } catch (error) {
+      console.error('Sync error:', error)
+    }
+  }, [projectId])
+
   // Check for active users - only enables sync if multiple users detected
   useEffect(() => {
     if (projectType === 'team' && !isOfflineMode) {
@@ -169,16 +188,16 @@ export default function QuadrantTodoClient({
         isPageVisible = !document.hidden
 
         if (isPageVisible) {
-          // Immediately refresh when page becomes visible
-          router.refresh()
+          // Immediately sync when page becomes visible
+          syncData()
 
           // Resume polling
           if (interval) clearInterval(interval)
           interval = setInterval(() => {
             if (isPageVisible) {
-              router.refresh()
+              syncData()
             }
-          }, 1000) // Refresh every 1 second when multiple users online - near real-time!
+          }, 1000) // Sync every 1 second when multiple users online - real-time!
         } else {
           // Pause polling when page is hidden to save resources
           if (interval) clearInterval(interval)
@@ -191,17 +210,16 @@ export default function QuadrantTodoClient({
       // Start initial polling
       interval = setInterval(() => {
         if (isPageVisible) {
-          router.refresh()
-          setLastSyncTime(new Date())
+          syncData()
         }
-      }, 1000) // Refresh every 1 second - near real-time!
+      }, 1000) // Sync every 1 second - real-time!
 
       return () => {
         if (interval) clearInterval(interval)
         document.removeEventListener('visibilitychange', handleVisibilityChange)
       }
     }
-  }, [projectType, router, isOfflineMode, activeUserCount])
+  }, [projectType, isOfflineMode, activeUserCount, syncData])
 
   // Format time ago
   const getTimeAgo = useCallback((date: Date) => {
@@ -534,6 +552,33 @@ export default function QuadrantTodoClient({
       return
     }
 
+    // Try to acquire distributed lock
+    try {
+      const lockResponse = await fetch(`/api/projects/${projectId}/organize-lock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId || 'anonymous',
+          userName: userName || 'User'
+        })
+      })
+
+      const lockResult = await lockResponse.json()
+
+      if (!lockResult.success) {
+        if (lockResult.locked) {
+          toast.warning(`${lockResult.lockedBy} is currently organizing tasks. Please wait.`)
+        } else {
+          toast.error('Failed to start organize operation')
+        }
+        return
+      }
+    } catch (error) {
+      console.error('Lock acquire error:', error)
+      toast.error('Failed to start organize operation')
+      return
+    }
+
     // Save original positions
     const originalPositions = new Map<number, { urgency: number; importance: number }>()
     tasks.forEach(task => {
@@ -599,6 +644,11 @@ export default function QuadrantTodoClient({
       console.error('🔴 Organization error:', error)
       toast.error('Failed to organize tasks. Please try again.')
       setOriginalTaskPositions(new Map())
+
+      // Release lock on error
+      await fetch(`/api/projects/${projectId}/organize-lock`, {
+        method: 'DELETE'
+      })
     }
   }
 
@@ -619,6 +669,9 @@ export default function QuadrantTodoClient({
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
       toast.info("No changes to save")
+
+      // Release lock
+      await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
       return
     }
 
@@ -648,10 +701,13 @@ export default function QuadrantTodoClient({
     } catch (error) {
       console.error("🔴 Failed to save organization:", error)
       toast.error("Failed to save changes to database")
+    } finally {
+      // Release lock after saving
+      await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
     }
   }
 
-  const handleRevertOrganize = () => {
+  const handleRevertOrganize = async () => {
     // Restore original positions
     const revertedTasks = tasks.map(task => {
       const original = originalTaskPositions.get(task.id)
@@ -665,6 +721,9 @@ export default function QuadrantTodoClient({
     setOriginalTaskPositions(new Map())
     setIsOrganizing(false)
     toast.info("Changes reverted")
+
+    // Release lock
+    await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
   }
 
   // Algorithm to organize tasks and spread out overlaps
