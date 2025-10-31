@@ -25,6 +25,14 @@ export async function DELETE(
 
     const currentUserId = user.id
 
+    // Prevent removing yourself
+    if (currentUserId === targetUserId) {
+      return NextResponse.json(
+        { success: false, error: 'You cannot remove yourself from the project. Use "Leave Project" instead.' },
+        { status: 403 }
+      )
+    }
+
     // Check if current user is owner or admin
     const membership = await sql`
       SELECT role FROM project_members

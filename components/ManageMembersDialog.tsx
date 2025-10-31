@@ -36,6 +36,7 @@ interface ManageMembersDialogProps {
   onOpenChange: (open: boolean) => void
   projectId: string
   currentUserRole: "owner" | "admin" | "member"
+  currentUserId?: string
   onMemberRemoved?: () => void
 }
 
@@ -44,6 +45,7 @@ export function ManageMembersDialog({
   onOpenChange,
   projectId,
   currentUserRole,
+  currentUserId,
   onMemberRemoved,
 }: ManageMembersDialogProps) {
   const [members, setMembers] = useState<Member[]>([])
@@ -135,6 +137,9 @@ export function ManageMembersDialog({
   }
 
   const canRemoveMember = (member: Member) => {
+    // Cannot remove yourself
+    if (currentUserId && member.user_id === currentUserId) return false
+
     // Owner cannot be removed
     if (member.role === "owner") return false
 
