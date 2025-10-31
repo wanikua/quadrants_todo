@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import TaskSegment from "@/components/TaskSegment"
 import { BulkTaskInput } from "@/components/BulkTaskInput"
-import { ManageMembersDialog } from "@/components/ManageMembersDialog"
 import { toast } from "sonner"
 
 interface QuadrantTodoClientProps {
@@ -82,7 +81,6 @@ export default function QuadrantTodoClient({
   const [taskToDelete, setTaskToDelete] = useState<TaskWithAssignees | null>(null)
   const [deleteTaskDialogOpen, setDeleteTaskDialogOpen] = useState(false)
   const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
-  const [isManageMembersOpen, setIsManageMembersOpen] = useState(false)
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
@@ -1003,13 +1001,6 @@ export default function QuadrantTodoClient({
 
                   <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Team Management</DropdownMenuLabel>
 
-                  {(userRole === "owner" || userRole === "admin") && (
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManageMembersOpen(true)}>
-                      <Users className="h-4 w-4 mr-2" />
-                      Manage Members
-                    </DropdownMenuItem>
-                  )}
-
                   <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
                     <Users className="h-4 w-4 mr-2" />
                     {userRole === "owner" ? "Manage Players" : "View Players"}
@@ -1534,17 +1525,6 @@ export default function QuadrantTodoClient({
           projectType={projectType}
           userName={userName}
         />
-
-        {/* Manage Members Dialog */}
-        {projectType === "team" && (userRole === "owner" || userRole === "admin") && (
-          <ManageMembersDialog
-            open={isManageMembersOpen}
-            onOpenChange={setIsManageMembersOpen}
-            projectId={projectId}
-            currentUserRole={userRole || "member"}
-            onMemberRemoved={() => router.refresh()}
-          />
-        )}
       </div>
     </div>
   )
