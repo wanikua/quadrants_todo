@@ -85,6 +85,7 @@ export default function QuadrantTodoClient({
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
   const [isSyncPaused, setIsSyncPaused] = useState(false)
+  const [pendingUpdateTaskIds, setPendingUpdateTaskIds] = useState<Set<number>>(new Set())
 
   // Project editing state
   const [isEditingProject, setIsEditingProject] = useState(false)
@@ -145,6 +146,12 @@ export default function QuadrantTodoClient({
       return
     }
 
+    // Skip sync if in organize mode to preserve preview
+    if (isOrganizing) {
+      console.log('⏸️ [Sync] Skipping during organize preview')
+      return
+    }
+
     try {
       console.log('🔄 [Sync] Fetching data from server...')
       const response = await fetch(`/api/projects/${projectId}/sync`)
@@ -153,11 +160,49 @@ export default function QuadrantTodoClient({
         console.log('✅ [Sync] Data received:', {
           tasks: result.data?.tasks?.length || 0,
           players: result.data?.players?.length || 0,
-          lines: result.data?.lines?.length || 0
+          lines: result.data?.lines?.length || 0,
+          pendingUpdates: pendingUpdateTaskIds.size
         })
         if (result.success && result.data) {
-          // Update local state with server data
-          setTasks(result.data.tasks || [])
+          // Smart merge: preserve tasks with pending updates
+          setTasks(prevTasks => {
+            const serverTasks = result.data.tasks || []
+
+            // If no pending updates, use server data directly
+            if (pendingUpdateTaskIds.size === 0) {
+              return serverTasks
+            }
+
+            // Merge strategy: keep local version of pending tasks, add/update others
+            const mergedTasks = [...prevTasks]
+            const localTaskIds = new Set(prevTasks.map(t => t.id))
+
+            serverTasks.forEach(serverTask => {
+              // Skip tasks that have pending updates
+              if (pendingUpdateTaskIds.has(serverTask.id)) {
+                console.log('⏭️ [Sync] Skipping task with pending update:', serverTask.id)
+                return
+              }
+
+              const localIndex = mergedTasks.findIndex(t => t.id === serverTask.id)
+              if (localIndex >= 0) {
+                // Update existing task
+                mergedTasks[localIndex] = serverTask
+              } else {
+                // Add new task from server
+                mergedTasks.push(serverTask)
+              }
+            })
+
+            // Remove tasks that don't exist on server (unless they have pending updates)
+            const serverTaskIds = new Set(serverTasks.map(t => t.id))
+            const filteredTasks = mergedTasks.filter(task =>
+              serverTaskIds.has(task.id) || pendingUpdateTaskIds.has(task.id)
+            )
+
+            return filteredTasks
+          })
+
           setPlayers(result.data.players || [])
           setLines(result.data.lines || [])
           setLastSyncTime(new Date())
@@ -168,7 +213,7 @@ export default function QuadrantTodoClient({
     } catch (error) {
       console.error('❌ [Sync] Error:', error)
     }
-  }, [projectId, isSyncPaused])
+  }, [projectId, isSyncPaused, isOrganizing, pendingUpdateTaskIds])
 
   // Check for active users - only enables sync if multiple users detected
   useEffect(() => {
@@ -1028,8 +1073,24 @@ export default function QuadrantTodoClient({
               originalTaskPositions={originalTaskPositions}
               onAcceptOrganize={handleAcceptOrganize}
               onRevertOrganize={handleRevertOrganize}
-              onDragStart={() => setIsSyncPaused(true)}
-              onDragEnd={() => setIsSyncPaused(false)}
+              onDragStart={(taskId) => {
+                console.log('🔵 [Drag] Starting drag for task:', taskId)
+                setIsSyncPaused(true)
+                setPendingUpdateTaskIds(prev => new Set([...prev, taskId]))
+              }}
+              onDragEnd={(taskId) => {
+                console.log('🔵 [Drag] Ending drag for task:', taskId)
+                setIsSyncPaused(false)
+                // Remove from pending after a short delay to ensure DB transaction completes
+                setTimeout(() => {
+                  setPendingUpdateTaskIds(prev => {
+                    const next = new Set(prev)
+                    next.delete(taskId)
+                    console.log('✅ [Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
+                    return next
+                  })
+                }, 500)
+              }}
             />
           </TabsContent>
 

@@ -40,8 +40,8 @@ interface QuadrantMatrixMapProps {
   originalTaskPositions?: Map<number, { urgency: number; importance: number }>
   onAcceptOrganize?: () => void
   onRevertOrganize?: () => void
-  onDragStart?: () => void
-  onDragEnd?: () => void
+  onDragStart?: (taskId: number) => void
+  onDragEnd?: (taskId: number) => void
 }
 
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
@@ -111,15 +111,17 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       e.preventDefault()
       return
     }
-    onDragStart?.() // Pause sync during drag
+    onDragStart?.(task.id) // Mark task as pending and pause sync
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = "move"
     e.dataTransfer.setData("text/plain", task.id.toString())
   }
 
   const handleTaskDragEnd = () => {
+    if (draggedTask) {
+      onDragEnd?.(draggedTask.id) // Clear pending state and resume sync
+    }
     setDraggedTask(null)
-    onDragEnd?.() // Resume sync after drag
   }
 
   const handleMatrixDragOver = (e: React.DragEvent) => {
@@ -161,15 +163,16 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       ))
     }
 
+    const taskId = draggedTask.id
     setDraggedTask(null)
 
     // Sync to database in background
-    const result = await updateTask(draggedTask.id, urgency, importance)
+    const result = await updateTask(taskId, urgency, importance)
     if (!result.success) {
       // Rollback on failure
       if (setTasks) {
         setTasks(prev => prev.map(t =>
-          t.id === draggedTask.id
+          t.id === taskId
             ? { ...t, urgency: oldUrgency, importance: oldImportance }
             : t
         ))
@@ -178,10 +181,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     }
     // Don't call router.refresh() - rely on optimistic update and sync polling
 
-    // Small delay before resuming sync to ensure DB transaction is committed
-    setTimeout(() => {
-      onDragEnd?.() // Resume sync after drop
-    }, 200)
+    // Clear pending state after DB update completes
+    onDragEnd?.(taskId)
   }
 
   const handleMatrixMouseDown = (e: React.MouseEvent) => {
@@ -350,10 +351,11 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     // Show confirmation dialog instead of deleting directly
     setTaskToDelete(draggedTask)
     setShowDeleteConfirm(true)
+    const taskId = draggedTask.id
     setDraggedTask(null)
 
     // Resume sync immediately for trash drop (no DB operation yet)
-    onDragEnd?.()
+    onDragEnd?.(taskId)
   }
 
   const handleConfirmDelete = async () => {
@@ -399,11 +401,11 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     if (!draggedTask) return
 
     // Optimistic update - remove completed task immediately
+    const taskId = draggedTask.id
     if (setTasks) {
-      setTasks(prev => prev.filter(t => t.id !== draggedTask.id))
+      setTasks(prev => prev.filter(t => t.id !== taskId))
     }
 
-    const taskId = draggedTask.id
     setDraggedTask(null)
 
     const result = await completeTask(taskId)
@@ -413,10 +415,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     }
     // Rely on sync polling to update after complete
 
-    // Small delay before resuming sync to ensure DB transaction is committed
-    setTimeout(() => {
-      onDragEnd?.() // Resume sync after drop
-    }, 200)
+    // Clear pending state after DB update completes
+    onDragEnd?.(taskId)
   }
 
   // Fullscreen handlers - Use CSS instead of Fullscreen API to avoid Dialog hiding
