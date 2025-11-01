@@ -30,30 +30,30 @@ Successfully implemented automatic welcome emails for users who upgrade to Pro P
 
 ### 1. Get Resend API Key
 
-```bash
+\`\`\`bash
 # Visit https://resend.com and create account
 # Go to API Keys → Create API Key
 # Copy the key (starts with 're_')
-```
+\`\`\`
 
 ### 2. Add to Environment Variables
 
 Add to `.env.local`:
-```bash
+\`\`\`bash
 RESEND_API_KEY=re_your_actual_api_key_here
 EMAIL_FROM=noreply@yourdomain.com  # Optional, defaults to onboarding@resend.dev
 NEXT_PUBLIC_APP_URL=https://yourdomain.com  # Optional
-```
+\`\`\`
 
 ### 3. Test Email Delivery
 
-```bash
+\`\`\`bash
 # Start dev server
 npm run dev
 
 # Send test email
 curl "http://localhost:3000/api/test-email?to=your-email@example.com"
-```
+\`\`\`
 
 ### 4. Verify in Production
 

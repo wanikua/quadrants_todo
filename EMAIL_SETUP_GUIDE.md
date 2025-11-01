@@ -40,7 +40,7 @@ For production use, add your custom domain:
 
 Add these variables to your `.env.local` file:
 
-```bash
+\`\`\`bash
 # Resend API Key (required)
 RESEND_API_KEY=re_your_api_key_here
 
@@ -49,20 +49,20 @@ EMAIL_FROM=noreply@yourdomain.com
 
 # App URL for email links (optional, defaults to current origin)
 NEXT_PUBLIC_APP_URL=https://your-app-url.com
-```
+\`\`\`
 
 **Example**:
-```bash
+\`\`\`bash
 RESEND_API_KEY=re_AbCdEf123456_xyz789
 EMAIL_FROM=hello@quadranttasks.com
 NEXT_PUBLIC_APP_URL=https://quadranttasks.com
-```
+\`\`\`
 
 ### 5. Restart Your Development Server
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 ## Testing Email Delivery
 
@@ -70,23 +70,23 @@ npm run dev
 
 Send a test email to verify setup:
 
-```bash
+\`\`\`bash
 curl "http://localhost:3000/api/test-email?to=your-email@example.com"
-```
+\`\`\`
 
 Or visit in browser:
-```
+\`\`\`
 http://localhost:3000/api/test-email?to=your-email@example.com
-```
+\`\`\`
 
 **Expected Response**:
-```json
+\`\`\`json
 {
   "success": true,
   "message": "Test email sent successfully to your-email@example.com",
   "emailId": "abc123..."
 }
-```
+\`\`\`
 
 ### Method 2: Complete a Test Payment
 
@@ -111,9 +111,9 @@ http://localhost:3000/api/test-email?to=your-email@example.com
 The email template is located in `/lib/email.ts`. You can customize:
 
 ### Email Subject
-```typescript
+\`\`\`typescript
 subject: 'Your Custom Subject Here',
-```
+\`\`\`
 
 ### Email Content
 Edit the `getWelcomeEmailHTML()` function to change:
@@ -124,7 +124,7 @@ Edit the `getWelcomeEmailHTML()` function to change:
 - Footer text
 
 ### Example Customization
-```typescript
+\`\`\`typescript
 function getWelcomeEmailHTML(userName: string): string {
   return `
     <!DOCTYPE html>
@@ -133,7 +133,7 @@ function getWelcomeEmailHTML(userName: string): string {
     </html>
   `
 }
-```
+\`\`\`
 
 ## Troubleshooting
 
@@ -147,13 +147,13 @@ function getWelcomeEmailHTML(userName: string): string {
 3. Check Resend Dashboard for error logs
 4. Look at server logs for error messages
 
-```bash
+\`\`\`bash
 # Check if env var is loaded
 echo $RESEND_API_KEY
 
 # Test API directly
 curl "http://localhost:3000/api/test-email?to=your-email@example.com"
-```
+\`\`\`
 
 ### "From" Email Rejected
 
@@ -182,13 +182,13 @@ curl "http://localhost:3000/api/test-email?to=your-email@example.com"
 1. Webhook logs in Stripe Dashboard
 2. Server logs for error messages
 3. User has email in database:
-   ```sql
+   \`\`\`sql
    SELECT email, name FROM users WHERE id = 'user_id';
-   ```
+   \`\`\`
 
 ## Email Flow Diagram
 
-```
+\`\`\`
 User Completes Payment
          |
          v
@@ -208,7 +208,7 @@ Resend API Sends Email
          |
          v
 Email Delivered to User's Inbox
-```
+\`\`\`
 
 ## Production Checklist
 
@@ -232,7 +232,7 @@ Before going to production:
 
 Send welcome email to new Pro user.
 
-```typescript
+\`\`\`typescript
 import { sendWelcomeEmail } from '@/lib/email'
 
 const result = await sendWelcomeEmail({
@@ -245,17 +245,17 @@ if (result.success) {
 } else {
   console.error('Email failed:', result.error)
 }
-```
+\`\`\`
 
 ### sendTestEmail()
 
 Send test email (uses default template).
 
-```typescript
+\`\`\`typescript
 import { sendTestEmail } from '@/lib/email'
 
 const result = await sendTestEmail('test@example.com')
-```
+\`\`\`
 
 ## Cost and Limits
 

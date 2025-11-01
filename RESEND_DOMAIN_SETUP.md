@@ -21,7 +21,7 @@ To send emails from `info@quadrants.ch` to any user, you need to verify the `qua
 
 Resend will provide you with DNS records to add. Example:
 
-```
+\`\`\`
 Type: TXT
 Host: resend._domainkey.quadrants.ch
 Value: p=MIGfMA0GCSqGSIb3DQEBAQUAA4... (long string)
@@ -34,7 +34,7 @@ Type: MX
 Host: quadrants.ch
 Priority: 10
 Value: mx.resend.com
-```
+\`\`\`
 
 ### Step 3: Add DNS Records
 
@@ -62,22 +62,22 @@ The process is similar - find your DNS management panel and add the records.
 
 Once verified, update `.env.local`:
 
-```bash
+\`\`\`bash
 # Change from:
 EMAIL_FROM=onboarding@resend.dev
 
 # To:
 EMAIL_FROM=info@quadrants.ch
-```
+\`\`\`
 
 Restart your server:
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 ### Step 6: Test with Your Domain
 
-```bash
+\`\`\`bash
 # Create a test script
 cat > test-custom-domain.ts << 'EOF'
 import * as dotenv from 'dotenv'
@@ -98,7 +98,7 @@ npx tsx test-custom-domain.ts
 
 # Clean up
 rm test-custom-domain.ts
-```
+\`\`\`
 
 ## Common Issues
 
@@ -124,9 +124,9 @@ rm test-custom-domain.ts
 **Solution**:
 - Merge SPF records into one
 - Example:
-  ```
+  \`\`\`
   v=spf1 include:_spf.google.com include:spf.resend.com ~all
-  ```
+  \`\`\`
 
 ## Email Functionality After Verification
 

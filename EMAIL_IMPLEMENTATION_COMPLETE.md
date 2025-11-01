@@ -23,12 +23,12 @@ Successfully implemented automatic welcome emails for users who upgrade to Pro P
 
 ## Current Configuration
 
-```bash
+\`\`\`bash
 # Email Settings
 RESEND_API_KEY=re_eZcrk6CP_9DDFAwvcRLhYE3n6yqRYDpfJ
 EMAIL_FROM=onboarding@resend.dev  # Temporary (Resend test domain)
 NEXT_PUBLIC_APP_URL=https://quadrants.ch
-```
+\`\`\`
 
 ## Next Step: Domain Verification
 
@@ -46,7 +46,7 @@ To send emails from `info@quadrants.ch` to all users:
 
 ### Payment Flow
 
-```
+\`\`\`
 User clicks "Upgrade to Pro"
     ↓
 Stripe checkout session
@@ -60,7 +60,7 @@ Database: subscription_status = 'active'
 Send welcome email (async)
     ↓
 User receives email + Pro access
-```
+\`\`\`
 
 ### Email Template
 
@@ -98,10 +98,10 @@ User receives email + Pro access
 
 ### Test Welcome Email
 
-```bash
+\`\`\`bash
 # After domain verification
 curl "http://localhost:3000/api/test-email?to=thomtechnic@gmail.com"
-```
+\`\`\`
 
 ### Test Payment Flow
 
@@ -136,9 +136,9 @@ After deployment, monitor:
    - Spam reports
 
 2. **Server Logs**: Check for email errors
-   ```bash
+   \`\`\`bash
    grep "email" /var/log/app.log
-   ```
+   \`\`\`
 
 3. **User Feedback**: Ask users if they received welcome email
 
@@ -167,16 +167,16 @@ After deployment, monitor:
 ### Email Not Sending
 
 1. Check environment variables:
-   ```bash
+   \`\`\`bash
    echo $RESEND_API_KEY
-   ```
+   \`\`\`
 
 2. Check server logs for errors
 
 3. Test API directly:
-   ```bash
+   \`\`\`bash
    curl "http://localhost:3000/api/test-email?to=your@email.com"
-   ```
+   \`\`\`
 
 ### Email in Spam
 

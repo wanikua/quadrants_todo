@@ -19,7 +19,7 @@ When a user updates their name in settings, the new name is automatically synchr
 **API Endpoint**: `/api/user/update-name`
 
 **Database Updates**:
-```sql
+\`\`\`sql
 -- Update user table
 UPDATE users
 SET name = 'New Name', updated_at = NOW()
@@ -29,7 +29,7 @@ WHERE id = 'user_id'
 UPDATE players
 SET name = 'New Name'
 WHERE user_id = 'user_id'
-```
+\`\`\`
 
 ### Data Model
 
@@ -64,7 +64,7 @@ A user can be a member of multiple projects. In each project, they have a "playe
 
 **Test Result**: ✓ All 4 player names synchronized successfully
 
-```
+\`\`\`
 Before:
   User: Thomas
   Players: Tomtechnic, Tomtechnic, Tomtechnic, Thomas
@@ -74,7 +74,7 @@ After Update to "Thomas Test 1762019093098":
   Players: All 4 updated to "Thomas Test 1762019093098"
 
 ✓ All names synchronized correctly
-```
+\`\`\`
 
 ## Files Modified
 
@@ -84,14 +84,14 @@ After Update to "Thomas Test 1762019093098":
 
 ## API Response
 
-```json
+\`\`\`json
 {
   "success": true,
   "name": "New Name",
   "message": "Name updated successfully",
   "projectsUpdated": 4
 }
-```
+\`\`\`
 
 The `projectsUpdated` field shows how many projects were affected.
 

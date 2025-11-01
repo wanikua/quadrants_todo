@@ -22,13 +22,13 @@
 ### 1. Webhook 代码修复
 **文件**: `/app/api/stripe/webhook/route.ts`
 
-```typescript
+\`\`\`typescript
 // ❌ 之前（错误）
 subscription_status = 'pro',
 
 // ✅ 现在（正确）
 subscription_status = 'active',
-```
+\`\`\`
 
 这确保新用户支付后会正确升级到 Pro。
 
@@ -47,17 +47,17 @@ subscription_status = 'active',
 ### 方法 1：使用 API 修复（推荐）
 
 #### 步骤 1: 检查当前状态
-```bash
+\`\`\`bash
 curl http://localhost:3000/api/fix-subscription-status
-```
+\`\`\`
 
 或在浏览器中访问：
-```
+\`\`\`
 http://localhost:3000/api/fix-subscription-status
-```
+\`\`\`
 
 **响应示例**：
-```json
+\`\`\`json
 {
   "success": true,
   "breakdown": {
@@ -69,15 +69,15 @@ http://localhost:3000/api/fix-subscription-status
   "needsFix": true,
   "users": [...]
 }
-```
+\`\`\`
 
 #### 步骤 2: 执行修复
-```bash
+\`\`\`bash
 curl -X POST http://localhost:3000/api/fix-subscription-status
-```
+\`\`\`
 
 **成功响应**：
-```json
+\`\`\`json
 {
   "success": true,
   "message": "Successfully fixed 3 user(s)",
@@ -94,7 +94,7 @@ curl -X POST http://localhost:3000/api/fix-subscription-status
     "activeProUsers": 5
   }
 }
-```
+\`\`\`
 
 #### 步骤 3: 验证修复
 让受影响的用户：
@@ -109,7 +109,7 @@ curl -X POST http://localhost:3000/api/fix-subscription-status
 
 如果 API 方法失败，可以直接在数据库中执行：
 
-```sql
+\`\`\`sql
 -- 1. 更新数据库约束
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_subscription_status_check;
 
@@ -132,7 +132,7 @@ WHERE subscription_status = 'pro'
 SELECT id, email, subscription_status, subscription_plan
 FROM users
 WHERE subscription_plan = 'pro';
-```
+\`\`\`
 
 ---
 
@@ -160,7 +160,7 @@ WHERE subscription_plan = 'pro';
 ## 🔧 测试支付流程
 
 ### 使用 Stripe 测试模式
-```bash
+\`\`\`bash
 # 1. 启动开发服务器
 npm run dev
 
@@ -174,10 +174,10 @@ open http://localhost:3000/pricing
 
 # 4. 支付成功后检查：
 curl http://localhost:3000/api/check-user
-```
+\`\`\`
 
 **期望结果**：
-```json
+\`\`\`json
 {
   "user": {
     "subscription_status": "active",    // ✅ 应该是 'active'
@@ -185,7 +185,7 @@ curl http://localhost:3000/api/check-user
     "isPro": true                       // ✅ 应该是 true
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -195,21 +195,21 @@ curl http://localhost:3000/api/check-user
 **原因**: 数据库连接问题或权限不足
 
 **解决方案**:
-```bash
+\`\`\`bash
 # 检查数据库连接
 DATABASE_URL="your-database-url" npx tsx -e "
   const { sql } = require('./lib/db.ts');
   sql\`SELECT 1\`.then(() => console.log('✅ DB OK'));
 "
-```
+\`\`\`
 
 ### 问题 2: 约束冲突错误
 **错误**: `violates check constraint "users_subscription_status_check"`
 
 **解决方案**: 先删除旧约束
-```sql
+\`\`\`sql
 ALTER TABLE users DROP CONSTRAINT users_subscription_status_check;
-```
+\`\`\`
 
 ### 问题 3: 修复后用户仍显示为 Free
 **原因**: 缓存或会话问题
@@ -218,11 +218,11 @@ ALTER TABLE users DROP CONSTRAINT users_subscription_status_check;
 1. 清除浏览器缓存
 2. 用户退出并重新登录
 3. 检查数据库中的实际值：
-```sql
+\`\`\`sql
 SELECT subscription_status, subscription_plan
 FROM users
 WHERE email = 'user@example.com';
-```
+\`\`\`
 
 ---
 
@@ -249,11 +249,11 @@ WHERE email = 'user@example.com';
 | `team` | 团队计划（未来） |
 
 ### 正确的 Pro 用户状态
-```typescript
+\`\`\`typescript
 subscription_status = 'active'   // ✅ 关键！
 subscription_plan = 'pro'
 stripe_subscription_id = 'sub_xxx'
-```
+\`\`\`
 
 ---
 
@@ -285,7 +285,7 @@ stripe_subscription_id = 'sub_xxx'
    - 应用日志: `console.log` 输出
 
 2. **验证数据**:
-   ```sql
+   \`\`\`sql
    -- 检查用户表结构
    SELECT column_name, data_type
    FROM information_schema.columns
@@ -295,13 +295,13 @@ stripe_subscription_id = 'sub_xxx'
    SELECT conname, pg_get_constraintdef(oid)
    FROM pg_constraint
    WHERE conrelid = 'users'::regclass;
-   ```
+   \`\`\`
 
 3. **测试 Webhook**:
-   ```bash
+   \`\`\`bash
    stripe listen --forward-to localhost:3000/api/stripe/webhook
    stripe trigger checkout.session.completed
-   ```
+   \`\`\`
 
 ---
 

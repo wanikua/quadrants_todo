@@ -76,7 +76,7 @@ Now matches website design:
 
 ## Email Preview
 
-```
+\`\`\`
 Subject: Welcome to Quadrants Pro
 From: info@quadrants.ch (after domain verification)
 
@@ -112,7 +112,7 @@ Thanks for your support
 You can manage your subscription anytime from your dashboard.
 
 2025 Quadrants. All rights reserved.
-```
+\`\`\`
 
 ## Files Updated
 
@@ -137,9 +137,9 @@ You can manage your subscription anytime from your dashboard.
    - Wait for verification
 
 2. **Update environment variable**
-   ```bash
+   \`\`\`bash
    EMAIL_FROM=info@quadrants.ch
-   ```
+   \`\`\`
 
 3. **Deploy and test**
    - Complete a test payment

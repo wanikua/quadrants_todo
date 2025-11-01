@@ -14,11 +14,11 @@ All systems tested and working perfectly.
 
 ## Configuration
 
-```bash
+\`\`\`bash
 RESEND_API_KEY=re_eZcrk6CP_9DDFAwvcRLhYE3n6yqRYDpfJ
 EMAIL_FROM=info@quadrants.ch
 NEXT_PUBLIC_APP_URL=https://quadrants.ch
-```
+\`\`\`
 
 ## Email Template
 
@@ -31,7 +31,7 @@ NEXT_PUBLIC_APP_URL=https://quadrants.ch
 
 ### User Upgrade Flow
 
-```
+\`\`\`
 1. User clicks "Upgrade to Pro" on pricing page
 2. Stripe checkout session created
 3. User completes payment
@@ -40,7 +40,7 @@ NEXT_PUBLIC_APP_URL=https://quadrants.ch
 6. Welcome email sent automatically from info@quadrants.ch
 7. User receives professional welcome email
 8. User has full Pro access
-```
+\`\`\`
 
 ### Email Content
 
@@ -76,14 +76,14 @@ NEXT_PUBLIC_APP_URL=https://quadrants.ch
 ## API Endpoints
 
 ### Test Email (for debugging)
-```bash
+\`\`\`bash
 curl "https://quadrants.ch/api/test-email?to=your@email.com"
-```
+\`\`\`
 
 ### Webhook Endpoint
-```
+\`\`\`
 POST https://quadrants.ch/api/stripe/webhook
-```
+\`\`\`
 Automatically triggered by Stripe on:
 - checkout.session.completed
 - customer.subscription.updated
@@ -142,13 +142,13 @@ If you exceed limits:
 4. Monitor bounce/spam rates
 
 ### Check Logs
-```bash
+\`\`\`bash
 # Server logs
 grep "welcome email" /var/log/app.log
 
 # Webhook logs
 grep "checkout.session.completed" /var/log/app.log
-```
+\`\`\`
 
 ### Common Issues
 
