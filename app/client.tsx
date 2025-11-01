@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown, Check, Edit, Sparkles, LogOut } from "lucide-react"
+import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Link as LinkIcon, Settings, ChevronDown, Check, Edit, Sparkles, LogOut, HelpCircle } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -49,6 +49,7 @@ interface QuadrantTodoClientProps {
   projectName?: string
   userRole?: "owner" | "admin" | "member"
   userId?: string
+  onFullscreenChange?: (isFullscreen: boolean) => void
 }
 
 export default function QuadrantTodoClient({
@@ -62,6 +63,7 @@ export default function QuadrantTodoClient({
   projectName,
   userRole,
   userId,
+  onFullscreenChange,
 }: QuadrantTodoClientProps) {
   const router = useRouter()
 
@@ -75,6 +77,7 @@ export default function QuadrantTodoClient({
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
   const [isBulkAddOpen, setIsBulkAddOpen] = useState(false)
+  const [showHelpDialog, setShowHelpDialog] = useState(false)
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -84,7 +87,6 @@ export default function QuadrantTodoClient({
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
-  const [isSyncPaused, setIsSyncPaused] = useState(false)
   const [pendingUpdateTaskIds, setPendingUpdateTaskIds] = useState<Set<number>>(new Set())
 
   // Project editing state
@@ -97,6 +99,43 @@ export default function QuadrantTodoClient({
   // One-click organize state
   const [isOrganizing, setIsOrganizing] = useState(false)
   const [originalTaskPositions, setOriginalTaskPositions] = useState<Map<number, { urgency: number; importance: number }>>(new Map())
+
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // User activity detection for pausing sync during interactions
+  const [lastUserActivity, setLastUserActivity] = useState<number>(Date.now())
+  const [isUserActive, setIsUserActive] = useState(false)
+
+  // Handle fullscreen change - notify parent component
+  const handleFullscreenChange = useCallback((value: boolean) => {
+    setIsFullscreen(value)
+    onFullscreenChange?.(value)
+  }, [onFullscreenChange])
+
+  // Track user activity to pause sync during interactions
+  const handleUserActivity = useCallback(() => {
+    setLastUserActivity(Date.now())
+    if (!isUserActive) {
+      setIsUserActive(true)
+    }
+  }, [isUserActive])
+
+  // Global user activity listener
+  useEffect(() => {
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    const handler = () => handleUserActivity()
+
+    events.forEach(event => {
+      document.addEventListener(event, handler, { passive: true })
+    })
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handler)
+      })
+    }
+  }, [handleUserActivity])
 
   // Sync initial data when props change
   useEffect(() => {
@@ -140,16 +179,22 @@ export default function QuadrantTodoClient({
 
   // Sync function to fetch latest data from server
   const syncData = useCallback(async () => {
-    // Skip sync if paused (during user interactions like dragging)
-    if (isSyncPaused) {
-      console.log('⏸️ [Sync] Paused, skipping...')
-      return
-    }
-
     // Skip sync if in organize mode to preserve preview
     if (isOrganizing) {
       console.log('⏸️ [Sync] Skipping during organize preview')
       return
+    }
+
+    // Skip sync if user is actively interacting (within 2 seconds of last activity)
+    const timeSinceActivity = Date.now() - lastUserActivity
+    if (isUserActive && timeSinceActivity < 2000) {
+      console.log('⏸️ [Sync] Skipping during user activity')
+      return
+    }
+
+    // Reset user active flag if inactive for 2+ seconds
+    if (isUserActive && timeSinceActivity >= 2000) {
+      setIsUserActive(false)
     }
 
     try {
@@ -164,7 +209,7 @@ export default function QuadrantTodoClient({
           pendingUpdates: pendingUpdateTaskIds.size
         })
         if (result.success && result.data) {
-          // Smart merge: preserve tasks with pending updates
+          // Smart merge with updated_at comparison
           setTasks(prevTasks => {
             const serverTasks = result.data.tasks || []
 
@@ -173,9 +218,9 @@ export default function QuadrantTodoClient({
               return serverTasks
             }
 
-            // Merge strategy: keep local version of pending tasks, add/update others
+            // Merge strategy: use whichever version is newer based on updated_at
             const mergedTasks = [...prevTasks]
-            const localTaskIds = new Set(prevTasks.map(t => t.id))
+            const localTaskMap = new Map(prevTasks.map(t => [t.id, t]))
 
             serverTasks.forEach(serverTask => {
               // Skip tasks that have pending updates
@@ -184,13 +229,24 @@ export default function QuadrantTodoClient({
                 return
               }
 
+              const localTask = localTaskMap.get(serverTask.id)
               const localIndex = mergedTasks.findIndex(t => t.id === serverTask.id)
+
               if (localIndex >= 0) {
-                // Update existing task
-                mergedTasks[localIndex] = serverTask
+                // Compare timestamps - only use server data if it's newer
+                const serverTime = serverTask.updated_at ? new Date(serverTask.updated_at).getTime() : 0
+                const localTime = localTask?.updated_at ? new Date(localTask.updated_at).getTime() : 0
+
+                if (serverTime >= localTime) {
+                  mergedTasks[localIndex] = serverTask
+                  console.log(`📥 [Sync] Updated task ${serverTask.id} (server newer)`)
+                } else {
+                  console.log(`⏭️ [Sync] Keeping local task ${serverTask.id} (local newer)`)
+                }
               } else {
                 // Add new task from server
                 mergedTasks.push(serverTask)
+                console.log(`➕ [Sync] Added new task ${serverTask.id}`)
               }
             })
 
@@ -213,7 +269,7 @@ export default function QuadrantTodoClient({
     } catch (error) {
       console.error('❌ [Sync] Error:', error)
     }
-  }, [projectId, isSyncPaused, isOrganizing, pendingUpdateTaskIds])
+  }, [projectId, isOrganizing, pendingUpdateTaskIds, lastUserActivity, isUserActive])
 
   // Check for active users - only enables sync if multiple users detected
   useEffect(() => {
@@ -247,9 +303,9 @@ export default function QuadrantTodoClient({
       let isPageVisible = true
 
       // Determine sync interval based on user count
-      // Multiple users: 500ms (real-time, ultra responsive)
-      // Single user: 2 seconds (still responsive but less resource intensive)
-      const syncInterval = activeUserCount > 1 ? 500 : 2000
+      // Multiple users: 1500ms (balanced, prevents conflicts)
+      // Single user: 3000ms (conserves resources)
+      const syncInterval = activeUserCount > 1 ? 1500 : 3000
       console.log(`📊 [Sync] Using interval: ${syncInterval}ms (${activeUserCount > 1 ? 'multi-user' : 'single-user'} mode)`)
 
       // Check if page is visible
@@ -746,11 +802,16 @@ export default function QuadrantTodoClient({
       console.error('🔴 Organization error:', error)
       toast.error('Failed to organize tasks. Please try again.')
       setOriginalTaskPositions(new Map())
+      setIsOrganizing(false)
 
-      // Release lock on error
-      await fetch(`/api/projects/${projectId}/organize-lock`, {
-        method: 'DELETE'
-      })
+      // Release lock on error with error handling
+      try {
+        await fetch(`/api/projects/${projectId}/organize-lock`, {
+          method: 'DELETE'
+        })
+      } catch (lockError) {
+        console.error('Failed to release lock on error:', lockError)
+      }
     }
   }
 
@@ -773,13 +834,21 @@ export default function QuadrantTodoClient({
       toast.info("No changes to save")
 
       // Release lock
-      await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
+      try {
+        await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
+      } catch (error) {
+        console.error('Failed to release lock:', error)
+      }
       return
     }
 
+    // Mark all tasks being updated as pending to prevent sync conflicts
+    const updatingTaskIds = new Set(tasksToUpdate.map(t => t.id))
+    setPendingUpdateTaskIds(prev => new Set([...prev, ...updatingTaskIds]))
+
     // Immediately update UI for instant feedback
     const updatedTasks = tasks.map(task => {
-      const wasMoved = tasksToUpdate.some(t => t.id === task.id)
+      const wasMoved = updatingTaskIds.has(task.id)
       if (wasMoved) {
         return { ...task, updated_at: new Date() }
       }
@@ -787,25 +856,43 @@ export default function QuadrantTodoClient({
     })
 
     setTasks(updatedTasks)
+    setLastSyncTime(new Date())
+
+    // Exit organize mode to allow sync to resume
     setOriginalTaskPositions(new Map())
     setIsOrganizing(false)
-    setLastSyncTime(new Date())
-    toast.success(`Saving ${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? 's' : ''}...`)
 
-    // Save to database in background
+    // Mark user as active
+    handleUserActivity()
+
+    // Save to database and wait for completion
     const updatePromises = tasksToUpdate.map(task =>
       updateTaskAction(task.id, task.urgency, task.importance, task.description)
     )
 
     try {
       await Promise.all(updatePromises)
-      console.log('🟢 Organization changes saved successfully')
+      console.log('🟢 Organization changes saved to database successfully')
+      toast.success(`✓ ${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? 's' : ''} organized!`)
     } catch (error) {
       console.error("🔴 Failed to save organization:", error)
       toast.error("Failed to save changes to database")
     } finally {
+      // Clear pending state after save completes (with delay)
+      setTimeout(() => {
+        setPendingUpdateTaskIds(prev => {
+          const next = new Set(prev)
+          updatingTaskIds.forEach(id => next.delete(id))
+          return next
+        })
+      }, 1000)
+
       // Release lock after saving
-      await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
+      try {
+        await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
+      } catch (error) {
+        console.error('Failed to release lock:', error)
+      }
     }
   }
 
@@ -824,8 +911,12 @@ export default function QuadrantTodoClient({
     setIsOrganizing(false)
     toast.info("Changes reverted")
 
-    // Release lock
-    await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
+    // Release lock with error handling
+    try {
+      await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
+    } catch (error) {
+      console.error('Failed to release lock:', error)
+    }
   }
 
   // Algorithm to organize tasks and spread out overlaps
@@ -934,6 +1025,11 @@ export default function QuadrantTodoClient({
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowHelpDialog(true)}>
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Help
+            </Button>
+
             <Button variant="outline" size="sm" onClick={() => setIsBulkAddOpen(true)}>
               <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
               Bulk Add
@@ -949,7 +1045,7 @@ export default function QuadrantTodoClient({
               </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>Settings</DropdownMenuLabel>
-              <div className="px-2 py-1 text-xs text-muted-foreground">Manage your team and tasks</div>
+              <div className="px-2 py-1 text-xs text-muted-foreground">{projectType === "team" ? "Manage your team and tasks" : "Manage your tasks"}</div>
 
               <DropdownMenuSeparator />
 
@@ -1095,15 +1191,17 @@ export default function QuadrantTodoClient({
               originalTaskPositions={originalTaskPositions}
               onAcceptOrganize={handleAcceptOrganize}
               onRevertOrganize={handleRevertOrganize}
+              isFullscreen={isFullscreen}
+              onFullscreenChange={handleFullscreenChange}
               onDragStart={(taskId) => {
                 console.log('🔵 [Drag] Starting drag for task:', taskId)
-                setIsSyncPaused(true)
+                handleUserActivity() // Mark user as active
                 setPendingUpdateTaskIds(prev => new Set([...prev, taskId]))
               }}
               onDragEnd={(taskId) => {
                 console.log('🔵 [Drag] Ending drag for task:', taskId)
-                setIsSyncPaused(false)
-                // Remove from pending after a short delay to ensure DB transaction completes
+                handleUserActivity() // Mark user as active
+                // Remove from pending after longer delay (1500ms to ensure DB completes)
                 setTimeout(() => {
                   setPendingUpdateTaskIds(prev => {
                     const next = new Set(prev)
@@ -1111,7 +1209,7 @@ export default function QuadrantTodoClient({
                     console.log('✅ [Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
                     return next
                   })
-                }, 500)
+                }, 1500)
               }}
             />
           </TabsContent>
@@ -1525,6 +1623,41 @@ export default function QuadrantTodoClient({
           projectType={projectType}
           userName={userName}
         />
+
+        {/* Help Dialog */}
+        <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
+          <DialogContent className="max-w-md mx-auto">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-medium">Usage Instructions</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <div>
+                <h4 className="font-medium mb-1">Create Task</h4>
+                <p className="text-muted-foreground">Long press on empty space or use &quot;Add Task&quot;</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Move Task</h4>
+                <p className="text-muted-foreground">Drag to change urgency/importance</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Edit Task</h4>
+                <p className="text-muted-foreground">Click on task to view details</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Complete/Delete</h4>
+                <p className="text-muted-foreground">Drag to green checkmark or red trash</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Connect Tasks</h4>
+                <p className="text-muted-foreground">Enable drawing mode to visualize dependencies</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Priority Highlight</h4>
+                <p className="text-muted-foreground">Highest priority task is auto-highlighted</p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

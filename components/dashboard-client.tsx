@@ -116,7 +116,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                 onClick={() => router.push("/projects")}
                 className="text-black hover:text-gray-600 hover:bg-gray-100/50 transition-all duration-[600ms] font-bold text-base px-4 rounded-[15px]"
               >
-                Projects
+                My Projects
               </Button>
               <Button
                 variant="ghost"
@@ -215,7 +215,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                 <Button
                   type="submit"
                   disabled={isLoading || name.trim() === initialUser.name}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md flex items-center space-x-2 rounded-full"
+                  className="transition-all duration-200 font-semibold shadow-sm hover:shadow-md flex items-center space-x-2 rounded-full"
                 >
                   <Save className="w-4 h-4" />
                   <span>{isLoading ? "Saving..." : "Save Changes"}</span>

@@ -18,7 +18,7 @@ import TaskSegment from "@/components/TaskSegment"
 import type { TaskWithAssignees, Player, Line } from "@/app/types"
 import { updateTask, toggleLine, deleteLine, deleteTask, completeTask } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
-import { Trash2, Maximize2, Minimize2, CheckCircle2, Check, X, Sparkles, LayoutGrid } from "lucide-react"
+import { Trash2, Maximize2, Minimize2, CheckCircle2, Check, X, Sparkles, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface QuadrantMatrixMapProps {
@@ -40,6 +40,8 @@ interface QuadrantMatrixMapProps {
   originalTaskPositions?: Map<number, { urgency: number; importance: number }>
   onAcceptOrganize?: () => void
   onRevertOrganize?: () => void
+  isFullscreen?: boolean
+  onFullscreenChange?: (isFullscreen: boolean) => void
   onDragStart?: (taskId: number) => void
   onDragEnd?: (taskId: number) => void
 }
@@ -63,6 +65,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   originalTaskPositions,
   onAcceptOrganize,
   onRevertOrganize,
+  isFullscreen = false,
+  onFullscreenChange,
   onDragStart,
   onDragEnd,
 }: QuadrantMatrixMapProps) {
@@ -72,13 +76,11 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   const [isLongPress, setIsLongPress] = useState(false)
   const [draggedTask, setDraggedTask] = useState<TaskWithAssignees | null>(null)
   const [selectedTaskForLine, setSelectedTaskForLine] = useState<number | null>(null)
-  const [showHelpDialog, setShowHelpDialog] = useState(false)
   const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null)
   const [isOverTrash, setIsOverTrash] = useState(false)
   const [isOverComplete, setIsOverComplete] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState<TaskWithAssignees | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const handleTaskClick = useCallback((task: TaskWithAssignees, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -117,10 +119,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     e.dataTransfer.setData("text/plain", task.id.toString())
   }
 
-  const handleTaskDragEnd = () => {
-    if (draggedTask) {
-      onDragEnd?.(draggedTask.id) // Clear pending state and resume sync
-    }
+  const handleTaskDragEnd = (e: React.DragEvent) => {
+    // Only clear dragged task state here
+    // Don't call onDragEnd yet - wait for drop to complete
+    // This prevents duplicate onDragEnd calls (dragEnd fires before drop)
     setDraggedTask(null)
   }
 
@@ -153,21 +155,26 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     // Save old position for rollback
     const oldUrgency = draggedTask.urgency
     const oldImportance = draggedTask.importance
+    const taskId = draggedTask.id
+
+    // Clear dragged task state immediately
+    setDraggedTask(null)
 
     // Optimistic update - update UI immediately
     if (setTasks) {
       setTasks(prev => prev.map(t =>
-        t.id === draggedTask.id
+        t.id === taskId
           ? { ...t, urgency, importance }
           : t
       ))
     }
 
-    const taskId = draggedTask.id
-    setDraggedTask(null)
-
-    // Sync to database in background
+    // Save to database (with pending protection)
     const result = await updateTask(taskId, urgency, importance)
+
+    // Call onDragEnd after DB completes (triggers pending cleanup)
+    onDragEnd?.(taskId)
+
     if (!result.success) {
       // Rollback on failure
       if (setTasks) {
@@ -180,9 +187,6 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       toast.error(result.error || "Failed to move task")
     }
     // Don't call router.refresh() - rely on optimistic update and sync polling
-
-    // Clear pending state after DB update completes
-    onDragEnd?.(taskId)
   }
 
   const handleMatrixMouseDown = (e: React.MouseEvent) => {
@@ -348,13 +352,15 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
     if (!draggedTask) return
 
+    const taskId = draggedTask.id
+
     // Show confirmation dialog instead of deleting directly
     setTaskToDelete(draggedTask)
     setShowDeleteConfirm(true)
-    const taskId = draggedTask.id
     setDraggedTask(null)
 
-    // Resume sync immediately for trash drop (no DB operation yet)
+    // Call onDragEnd immediately since we're not doing DB operation yet
+    // The actual delete will happen after user confirms
     onDragEnd?.(taskId)
   }
 
@@ -400,29 +406,39 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
     if (!draggedTask) return
 
-    // Optimistic update - remove completed task immediately
     const taskId = draggedTask.id
+    const completedTask = draggedTask
+
+    // Clear dragged task state immediately
+    setDraggedTask(null)
+
+    // Optimistic update - remove completed task immediately
     if (setTasks) {
       setTasks(prev => prev.filter(t => t.id !== taskId))
     }
 
-    setDraggedTask(null)
-
+    // Execute complete operation
     const result = await completeTask(taskId)
+
+    // Call onDragEnd after DB completes
+    onDragEnd?.(taskId)
+
     if (!result.success) {
       toast.error(result.error || "Failed to complete task")
-      // Rely on sync polling to restore task on failure
+      // Restore task on failure
+      if (setTasks) {
+        setTasks(prev => [...prev, completedTask])
+      }
+    } else {
+      toast.success("✓ Task completed!")
     }
     // Rely on sync polling to update after complete
-
-    // Clear pending state after DB update completes
-    onDragEnd?.(taskId)
   }
 
   // Fullscreen handlers - Use CSS instead of Fullscreen API to avoid Dialog hiding
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(!isFullscreen)
-  }, [isFullscreen])
+    onFullscreenChange?.(!isFullscreen)
+  }, [isFullscreen, onFullscreenChange])
 
   React.useEffect(() => {
     return () => {
@@ -436,7 +452,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false)
+        onFullscreenChange?.(false)
       }
     }
 
@@ -444,7 +460,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isFullscreen])
+  }, [isFullscreen, onFullscreenChange])
 
   return (
     <Card
@@ -493,7 +509,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                     <X className="w-4 h-4 mr-2" />
                     Revert
                   </Button>
-                  <Button onClick={onAcceptOrganize} size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
+                  <Button onClick={onAcceptOrganize} size="sm">
                     <Check className="w-4 h-4 mr-2" />
                     Accept
                   </Button>
@@ -510,25 +526,13 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                   onOrganizeTasks()
                 }}
                 disabled={tasks.length === 0 || isOrganizing}
-                className="flex items-center justify-center gap-1.5 px-3 h-8 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm font-medium group"
+                className="flex items-center justify-center gap-1.5 px-3 h-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm font-medium group"
                 title="AI Organize tasks"
               >
-                <LayoutGrid className="w-3.5 h-3.5 group-hover:scale-110 transition-transform duration-300" />
+                <Wand2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform duration-300" />
                 Organize
               </button>
             )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowHelpDialog(true)
-              }}
-              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200 hover:scale-110"
-              title="Help & Instructions"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
-            </button>
             <button
               onClick={toggleFullscreen}
               className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200 hover:scale-110"
@@ -553,7 +557,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       )}
       <CardContent className={`${isFullscreen ? "h-screen p-0 relative" : "px-2 sm:px-6"}`}>
         <div
-          className={`relative w-full bg-gradient-to-br from-background to-muted/20 overflow-hidden cursor-crosshair ${
+          className={`relative w-full bg-white overflow-hidden cursor-crosshair ${
             isFullscreen ? "h-screen border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
           }`}
           style={{
@@ -737,7 +741,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                     top: `calc(${marginY}px + (100% - ${marginY * 2}px) * ${y / 100} - ${offset}px)`,
                     transform: "translate(0, 0)",
                   }}
-                  draggable={!isDrawingLine && !isMobile}
+                  draggable={!isDrawingLine && !isMobile && !isOrganizing}
                   onDragStart={(e) => handleTaskDragStart(task, e)}
                   onDragEnd={handleTaskDragEnd}
                   onClick={(e) => handleTaskClick(task, e)}
@@ -847,41 +851,6 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           </div>
         </div>
       </CardContent>
-
-      {/* Help Dialog */}
-      <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
-        <DialogContent className="max-w-md mx-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-medium">Usage Instructions</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 text-sm">
-            <div>
-              <h4 className="font-medium mb-1">Create Task</h4>
-              <p className="text-muted-foreground">Long press on empty space or use &quot;Add Task&quot;</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-1">Move Task</h4>
-              <p className="text-muted-foreground">Drag to change urgency/importance</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-1">Edit Task</h4>
-              <p className="text-muted-foreground">Click on task to view details</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-1">Complete/Delete</h4>
-              <p className="text-muted-foreground">Drag to green checkmark or red trash</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-1">Connect Tasks</h4>
-              <p className="text-muted-foreground">Enable drawing mode to visualize dependencies</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-1">Priority Highlight</h4>
-              <p className="text-muted-foreground">Highest priority task is auto-highlighted</p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

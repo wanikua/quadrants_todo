@@ -3,10 +3,9 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, LogOut, Home, User, Archive } from "lucide-react"
+import { Copy, Check, Home, Archive } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
-import { useClerk } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent } from "@/components/ui/card"
@@ -33,11 +32,11 @@ interface ProjectTaskManagerProps {
 
 export function ProjectTaskManager({ project, initialTasks, initialPlayers, initialLines, user }: ProjectTaskManagerProps) {
   const router = useRouter()
-  const { signOut } = useClerk()
   const [copied, setCopied] = useState(false)
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
   const [archivedTasks, setArchivedTasks] = useState<any[]>([])
   const [isLoadingArchived, setIsLoadingArchived] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const handleCopyInviteCode = async () => {
     if (project.invite_code) {
@@ -47,14 +46,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
     }
   }
 
-  const handleSignOut = async () => {
-    try {
-      await signOut({ redirectUrl: '/' })
-    } catch (error) {
-      console.error('Sign out error:', error)
-      toast.error('Failed to sign out')
-    }
-  }
 
   const handleOpenArchives = async () => {
     setArchiveDialogOpen(true)
@@ -92,7 +83,7 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="p-2 sm:p-4">
@@ -129,24 +120,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                     )}
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push("/dashboard")}
-                  title="Account Settings"
-                  className="text-black hover:text-gray-600 p-2"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSignOut}
-                  title="Sign Out"
-                  className="text-black hover:text-gray-600 p-2"
-                >
-                  <LogOut className="w-5 h-5" />
-                </Button>
               </div>
             </div>
           </div>
@@ -164,16 +137,19 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         projectName={project.name}
         userRole={project.role}
         userId={user?.id}
+        onFullscreenChange={setIsFullscreen}
       />
 
-      {/* Floating Archives Button */}
-      <Button
-        onClick={handleOpenArchives}
-        className="fixed bottom-8 right-8 rounded-full w-14 h-14 shadow-lg bg-gray-800 hover:bg-gray-900 text-white z-50"
-        title="View Archived Tasks"
-      >
-        <Archive className="w-6 h-6" />
-      </Button>
+      {/* Floating Archives Button - Hidden in fullscreen */}
+      {!isFullscreen && (
+        <Button
+          onClick={handleOpenArchives}
+          className="fixed bottom-8 right-8 rounded-full w-14 h-14 shadow-lg bg-gray-800 hover:bg-gray-900 text-white z-50"
+          title="View Archived Tasks"
+        >
+          <Archive className="w-6 h-6" />
+        </Button>
+      )}
 
       {/* Archived Tasks Dialog */}
       <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>

@@ -4,6 +4,129 @@ import bcrypt from "bcryptjs"
 import { sql } from "./database"
 import { auth, currentUser } from "@clerk/nextjs/server"
 
+// Function to create example project for new users
+async function createExampleProject(userId: string, userName: string) {
+  if (!sql) {
+    console.log("Database not available, skipping example project creation")
+    return
+  }
+
+  try {
+    const projectId = `proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase()
+
+    // Create example project as team project
+    await sql`
+      INSERT INTO projects (id, name, description, type, owner_id, invite_code, created_at)
+      VALUES (
+        ${projectId},
+        'Welcome to Quadrant Manager! 👋',
+        'This is your example team project. Feel free to explore and modify these tasks!',
+        'team',
+        ${userId},
+        ${inviteCode},
+        NOW()
+      )
+    `
+
+    // Add user as project member
+    await sql`
+      INSERT INTO project_members (id, project_id, user_id, role, joined_at)
+      VALUES (
+        ${'member_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)},
+        ${projectId},
+        ${userId},
+        'owner',
+        NOW()
+      )
+    `
+
+    // Create player for the user
+    const userPlayerResult = await sql`
+      INSERT INTO players (project_id, user_id, name, color, created_at)
+      VALUES (${projectId}, ${userId}, ${userName}, '#3b82f6', NOW())
+      RETURNING id
+    `
+    const userPlayerId = userPlayerResult[0]?.id
+
+    // Create example tasks with varying urgency and importance
+    const exampleTasks = [
+      {
+        description: '🎯 High Priority: Complete this important and urgent task first',
+        urgency: 85,
+        importance: 90,
+        assigneeIds: [userPlayerId].filter(Boolean)
+      },
+      {
+        description: '📅 Schedule: Plan this important but not urgent task',
+        urgency: 30,
+        importance: 80,
+        assigneeIds: [userPlayerId].filter(Boolean)
+      },
+      {
+        description: '⚡ Quick Win: Handle this urgent but less important task soon',
+        urgency: 80,
+        importance: 35,
+        assigneeIds: []
+      },
+      {
+        description: '💡 Try dragging me around the matrix!',
+        urgency: 50,
+        importance: 50,
+        assigneeIds: []
+      },
+      {
+        description: '🗑️ Low Priority: Delegate or eliminate tasks in this quadrant',
+        urgency: 25,
+        importance: 20,
+        assigneeIds: []
+      },
+      {
+        description: '✨ Click on me to add comments and details',
+        urgency: 60,
+        importance: 70,
+        assigneeIds: []
+      },
+      {
+        description: '🚀 Invite team members to collaborate on this task',
+        urgency: 70,
+        importance: 75,
+        assigneeIds: [userPlayerId].filter(Boolean)
+      },
+      {
+        description: '📊 Review quarterly goals and metrics',
+        urgency: 45,
+        importance: 85,
+        assigneeIds: [userPlayerId].filter(Boolean)
+      }
+    ]
+
+    for (const task of exampleTasks) {
+      const taskResult = await sql`
+        INSERT INTO tasks (project_id, description, urgency, importance, created_at)
+        VALUES (${projectId}, ${task.description}, ${task.urgency}, ${task.importance}, NOW())
+        RETURNING id
+      `
+
+      const taskId = taskResult[0]?.id
+
+      // Assign task to user if specified
+      if (taskId && task.assigneeIds.length > 0) {
+        for (const playerId of task.assigneeIds) {
+          await sql`
+            INSERT INTO task_assignments (task_id, player_id, assigned_at)
+            VALUES (${taskId}, ${playerId}, NOW())
+          `
+        }
+      }
+    }
+
+    console.log(`Created example project for user ${userId}`)
+  } catch (error) {
+    console.error("Failed to create example project:", error)
+  }
+}
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "change-this-to-a-secure-secret-key-at-least-32-characters-long",
 )
@@ -191,6 +314,8 @@ export async function getCurrentUser(): Promise<User | null> {
                     VALUES (${clerkUserId}, ${email}, '__clerk_user__', ${defaultName}, NOW())
                     ON CONFLICT (id) DO NOTHING
                   `
+                  // Create example project for new user
+                  await createExampleProject(clerkUserId, defaultName)
                 } catch (insertError) {
                   console.log("Failed to insert user into database:", insertError)
                 }
@@ -283,6 +408,9 @@ export async function signUp(email: string, password: string, name: string): Pro
     INSERT INTO users (id, email, password_hash, name, created_at)
     VALUES (${userId}, ${email}, ${hashedPassword}, ${name}, NOW())
   `
+
+  // Create example project for new user
+  await createExampleProject(userId, name)
 
   const token = await createToken(userId)
   await setAuthCookie(token)

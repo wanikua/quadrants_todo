@@ -17,13 +17,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { LogOut, Plus, Folder, Settings, Users, Crown, Sparkles, User, Archive, X as CloseIcon } from "lucide-react"
+import { Plus, Folder, Settings, Users, Crown, Sparkles, User, Archive, X as CloseIcon } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { joinProject } from "@/app/db/actions"
-import { useClerk } from "@clerk/nextjs"
 
 interface Project {
   id: string
@@ -36,7 +35,6 @@ interface Project {
 
 export default function ProjectsPageClient({ initialProjects, user }: { initialProjects: Project[]; user: any }) {
   const router = useRouter()
-  const { signOut } = useClerk()
   const [projects, setProjects] = useState<Project[]>(initialProjects)
 
   // Check if user is Pro
@@ -56,15 +54,6 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
   const [archivedProjects, setArchivedProjects] = useState<Project[]>([])
   const [isLoadingArchived, setIsLoadingArchived] = useState(false)
-
-  async function handleSignOut() {
-    try {
-      await signOut({ redirectUrl: '/' })
-    } catch (error) {
-      console.error('Sign out error:', error)
-      toast.error('Failed to sign out')
-    }
-  }
 
   async function handleCreateProject(e: React.FormEvent) {
     e.preventDefault()
@@ -212,15 +201,6 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
             >
               <User className="w-5 h-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-              title="Sign Out"
-              className="text-black hover:text-gray-600 p-2"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
           </div>
         </div>
       </header>
@@ -244,7 +224,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
         <div className="mb-12 flex gap-4">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full">
+              <Button className="transition-all duration-200 font-semibold shadow-sm hover:shadow-md rounded-full">
                 <Plus className="mr-2 h-4 w-4" />
                 New Project
               </Button>
