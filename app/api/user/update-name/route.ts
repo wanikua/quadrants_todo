@@ -24,16 +24,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Database not configured" }, { status: 500 })
     }
 
+    const trimmedName = name.trim()
+
+    // Update user name in users table
     await sql`
       UPDATE users
-      SET name = ${name.trim()}, updated_at = NOW()
+      SET name = ${trimmedName}, updated_at = NOW()
       WHERE id = ${user.id}
     `
 
+    // Update player name in all projects where this user is a member
+    const updatedPlayers = await sql`
+      UPDATE players
+      SET name = ${trimmedName}
+      WHERE user_id = ${user.id}
+      RETURNING project_id
+    `
+
+    console.log(`Updated name for user ${user.id} in ${updatedPlayers.length} project(s)`)
+
     return NextResponse.json({
       success: true,
-      name: name.trim(),
-      message: "Name updated successfully"
+      name: trimmedName,
+      message: "Name updated successfully",
+      projectsUpdated: updatedPlayers.length
     })
   } catch (error) {
     console.error("Failed to update user name:", error)
