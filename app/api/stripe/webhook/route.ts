@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe'
 import { sql } from '@/lib/db'
 import Stripe from 'stripe'
+import { sendWelcomeEmail } from '@/lib/email'
 
 // Map Stripe subscription status to app status
 function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'team' {
@@ -108,19 +109,45 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   console.log(`Updating user ${userId} with customer ${customerId} and subscription ${subscriptionId}`)
 
   try {
+    // 更新用户订阅状态
     const result = await sql`
       UPDATE users
       SET
         stripe_customer_id = ${customerId},
         stripe_subscription_id = ${subscriptionId},
-        subscription_status = 'pro',
+        subscription_status = 'active',
         subscription_plan = 'pro',
         updated_at = NOW()
       WHERE id = ${userId}
+      RETURNING email, name
     `
 
     console.log(`SQL update result:`, result)
     console.log(`Subscription activated for user ${userId}`)
+
+    // 获取用户信息
+    const user = result[0]
+    if (user?.email) {
+      console.log(`Sending welcome email to ${user.email}...`)
+
+      // 发送欢迎邮件（异步，不阻塞订阅激活）
+      sendWelcomeEmail({
+        to: user.email,
+        userName: user.name || user.email.split('@')[0],
+      })
+        .then((emailResult) => {
+          if (emailResult.success) {
+            console.log(`Welcome email sent successfully to ${user.email}`)
+          } else {
+            console.error(`Failed to send welcome email to ${user.email}:`, emailResult.error)
+          }
+        })
+        .catch((error) => {
+          console.error(`Error sending welcome email to ${user.email}:`, error)
+        })
+    } else {
+      console.warn(`No email found for user ${userId}, skipping welcome email`)
+    }
   } catch (error) {
     console.error('SQL Error in handleCheckoutCompleted:', error)
     throw error

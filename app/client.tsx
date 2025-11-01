@@ -98,6 +98,7 @@ export default function QuadrantTodoClient({
 
   // One-click organize state
   const [isOrganizing, setIsOrganizing] = useState(false)
+  const [isOrganizingInProgress, setIsOrganizingInProgress] = useState(false) // Prevent rapid double-clicks
   const [originalTaskPositions, setOriginalTaskPositions] = useState<Map<number, { urgency: number; importance: number }>>(new Map())
 
   // Fullscreen state
@@ -696,11 +697,11 @@ export default function QuadrantTodoClient({
 
   // One-click organize: intelligently redistribute tasks using AI
   const handleOrganizeTasks = async () => {
-    console.log('🔵 handleOrganizeTasks called, tasks.length:', tasks.length, 'isOrganizing:', isOrganizing)
+    console.log('🔵 handleOrganizeTasks called, tasks.length:', tasks.length, 'isOrganizing:', isOrganizing, 'isOrganizingInProgress:', isOrganizingInProgress)
 
-    // Prevent organizing if already in organize mode
-    if (isOrganizing) {
-      console.log('⚠️ Already in organize mode, ignoring request')
+    // Prevent organizing if already in organize mode or in progress
+    if (isOrganizing || isOrganizingInProgress) {
+      console.log('⚠️ Already in organize mode or processing, ignoring request')
       toast.warning("Please accept or revert current changes first")
       return
     }
@@ -709,6 +710,9 @@ export default function QuadrantTodoClient({
       toast.warning("No tasks to organize")
       return
     }
+
+    // Immediately set in-progress flag to prevent double-clicks
+    setIsOrganizingInProgress(true)
 
     // Try to acquire distributed lock
     try {
@@ -729,11 +733,13 @@ export default function QuadrantTodoClient({
         } else {
           toast.error('Failed to start organize operation')
         }
+        setIsOrganizingInProgress(false) // Reset on lock failure
         return
       }
     } catch (error) {
       console.error('Lock acquire error:', error)
       toast.error('Failed to start organize operation')
+      setIsOrganizingInProgress(false) // Reset on error
       return
     }
 
@@ -797,12 +803,14 @@ export default function QuadrantTodoClient({
       console.log('🔵 Setting', updatedTasks.length, 'updated tasks')
       setTasks(updatedTasks)
       setIsOrganizing(true)
+      // Keep isOrganizingInProgress true until user accepts/reverts
       toast.success("Tasks organized! Review changes and Accept or Revert.")
     } catch (error) {
       console.error('🔴 Organization error:', error)
       toast.error('Failed to organize tasks. Please try again.')
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
+      setIsOrganizingInProgress(false) // Reset on error
 
       // Release lock on error with error handling
       try {
@@ -831,6 +839,7 @@ export default function QuadrantTodoClient({
       console.log('⚠️ No tasks to update')
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
+      setIsOrganizingInProgress(false) // Reset on completion
       toast.info("No changes to save")
 
       // Release lock
@@ -861,6 +870,7 @@ export default function QuadrantTodoClient({
     // Exit organize mode to allow sync to resume
     setOriginalTaskPositions(new Map())
     setIsOrganizing(false)
+    setIsOrganizingInProgress(false) // Reset on completion
 
     // Mark user as active
     handleUserActivity()
@@ -909,6 +919,7 @@ export default function QuadrantTodoClient({
     setTasks(revertedTasks)
     setOriginalTaskPositions(new Map())
     setIsOrganizing(false)
+    setIsOrganizingInProgress(false) // Reset on revert
     toast.info("Changes reverted")
 
     // Release lock with error handling
@@ -1187,7 +1198,7 @@ export default function QuadrantTodoClient({
               highestPriorityTaskId={highestPriorityTaskId}
               setTasks={setTasks}
               onOrganizeTasks={handleOrganizeTasks}
-              isOrganizing={isOrganizing}
+              isOrganizing={isOrganizing || isOrganizingInProgress}
               originalTaskPositions={originalTaskPositions}
               onAcceptOrganize={handleAcceptOrganize}
               onRevertOrganize={handleRevertOrganize}

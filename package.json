@@ -92,6 +92,7 @@
     "react-hook-form": "latest",
     "react-resizable-panels": "latest",
     "recharts": "latest",
+    "resend": "^6.4.0",
     "server-only": "0.0.1",
     "sonner": "latest",
     "sql.js": "latest",
