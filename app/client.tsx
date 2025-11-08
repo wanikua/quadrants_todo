@@ -514,9 +514,16 @@ export default function QuadrantTodoClient({
       // Refresh to get latest data from server
       router.refresh()
     } else {
-      // Refresh to rollback on error
-      router.refresh()
+      // Rollback optimistic update
+      setTasks(prev => prev.map(task =>
+        task.id === taskId ? originalTask : task
+      ))
+      if (selectedTask && selectedTask.id === taskId) {
+        setSelectedTask(originalTask)
+      }
       toast.error(result.error || "Failed to update task")
+      // Throw error so TaskDetailDialog knows update failed
+      throw new Error(result.error || "Failed to update task")
     }
   }
 
@@ -1416,6 +1423,8 @@ export default function QuadrantTodoClient({
                 router.refresh()
               } else {
                 toast.error(result.error || "Failed to add comment")
+                // Throw error so TaskDetailDialog knows operation failed
+                throw new Error(result.error || "Failed to add comment")
               }
             }}
             onDeleteComment={async (commentId: number, taskId: number) => {
