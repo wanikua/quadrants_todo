@@ -1,13 +1,6 @@
-// Temporarily disabled Clerk middleware due to proxy URL configuration issue
-// import { clerkMiddleware } from '@clerk/nextjs/server'
-// export default clerkMiddleware()
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-
-export function middleware(request: NextRequest) {
-  return NextResponse.next()
-}
+export default clerkMiddleware()
 
 export const config = {
   matcher: [
