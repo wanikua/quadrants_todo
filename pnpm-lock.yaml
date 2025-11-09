@@ -47,6 +47,9 @@ importers:
       '@prisma/client':
         specifier: latest
         version: 6.19.0(typescript@5.9.3)
+      '@quadrants/shared':
+        specifier: workspace:*
+        version: link:packages/shared
       '@radix-ui/react-accordion':
         specifier: latest
         version: 1.2.12(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -137,6 +140,9 @@ importers:
       '@stripe/stripe-js':
         specifier: latest
         version: 8.3.0
+      '@tanstack/react-query':
+        specifier: latest
+        version: 5.90.7(react@19.2.0)
       '@tidbcloud/serverless':
         specifier: latest
         version: 0.2.0
@@ -11020,6 +11026,11 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.90.7
       react: 19.1.0
+
+  '@tanstack/react-query@5.90.7(react@19.2.0)':
+    dependencies:
+      '@tanstack/query-core': 5.90.7
+      react: 19.2.0
 
   '@tanstack/react-table@8.21.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
