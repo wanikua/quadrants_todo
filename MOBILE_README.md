@@ -26,7 +26,7 @@ Quadrants移动应用是基于Eisenhower Matrix（艾森豪威尔矩阵）的任
 
 ## 🏗️ 项目架构
 
-```
+\`\`\`
 quadrants_todo/                 # Monorepo根目录
 ├── app/                        # Next.js Web应用（根目录）
 ├── components/                 # Web组件
@@ -46,7 +46,7 @@ quadrants_todo/                 # Monorepo根目录
     │   ├── hooks/              # 自定义Hooks
     │   └── utils/              # 工具函数
     └── App.tsx                 # 应用入口
-```
+\`\`\`
 
 ### 代码复用率
 
@@ -73,23 +73,23 @@ quadrants_todo/                 # Monorepo根目录
 
 ### 安装依赖
 
-```bash
+\`\`\`bash
 # 在根目录安装所有依赖（包括shared和mobile）
 pnpm install
 
 # 或单独安装mobile依赖
 cd mobile
 pnpm install
-```
+\`\`\`
 
 ### 启动开发服务器
 
 #### 方法1: 使用Expo (推荐)
 
-```bash
+\`\`\`bash
 cd mobile
 pnpm start
-```
+\`\`\`
 
 然后选择：
 - 按 `i` - 在iOS模拟器中打开
@@ -98,7 +98,7 @@ pnpm start
 
 #### 方法2: 直接运行
 
-```bash
+\`\`\`bash
 # iOS
 cd mobile
 pnpm ios
@@ -106,7 +106,7 @@ pnpm ios
 # Android
 cd mobile
 pnpm android
-```
+\`\`\`
 
 ### 连接到后端API
 
@@ -144,13 +144,13 @@ pnpm android
 - 滑动操作：完成任务、删除任务
 
 **核心代码**：
-```typescript
+\`\`\`typescript
 // 使用shared包的工具函数
 import { sortTasksByPriority, getQuadrantLabel } from '@quadrants/shared';
 
 const sortedTasks = sortTasksByPriority(tasks); // 自动排序
 const quadrant = getQuadrantLabel(urgency, importance); // 获取象限
-```
+\`\`\`
 
 **实现位置**：`src/screens/TaskListScreen.tsx`
 
@@ -163,12 +163,12 @@ const quadrant = getQuadrantLabel(urgency, importance); // 获取象限
 **工作流程**：
 
 1. **输入任务**（支持多种格式）：
-   ```
+   \`\`\`
    完成项目报告
    修复登录bug
    @alice 设计新界面
    @bob, @charlie 代码审查
-   ```
+   \`\`\`
 
 2. **AI智能分析**：
    - 点击"🤖 智能分析"按钮
@@ -187,7 +187,7 @@ const quadrant = getQuadrantLabel(urgency, importance); // 获取象限
    - 自动返回任务列表
 
 **核心代码**（100%共享）：
-```typescript
+\`\`\`typescript
 import {
   api,
   splitTaskText,      // 文本分割
@@ -207,7 +207,7 @@ await Promise.all(
     api.createTask(projectId, task.description, task.urgency, task.importance)
   )
 );
-```
+\`\`\`
 
 **支持的分隔符**：
 - 换行符 `\n`
@@ -250,18 +250,18 @@ await Promise.all(
 ### 自动同步
 
 **Task List Screen**：
-```typescript
+\`\`\`typescript
 useQuery({
   queryKey: ['project', projectId],
   queryFn: () => api.syncProjectData(projectId),
   refetchInterval: 3000, // 每3秒自动刷新
 });
-```
+\`\`\`
 
 ### 用户活动心跳
 
 **团队项目**：
-```typescript
+\`\`\`typescript
 useEffect(() => {
   const interval = setInterval(() => {
     api.updateUserActivity(projectId); // 每2秒发送心跳
@@ -269,7 +269,7 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, [projectId]);
-```
+\`\`\`
 
 ### 冲突处理
 
@@ -286,7 +286,7 @@ useEffect(() => {
 
 使用 **React Native Paper** 实现Material Design：
 
-```typescript
+\`\`\`typescript
 import {
   Button,
   FAB,
@@ -295,7 +295,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native-paper';
-```
+\`\`\`
 
 ### 触摸优化
 
@@ -313,7 +313,7 @@ import {
 - ⚪ **不紧急不重要**：灰色 (`#9ca3af`)
 
 **成员颜色**（8种预设）：
-```typescript
+\`\`\`typescript
 const PLAYER_COLORS = [
   '#3b82f6', // blue
   '#ef4444', // red
@@ -324,7 +324,7 @@ const PLAYER_COLORS = [
   '#06b6d4', // cyan
   '#f97316', // orange
 ];
-```
+\`\`\`
 
 ---
 
@@ -332,10 +332,10 @@ const PLAYER_COLORS = [
 
 ### 运行测试
 
-```bash
+\`\`\`bash
 cd mobile
 pnpm test
-```
+\`\`\`
 
 ### 手动测试清单
 
@@ -388,14 +388,14 @@ pnpm test
 
 ### 查看日志
 
-```bash
+\`\`\`bash
 # Expo开发工具
 cd mobile
 pnpm start
 
 # 然后按 m 打开菜单
 # 选择 "Show console logs"
-```
+\`\`\`
 
 ### React Native Debugger
 
@@ -408,19 +408,19 @@ pnpm start
 
 #### 1. "Unable to resolve module"
 
-```bash
+\`\`\`bash
 # 清除缓存
 cd mobile
 pnpm start --clear
-```
+\`\`\`
 
 #### 2. "@quadrants/shared not found"
 
-```bash
+\`\`\`bash
 # 重新安装workspace依赖
 cd ..
 pnpm install
-```
+\`\`\`
 
 #### 3. "Network request failed"
 
@@ -436,7 +436,7 @@ pnpm install
 ### API配置
 
 **开发环境**（`App.tsx`）：
-```typescript
+\`\`\`typescript
 // iOS模拟器
 api.setBaseUrl('http://localhost:3000');
 
@@ -445,12 +445,12 @@ api.setBaseUrl('http://10.0.2.2:3000');
 
 // 真机（使用电脑IP）
 api.setBaseUrl('http://192.168.1.100:3000');
-```
+\`\`\`
 
 **生产环境**：
-```typescript
+\`\`\`typescript
 api.setBaseUrl('https://your-production-api.com');
-```
+\`\`\`
 
 ### 认证
 
@@ -466,12 +466,12 @@ api.setBaseUrl('https://your-production-api.com');
 ### Map View（平板专属）
 
 **屏幕尺寸检测**：
-```typescript
+\`\`\`typescript
 import { useWindowDimensions } from 'react-native';
 
 const { width } = useWindowDimensions();
 const isTablet = width >= 768; // iPad Mini+
-```
+\`\`\`
 
 **功能**：
 - 四象限矩阵可视化
@@ -490,37 +490,37 @@ const isTablet = width >= 768; // iPad Mini+
 ### iOS（App Store）
 
 1. **配置**：
-   ```bash
+   \`\`\`bash
    cd mobile
    eas build:configure
-   ```
+   \`\`\`
 
 2. **构建**：
-   ```bash
+   \`\`\`bash
    eas build --platform ios
-   ```
+   \`\`\`
 
 3. **提交**：
-   ```bash
+   \`\`\`bash
    eas submit --platform ios
-   ```
+   \`\`\`
 
 ### Android（Google Play）
 
 1. **配置**：
-   ```bash
+   \`\`\`bash
    eas build:configure
-   ```
+   \`\`\`
 
 2. **构建**：
-   ```bash
+   \`\`\`bash
    eas build --platform android
-   ```
+   \`\`\`
 
 3. **提交**：
-   ```bash
+   \`\`\`bash
    eas submit --platform android
-   ```
+   \`\`\`
 
 ---
 
@@ -528,7 +528,7 @@ const isTablet = width >= 768; // iPad Mini+
 
 ### React Query缓存
 
-```typescript
+\`\`\`typescript
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -538,11 +538,11 @@ const queryClient = new QueryClient({
     },
   },
 });
-```
+\`\`\`
 
 ### FlatList优化
 
-```typescript
+\`\`\`typescript
 <FlatList
   data={tasks}
   keyExtractor={(item) => item.id.toString()}
@@ -555,7 +555,7 @@ const queryClient = new QueryClient({
   maxToRenderPerBatch={10}
   windowSize={5}
 />
-```
+\`\`\`
 
 ---
 
@@ -602,7 +602,7 @@ MIT
 
 现在你已经了解了Mobile App的全部功能！开始开发：
 
-```bash
+\`\`\`bash
 # 1. 启动Web后端
 pnpm dev
 
@@ -611,6 +611,6 @@ cd mobile
 pnpm start
 
 # 3. 选择模拟器或扫码真机测试
-```
+\`\`\`
 
 享受开发吧！🚀

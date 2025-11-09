@@ -10,7 +10,7 @@
 ### 1. 项目架构 ✅
 
 #### Monorepo结构
-```
+\`\`\`
 quadrants_todo/
 ├── app/                        # Web应用（Next.js，保持在根目录给Vercel）
 ├── packages/
@@ -22,7 +22,7 @@ quadrants_todo/
     ├── src/
     │   └── screens/            # 4个核心screen
     └── App.tsx                 # 应用入口
-```
+\`\`\`
 
 #### 配置文件
 - ✅ `pnpm-workspace.yaml` - workspace配置
@@ -177,16 +177,16 @@ quadrants_todo/
 ### 4. 实时同步机制 ✅
 
 #### 自动刷新
-```typescript
+\`\`\`typescript
 useQuery({
   queryKey: ['project', projectId],
   queryFn: () => api.syncProjectData(projectId),
   refetchInterval: 3000, // 每3秒自动刷新
 });
-```
+\`\`\`
 
 #### 用户活动心跳
-```typescript
+\`\`\`typescript
 useEffect(() => {
   const interval = setInterval(() => {
     api.updateUserActivity(projectId);
@@ -194,7 +194,7 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, [projectId]);
-```
+\`\`\`
 
 #### 乐观更新
 - UI立即响应用户操作
@@ -231,7 +231,7 @@ useEffect(() => {
 修改shared包自动影响Web和Mobile：
 
 **示例**：更新优先级计算公式
-```typescript
+\`\`\`typescript
 // 位置: packages/shared/utils/index.ts
 
 // 修改前
@@ -245,21 +245,21 @@ export function calculatePriorityScore(u: number, i: number) {
 }
 
 // 结果: ✅ Web + Mobile 都自动更新！
-```
+\`\`\`
 
 ### 2. 类型安全 ✅
 
-```typescript
+\`\`\`typescript
 // Web和Mobile共享完全相同的类型
 import { Task, Player, api } from '@quadrants/shared';
 
 // TypeScript会检查类型一致性
 const task: Task = await api.createTask(...);
-```
+\`\`\`
 
 ### 3. Quick Add核心逻辑100%共享 ✅
 
-```typescript
+\`\`\`typescript
 // Mobile和Web使用完全相同的代码
 import {
   splitTaskText,
@@ -275,7 +275,7 @@ const predictions = await api.predictTaskPriorities(tasks, projectId);
 
 // 3. 创建任务
 await Promise.all(predictions.map(t => api.createTask(...)));
-```
+\`\`\`
 
 ---
 
@@ -284,13 +284,13 @@ await Promise.all(predictions.map(t => api.createTask(...)));
 ### 启动开发环境
 
 #### 1. 启动Web后端
-```bash
+\`\`\`bash
 # 在根目录
 pnpm dev
-```
+\`\`\`
 
 #### 2. 启动Mobile应用
-```bash
+\`\`\`bash
 # 在新终端
 cd mobile
 pnpm start
@@ -299,12 +299,12 @@ pnpm start
 # - 按 i 启动iOS模拟器
 # - 按 a 启动Android模拟器
 # - 扫码在真机上测试
-```
+\`\`\`
 
 ### API配置
 
 **开发环境**（`mobile/App.tsx`）：
-```typescript
+\`\`\`typescript
 // iOS模拟器
 api.setBaseUrl('http://localhost:3000');
 
@@ -313,14 +313,14 @@ api.setBaseUrl('http://10.0.2.2:3000');
 
 // 真机（使用电脑IP）
 api.setBaseUrl('http://192.168.1.100:3000');
-```
+\`\`\`
 
 ---
 
 ## 📝 已安装的依赖
 
 ### Mobile核心依赖
-```json
+\`\`\`json
 {
   "expo": "~54.0.23",
   "react": "19.1.0",
@@ -336,7 +336,7 @@ api.setBaseUrl('http://192.168.1.100:3000');
   "react-native-screens": "^4.18.0",
   "@quadrants/shared": "workspace:*"
 }
-```
+\`\`\`
 
 ---
 
@@ -378,38 +378,38 @@ api.setBaseUrl('http://192.168.1.100:3000');
 ### 代码示例：创建任务
 
 **Web版（React）**：
-```typescript
+\`\`\`typescript
 import { api } from '@quadrants/shared';
 
 await api.createTask(projectId, description, urgency, importance);
-```
+\`\`\`
 
 **Mobile版（React Native）**：
-```typescript
+\`\`\`typescript
 import { api } from '@quadrants/shared';
 
 await api.createTask(projectId, description, urgency, importance);
-```
+\`\`\`
 
 **完全相同！** ✅
 
 ### 代码示例：优先级计算
 
 **Web版**：
-```typescript
+\`\`\`typescript
 import { calculatePriorityScore, sortTasksByPriority } from '@quadrants/shared';
 
 const score = calculatePriorityScore(task.urgency, task.importance);
 const sorted = sortTasksByPriority(tasks);
-```
+\`\`\`
 
 **Mobile版**：
-```typescript
+\`\`\`typescript
 import { calculatePriorityScore, sortTasksByPriority } from '@quadrants/shared';
 
 const score = calculatePriorityScore(task.urgency, task.importance);
 const sorted = sortTasksByPriority(tasks);
-```
+\`\`\`
 
 **完全相同！** ✅
 
@@ -427,7 +427,7 @@ const sorted = sortTasksByPriority(tasks);
 ## 🔄 Git状态
 
 ### 创建的文件
-```
+\`\`\`
 packages/
   shared/
     package.json
@@ -449,10 +449,10 @@ mobile/
 pnpm-workspace.yaml
 MOBILE_README.md
 MOBILE_DEVELOPMENT_COMPLETE.md
-```
+\`\`\`
 
 ### 建议提交
-```bash
+\`\`\`bash
 git add .
 git commit -m "feat: add React Native mobile app with shared code
 
@@ -478,7 +478,7 @@ Structure:
 - pnpm workspace configured
 
 Generated with Claude Code"
-```
+\`\`\`
 
 ---
 
@@ -508,10 +508,10 @@ Generated with Claude Code"
 
 ### 立即可做
 1. **测试应用**：
-   ```bash
+   \`\`\`bash
    cd mobile
    pnpm start
-   ```
+   \`\`\`
 
 2. **连接真机测试**：
    - 扫描二维码
