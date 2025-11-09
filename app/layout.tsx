@@ -38,6 +38,8 @@ export default function RootLayout({
   return (
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      domain="clerk.quadrants.ch"
+      isSatellite={false}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
       afterSignInUrl="/projects"
