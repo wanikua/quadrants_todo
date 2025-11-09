@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Verify no mobile deps in root package.json
+node scripts/verify-no-mobile-deps.js || exit 1
