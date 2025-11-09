@@ -8,7 +8,7 @@
 ## 📦 What Was Done
 
 ### 1. Monorepo Structure Created
-```
+\`\`\`
 quadrants_todo/
 ├── apps/
 │   └── web/                    # Next.js web application
@@ -29,7 +29,7 @@ quadrants_todo/
 ├── pnpm-workspace.yaml         # pnpm config
 ├── turbo.json                  # Turborepo config
 └── tsconfig.json               # Root TypeScript config
-```
+\`\`\`
 
 ### 2. Shared Package Contents (`@quadrants/shared`)
 
@@ -71,7 +71,7 @@ quadrants_todo/
 | **Total** | **60-80%** | Extremely high reuse |
 
 ### One Change, Multiple Platforms
-```typescript
+\`\`\`typescript
 // Example: Update priority calculation formula
 // Location: packages/shared/utils/index.ts
 
@@ -86,14 +86,14 @@ export function calculatePriorityScore(u: number, i: number) {
 }
 
 // Result: ✅ Web + Mobile both updated automatically
-```
+\`\`\`
 
 ---
 
 ## 🚀 Development Workflow
 
 ### Starting Development Server
-```bash
+\`\`\`bash
 # Option 1: From root (using Turborepo)
 pnpm dev              # Start all apps
 pnpm dev:web          # Start only web app
@@ -103,10 +103,10 @@ cd apps/web
 pnpm dev
 
 # Result: http://localhost:3000
-```
+\`\`\`
 
 ### Building
-```bash
+\`\`\`bash
 # Build all apps
 pnpm build
 
@@ -118,10 +118,10 @@ pnpm typecheck
 
 # Linting
 pnpm lint
-```
+\`\`\`
 
 ### Installing Dependencies
-```bash
+\`\`\`bash
 # Root dependencies (turbo, typescript)
 pnpm add -D <package> -w
 
@@ -130,7 +130,7 @@ pnpm add <package> --filter web
 
 # Shared package dependencies
 pnpm add <package> --filter @quadrants/shared
-```
+\`\`\`
 
 ---
 
@@ -139,12 +139,12 @@ pnpm add <package> --filter @quadrants/shared
 ### Phase 3: React Native Setup (Ready to Start)
 
 1. **Create Mobile App**
-   ```bash
+   \`\`\`bash
    cd apps
    npx create-expo-app mobile --template blank-typescript
    cd mobile
    pnpm add @quadrants/shared
-   ```
+   \`\`\`
 
 2. **Implement Features** (using shared code):
    - ✅ **List View** (phone primary interface)
@@ -154,7 +154,7 @@ pnpm add <package> --filter @quadrants/shared
    - ✅ **Real-time Sync** (shared API client)
 
 3. **Phone vs Tablet Differences**:
-   ```typescript
+   \`\`\`typescript
    // Phone App
    - List view only (no map)
    - Swipe actions for complete/delete
@@ -166,7 +166,7 @@ pnpm add <package> --filter @quadrants/shared
    - List view toggle
    - Quick Add with AI ⭐
    - All web features
-   ```
+   \`\`\`
 
 ---
 
@@ -177,14 +177,14 @@ pnpm add <package> --filter @quadrants/shared
 **Why**: Faster, smaller disk usage, strict dependency resolution
 
 ### Workspace Protocol
-```json
+\`\`\`json
 // apps/web/package.json
 {
   "dependencies": {
     "@quadrants/shared": "workspace:*"  // Links to local package
   }
 }
-```
+\`\`\`
 
 ### Turborepo Benefits
 - Intelligent caching (don't rebuild if nothing changed)

@@ -23,7 +23,7 @@
 - **AI服务**: Qwen API (阿里云) + Claude API (备用)
 
 ### 项目结构
-```
+\`\`\`
 app/
 ├── actions.ts              # Server actions
 ├── api/                    # API路由
@@ -44,7 +44,7 @@ components/
 ├── TaskDetailDialog.tsx   # 任务详情对话框
 ├── BulkTaskInput.tsx      # 批量任务输入（AI）
 └── projects-page.tsx      # 项目管理页面
-```
+\`\`\`
 
 ---
 
@@ -69,7 +69,7 @@ components/
 **实现位置**: `components/QuadrantMatrixMap.tsx`
 
 **关键代码逻辑**：
-```typescript
+\`\`\`typescript
 // 计算任务优先级分数
 const priorityScore = urgency * 0.5 + importance * 0.5
 
@@ -78,7 +78,7 @@ if (urgency >= 50 && importance >= 50) return "重要且紧急"
 if (urgency < 50 && importance >= 50) return "重要不紧急"
 if (urgency >= 50 && importance < 50) return "紧急不重要"
 return "不紧急不重要"
-```
+\`\`\`
 
 ---
 
@@ -90,12 +90,12 @@ return "不紧急不重要"
 - 显示任务描述、分配人员、优先级标签
 
 **排序规则**：
-```typescript
+\`\`\`typescript
 // 优先级分数 = (紧急度 + 重要度) / 2
 tasks.sort((a, b) =>
   (b.urgency + b.importance) - (a.urgency + a.importance)
 )
-```
+\`\`\`
 
 **交互功能**：
 - 点击任务查看详情
@@ -144,7 +144,7 @@ tasks.sort((a, b) =>
    - 支持@all分配给所有人
 
 2. **解析阶段**：
-   ```typescript
+   \`\`\`typescript
    // 文本分割
    const tasks = text.split(/[\n,;。；]+/).filter(t => t.trim())
 
@@ -158,7 +158,7 @@ tasks.sort((a, b) =>
        p.name.toLowerCase().includes(mention.toLowerCase())
      )
    }
-   ```
+   \`\`\`
 
 3. **AI预测阶段**：
    - 调用 `POST /api/ai/predict-tasks`
@@ -171,7 +171,7 @@ tasks.sort((a, b) =>
    - 确认后批量创建
 
 5. **批量创建优化**：
-   ```typescript
+   \`\`\`typescript
    // 单次API调用创建所有任务
    const results = await Promise.all(
      tasks.map(task => createTask(
@@ -182,7 +182,7 @@ tasks.sort((a, b) =>
        task.assigneeIds
      ))
    )
-   ```
+   \`\`\`
 
 **实现位置**: `components/BulkTaskInput.tsx`
 
@@ -196,7 +196,7 @@ tasks.sort((a, b) =>
 一键整理重叠或混乱的任务布局，使用物理斥力算法自动扩散。
 
 **算法原理**：
-```typescript
+\`\`\`typescript
 // 1. 归一化：移动所有任务使中心点=(50, 50)
 const avgUrgency = tasks.reduce((s, t) => s + t.urgency, 0) / tasks.length
 const avgImportance = tasks.reduce((s, t) => s + t.importance, 0) / tasks.length
@@ -229,7 +229,7 @@ for (let iter = 0; iter < 8; iter++) {
 
 // 3. 重新归一化
 // 4. 边界检查（0-100）
-```
+\`\`\`
 
 **用户体验**：
 - 点击"Organize"按钮预览效果
@@ -249,7 +249,7 @@ for (let iter = 0; iter < 8; iter++) {
 **AI调用链**（按优先级）：
 
 #### 方案A：Qwen API（首选）
-```typescript
+\`\`\`typescript
 // 配置
 model: "qwen-plus"
 endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
@@ -265,17 +265,17 @@ apiKey: process.env.QWEN_API_KEY
 - Bug修复/紧急问题 → urgency高
 - 战略规划/重要决策 → importance高
 - 日常琐事 → 两者都低
-```
+\`\`\`
 
 #### 方案B：Claude API（备用）
-```typescript
+\`\`\`typescript
 // 配置
 model: "claude-sonnet-4-20250514"
 endpoint: "https://api.anthropic.com/v1/messages"
-```
+\`\`\`
 
 #### 方案C：关键词启发式（最终备用）
-```typescript
+\`\`\`typescript
 const highUrgencyKeywords = [
   'urgent', 'asap', 'immediately', 'today', 'now',
   'bug', 'error', 'broken', 'fix', 'critical'
@@ -298,16 +298,16 @@ highUrgencyKeywords.forEach(kw => {
 
 // 限制范围0-100
 urgency = Math.max(0, Math.min(100, urgency))
-```
+\`\`\`
 
 **用户偏好学习**：
 - 记录用户对AI预测的手动调整
 - 计算平均偏差（bias）
 - 未来预测时自动应用：
-  ```typescript
+  \`\`\`typescript
   predicted_urgency += user_urgency_bias
   predicted_importance += user_importance_bias
-  ```
+  \`\`\`
 
 **实现位置**: `app/api/ai/predict-tasks/route.ts`
 
@@ -321,7 +321,7 @@ urgency = Math.max(0, Math.min(100, urgency))
 用户调整任务优先级 ≥5% 时记录
 
 **学习逻辑**：
-```typescript
+\`\`\`typescript
 // 1. 记录调整
 await db.insert(taskPredictions).values({
   user_id: userId,
@@ -352,7 +352,7 @@ const avgImportanceBias = adjustments.reduce(
 await db.update(userTaskPreferences)
   .set({ avg_urgency_bias: avgUrgencyBias, avg_importance_bias: avgImportanceBias })
   .where(eq(userTaskPreferences.user_id, userId))
-```
+\`\`\`
 
 **实现位置**: `app/api/ai/learn-from-adjustment/route.ts`
 
@@ -363,7 +363,7 @@ await db.update(userTaskPreferences)
 ### 核心表结构
 
 #### 1. users（用户表）
-```sql
+\`\`\`sql
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
@@ -377,10 +377,10 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### 2. projects（项目表）
-```sql
+\`\`\`sql
 CREATE TABLE projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -390,10 +390,10 @@ CREATE TABLE projects (
   invite_code TEXT, -- 8位邀请码（仅团队项目）
   created_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### 3. project_members（项目成员表）
-```sql
+\`\`\`sql
 CREATE TABLE project_members (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -402,10 +402,10 @@ CREATE TABLE project_members (
   joined_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(project_id, user_id)
 );
-```
+\`\`\`
 
 #### 4. tasks（任务表）⭐核心表
-```sql
+\`\`\`sql
 CREATE TABLE tasks (
   id SERIAL PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -421,10 +421,10 @@ CREATE TABLE tasks (
 
 CREATE INDEX idx_tasks_project_id ON tasks(project_id);
 CREATE INDEX idx_tasks_updated_at ON tasks(updated_at);
-```
+\`\`\`
 
 #### 5. players（成员显示名称表）
-```sql
+\`\`\`sql
 CREATE TABLE players (
   id SERIAL PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -434,10 +434,10 @@ CREATE TABLE players (
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(project_id, user_id)
 );
-```
+\`\`\`
 
 #### 6. task_assignments（任务分配表）
-```sql
+\`\`\`sql
 CREATE TABLE task_assignments (
   id SERIAL PRIMARY KEY,
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -445,10 +445,10 @@ CREATE TABLE task_assignments (
   assigned_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(task_id, player_id)
 );
-```
+\`\`\`
 
 #### 7. comments（评论表）
-```sql
+\`\`\`sql
 CREATE TABLE comments (
   id SERIAL PRIMARY KEY,
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -456,10 +456,10 @@ CREATE TABLE comments (
   author_name TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### 8. lines（任务连线表）
-```sql
+\`\`\`sql
 CREATE TABLE lines (
   id SERIAL PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -470,11 +470,11 @@ CREATE TABLE lines (
   color VARCHAR(7) DEFAULT '#374151',
   created_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### 9. user_activity（用户活动表）
 用于实时协作的在线状态追踪
-```sql
+\`\`\`sql
 CREATE TABLE user_activity (
   id SERIAL PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -482,10 +482,10 @@ CREATE TABLE user_activity (
   last_seen TIMESTAMP DEFAULT NOW(),
   UNIQUE(project_id, user_id)
 );
-```
+\`\`\`
 
 #### 10. task_predictions（AI学习数据表）
-```sql
+\`\`\`sql
 CREATE TABLE task_predictions (
   id SERIAL PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -498,10 +498,10 @@ CREATE TABLE task_predictions (
   adjustment_delta JSONB, -- { urgency_delta: -10, importance_delta: 15 }
   created_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### 11. user_task_preferences（用户偏好表）
-```sql
+\`\`\`sql
 CREATE TABLE user_task_preferences (
   user_id TEXT PRIMARY KEY,
   avg_urgency_bias REAL DEFAULT 0,
@@ -509,24 +509,24 @@ CREATE TABLE user_task_preferences (
   keyword_patterns JSONB, -- { "urgent": { urgency: 85 }, ... }
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 ---
 
 ### 数据库访问策略
 
 #### 连接配置
-```typescript
+\`\`\`typescript
 // app/db/index.ts
 import { neon } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-http'
 
 const sql = neon(process.env.DATABASE_URL!)
 const db = drizzle(sql, { schema })
-```
+\`\`\`
 
 #### 权限检查
-```typescript
+\`\`\`typescript
 // 所有数据库操作前必须验证
 export async function getUserProjectAccess(
   userId: string,
@@ -552,10 +552,10 @@ export async function getUserProjectAccess(
 
   return member.length > 0
 }
-```
+\`\`\`
 
 #### 查询优化
-```typescript
+\`\`\`typescript
 // 获取项目完整数据（单次查询）
 const tasksWithAssignments = await db
   .select({
@@ -592,7 +592,7 @@ for (const row of tasksWithAssignments) {
     tasksMap.get(row.id).assignees.push(row.player)
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -601,7 +601,7 @@ for (const row of tasksWithAssignments) {
 ### 同步机制
 
 #### 1. 心跳检测
-```typescript
+\`\`\`typescript
 // 每2秒更新用户活动状态
 useEffect(() => {
   if (projectType === 'team' && !isOfflineMode) {
@@ -614,10 +614,10 @@ useEffect(() => {
     return () => clearInterval(interval)
   }
 }, [projectType, projectId])
-```
+\`\`\`
 
 #### 2. 动态同步频率
-```typescript
+\`\`\`typescript
 // 根据在线用户数调整同步间隔
 const syncInterval = activeUserCount > 1 ? 1500 : 3000
 
@@ -628,10 +628,10 @@ useEffect(() => {
 
   return () => clearInterval(interval)
 }, [activeUserCount])
-```
+\`\`\`
 
 #### 3. 智能暂停策略
-```typescript
+\`\`\`typescript
 // 暂停同步的条件
 if (isOrganizing) {
   // 预览organize结果时暂停
@@ -652,10 +652,10 @@ if (pendingUpdateTaskIds.size > 0) {
     // ...合并逻辑
   })
 }
-```
+\`\`\`
 
 #### 4. 冲突解决
-```typescript
+\`\`\`typescript
 // 基于时间戳的乐观并发控制
 const mergeTask = (localTask, serverTask) => {
   const serverTime = new Date(serverTask.updated_at).getTime()
@@ -667,7 +667,7 @@ const mergeTask = (localTask, serverTask) => {
     return localTask // 保留本地版本
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -676,7 +676,7 @@ const mergeTask = (localTask, serverTask) => {
 ### 响应式布局
 
 #### 断点检测
-```typescript
+\`\`\`typescript
 // hooks/use-mobile.tsx
 export function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(false)
@@ -695,10 +695,10 @@ export function useMediaQuery(query: string) {
 
 // 使用
 const isMobile = useMediaQuery("(max-width: 768px)")
-```
+\`\`\`
 
 #### UI组件适配
-```typescript
+\`\`\`typescript
 // 移动端使用Sheet，桌面端使用Dialog
 {isMobile ? (
   <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -713,10 +713,10 @@ const isMobile = useMediaQuery("(max-width: 768px)")
     </DialogContent>
   </Dialog>
 )}
-```
+\`\`\`
 
 #### 触摸优化
-```typescript
+\`\`\`typescript
 // 长按手势（移动端友好）
 const handleTouchStart = (e: React.TouchEvent) => {
   const touch = e.touches[0]
@@ -739,7 +739,7 @@ const handleTouchEnd = () => {
     WebkitUserSelect: 'none'
   }}
 >
-```
+\`\`\`
 
 ---
 
@@ -762,7 +762,7 @@ const handleTouchEnd = () => {
 
 ### AI功能⭐核心API
 - `POST /api/ai/predict-tasks` - 批量预测任务优先级
-  ```typescript
+  \`\`\`typescript
   // 请求
   {
     "tasks": ["完成报告", "修复bug", "计划会议"],
@@ -777,10 +777,10 @@ const handleTouchEnd = () => {
       { "description": "计划会议", "urgency": 60, "importance": 70 }
     ]
   }
-  ```
+  \`\`\`
 
 - `POST /api/ai/organize-tasks` - 智能整理任务布局
-  ```typescript
+  \`\`\`typescript
   // 请求
   {
     "tasks": [
@@ -799,10 +799,10 @@ const handleTouchEnd = () => {
       ...
     ]
   }
-  ```
+  \`\`\`
 
 - `POST /api/ai/learn-from-adjustment` - 学习用户调整
-  ```typescript
+  \`\`\`typescript
   // 请求
   {
     "taskId": 123,
@@ -812,25 +812,25 @@ const handleTouchEnd = () => {
 
   // 响应（后台异步处理）
   { "success": true }
-  ```
+  \`\`\`
 
 ### 任务操作（Server Actions）
 所有任务操作使用Server Actions而非REST API：
-```typescript
+\`\`\`typescript
 // app/db/actions.ts
 export async function createTask(projectId, description, urgency, importance, assigneeIds)
 export async function updateTask(taskId, urgency, importance, description?, assigneeIds?)
 export async function deleteTask(taskId)
 export async function completeTask(taskId) // 归档
 export async function restoreTask(taskId) // 恢复
-```
+\`\`\`
 
 ---
 
 ## 关键配置
 
 ### 环境变量
-```bash
+\`\`\`bash
 # 数据库
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
 
@@ -849,10 +849,10 @@ ANTHROPIC_API_KEY=sk-ant-...     # Claude API（备用）
 # Stripe（可选）
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-```
+\`\`\`
 
 ### Next.js配置
-```typescript
+\`\`\`typescript
 // next.config.js
 const nextConfig = {
   experimental: {
@@ -861,7 +861,7 @@ const nextConfig = {
     },
   },
 }
-```
+\`\`\`
 
 ---
 
@@ -905,14 +905,14 @@ const nextConfig = {
 - CSRF保护（SameSite: lax）
 
 ### 授权检查
-```typescript
+\`\`\`typescript
 // 每个操作前验证
 const userId = await getUserId()
 if (!userId) return { error: 'Not authenticated' }
 
 const hasAccess = await getUserProjectAccess(userId, projectId)
 if (!hasAccess) return { error: 'Access denied' }
-```
+\`\`\`
 
 ### 数据验证
 - Drizzle ORM自动参数化查询（防SQL注入）

@@ -8,31 +8,31 @@
 
 访问: https://vercel.com/new
 
-```bash
+\`\`\`bash
 1. 点击 "Import Project"
 2. 选择 "Import Git Repository"
 3. 连接GitHub账号（如果还没连接）
 4. 搜索并选择: wanikua/quadrants_todo
 5. 点击 "Import"
-```
+\`\`\`
 
 #### 2️⃣ 配置项目
 
 Vercel会自动检测Next.js项目，无需修改默认配置：
 
-```
+\`\`\`
 Framework Preset: Next.js ✅ (自动检测)
 Root Directory: ./ ✅
 Build Command: npm run build ✅ (自动)
 Output Directory: .next ✅ (自动)
 Install Command: npm install ✅ (自动)
-```
+\`\`\`
 
 #### 3️⃣ 配置环境变量
 
 在"Environment Variables"部分添加以下变量：
 
-```bash
+\`\`\`bash
 # 数据库
 DATABASE_URL=postgresql://neondb_owner:npg_3XQ4ghEceCoD@ep-shiny-shadow-agd4ewqa-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require
 
@@ -54,7 +54,7 @@ EMAIL_FROM=info@quadrants.ch
 # Stripe（可选）
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-```
+\`\`\`
 
 **💡 提示**: 所有环境都使用相同的值（Production, Preview, Development）
 
@@ -63,10 +63,10 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 点击 "Deploy" 按钮，等待2-3分钟。
 
 ✅ 部署完成后，您会看到：
-```
+\`\`\`
 🎉 Your project is live!
 https://quadrants-todo.vercel.app
-```
+\`\`\`
 
 ---
 
@@ -74,7 +74,7 @@ https://quadrants-todo.vercel.app
 
 ### 每次代码推送都会自动部署
 
-```bash
+\`\`\`bash
 # 1. 本地开发
 npm run dev
 
@@ -93,11 +93,11 @@ git push origin main
 
 # 5. 几分钟后访问
 https://quadrants-todo.vercel.app
-```
+\`\`\`
 
 ### 分支预览
 
-```bash
+\`\`\`bash
 # 创建功能分支
 git checkout -b feature/new-ui
 git push origin feature/new-ui
@@ -107,7 +107,7 @@ git push origin feature/new-ui
 
 # 主分支不受影响
 ↓ https://quadrants-todo.vercel.app (生产环境)
-```
+\`\`\`
 
 ---
 
@@ -116,7 +116,7 @@ git push origin feature/new-ui
 当转换为monorepo后，部署配置会自动适配：
 
 ### 目录结构
-```
+\`\`\`
 quadrants/                           # Git根目录
 ├── apps/
 │   ├── web/                        # Next.js网页版
@@ -127,7 +127,7 @@ quadrants/                           # Git根目录
 │   └── shared/                     # 共享代码
 ├── turbo.json                      # Turborepo配置 ✅已创建
 └── package.json                    # Workspace配置
-```
+\`\`\`
 
 ### Vercel自动检测monorepo
 
@@ -140,14 +140,14 @@ Vercel会自动：
 ### Web应用配置（未来）
 
 `apps/web/vercel.json`:
-```json
+\`\`\`json
 {
   "buildCommand": "cd ../.. && npx turbo run build --filter=web",
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "framework": "nextjs"
 }
-```
+\`\`\`
 
 ### 构建速度对比
 
@@ -161,39 +161,39 @@ Vercel会自动：
 
 ### 安装
 
-```bash
+\`\`\`bash
 npm install -g vercel
-```
+\`\`\`
 
 ### 登录
 
-```bash
+\`\`\`bash
 vercel login
-```
+\`\`\`
 
 ### 本地预览
 
-```bash
+\`\`\`bash
 # 部署到预览环境
 vercel
 
 # 部署到生产环境
 vercel --prod
-```
+\`\`\`
 
 ### 查看日志
 
-```bash
+\`\`\`bash
 # 查看最新部署日志
 vercel logs
 
 # 实时日志
 vercel logs --follow
-```
+\`\`\`
 
 ### 环境变量管理
 
-```bash
+\`\`\`bash
 # 查看环境变量
 vercel env ls
 
@@ -202,7 +202,7 @@ vercel env add DATABASE_URL production
 
 # 从.env.local拉取
 vercel env pull .env.local
-```
+\`\`\`
 
 ---
 
@@ -211,13 +211,13 @@ vercel env pull .env.local
 ### 绑定域名
 
 1. 在Vercel项目设置中添加域名
-```
+\`\`\`
 Vercel Dashboard → Settings → Domains
 添加: quadrants.ch
-```
+\`\`\`
 
 2. 在域名提供商添加DNS记录
-```
+\`\`\`
 类型: A
 名称: @
 值: 76.76.21.21
@@ -225,7 +225,7 @@ Vercel Dashboard → Settings → Domains
 类型: CNAME
 名称: www
 值: cname.vercel-dns.com
-```
+\`\`\`
 
 3. 等待DNS传播（几分钟）
 
@@ -239,7 +239,7 @@ Vercel Dashboard → Settings → Domains
 
 在 `app/layout.tsx` 添加：
 
-```typescript
+\`\`\`typescript
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -254,22 +254,22 @@ export default function RootLayout({ children }) {
     </html>
   )
 }
-```
+\`\`\`
 
 安装依赖：
-```bash
+\`\`\`bash
 npm install @vercel/analytics @vercel/speed-insights
-```
+\`\`\`
 
 ### 查看指标
 
-```
+\`\`\`
 Vercel Dashboard → Analytics
 - 页面浏览量
 - Core Web Vitals
 - 地理分布
 - 设备分布
-```
+\`\`\`
 
 ---
 
@@ -284,12 +284,12 @@ Vercel Dashboard → Analytics
 
 ### 推荐设置
 
-```bash
+\`\`\`bash
 # 在Vercel项目设置中启用：
 ✅ Deployment Protection (保护预览部署)
 ✅ Password Protection (访问密码)
 ✅ Automatically Lock Editing (锁定编辑)
-```
+\`\`\`
 
 ---
 
@@ -300,7 +300,7 @@ Vercel Dashboard → Analytics
 **症状**: 部署失败，显示错误
 
 **解决方案**:
-```bash
+\`\`\`bash
 # 1. 查看构建日志
 Vercel Dashboard → Deployments → [失败的部署] → Logs
 
@@ -311,14 +311,14 @@ Vercel Dashboard → Deployments → [失败的部署] → Logs
 
 # 3. 本地复现
 vercel build
-```
+\`\`\`
 
 ### 环境变量不生效
 
 **症状**: 代码中读取不到环境变量
 
 **解决方案**:
-```bash
+\`\`\`bash
 # 1. 确认环境变量名称正确
 # 客户端变量必须以 NEXT_PUBLIC_ 开头
 
@@ -327,17 +327,17 @@ Vercel Dashboard → Deployments → Redeploy
 
 # 3. 检查环境范围
 Production / Preview / Development 都要设置
-```
+\`\`\`
 
 ### 构建缓存问题
 
 **症状**: 代码更新了但网站没变化
 
 **解决方案**:
-```bash
+\`\`\`bash
 # 清除缓存重新部署
 Vercel Dashboard → Settings → Clear Cache
-```
+\`\`\`
 
 ---
 
@@ -368,18 +368,18 @@ $20/月，包含：
 
 ### 1. 使用预览部署
 
-```bash
+\`\`\`bash
 # 不要直接推送到main
 git checkout -b feature/test
 git push origin feature/test
 
 # 在预览环境测试
 # 确认无误后合并到main
-```
+\`\`\`
 
 ### 2. 环境变量分离
 
-```bash
+\`\`\`bash
 # 开发环境
 .env.local (本地)
 
@@ -388,11 +388,11 @@ Vercel → Preview 环境变量
 
 # 生产环境
 Vercel → Production 环境变量
-```
+\`\`\`
 
 ### 3. 监控性能
 
-```bash
+\`\`\`bash
 # 定期检查
 Vercel Dashboard → Analytics → Core Web Vitals
 
@@ -400,7 +400,7 @@ Vercel Dashboard → Analytics → Core Web Vitals
 LCP < 2.5s ✅
 FID < 100ms ✅
 CLS < 0.1 ✅
-```
+\`\`\`
 
 ---
 
@@ -415,14 +415,14 @@ CLS < 0.1 ✅
 
 ### 完成后
 
-```bash
+\`\`\`bash
 # 测试部署
 curl https://your-project.vercel.app
 
 # 推送代码测试自动部署
 git commit --allow-empty -m "test: trigger deployment"
 git push origin main
-```
+\`\`\`
 
 ---
 

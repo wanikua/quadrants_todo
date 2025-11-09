@@ -7,12 +7,289 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@aws-sdk/client-rds-data':
+        specifier: latest
+        version: 3.927.0
+      '@clerk/nextjs':
+        specifier: latest
+        version: 6.34.5(next@15.2.4(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@cloudflare/workers-types':
+        specifier: latest
+        version: 4.20251107.0
+      '@electric-sql/pglite':
+        specifier: latest
+        version: 0.3.14
+      '@eslint/eslintrc':
+        specifier: latest
+        version: 3.3.1
+      '@libsql/client':
+        specifier: latest
+        version: 0.15.15(bufferutil@4.0.9)
+      '@libsql/client-wasm':
+        specifier: latest
+        version: 0.15.15
+      '@neondatabase/serverless':
+        specifier: latest
+        version: 1.0.2
+      '@next/env':
+        specifier: latest
+        version: 16.0.1
+      '@op-engineering/op-sqlite':
+        specifier: latest
+        version: 15.0.7(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.2.0))(react@19.2.0)
+      '@opentelemetry/api':
+        specifier: latest
+        version: 1.9.0
+      '@planetscale/database':
+        specifier: latest
+        version: 1.19.0
+      '@prisma/client':
+        specifier: latest
+        version: 6.19.0(typescript@5.9.3)
+      '@radix-ui/react-accordion':
+        specifier: latest
+        version: 1.2.12(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-alert-dialog':
+        specifier: latest
+        version: 1.1.15(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-aspect-ratio':
+        specifier: latest
+        version: 1.1.8(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-avatar':
+        specifier: latest
+        version: 1.1.11(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-checkbox':
+        specifier: latest
+        version: 1.3.3(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-collapsible':
+        specifier: latest
+        version: 1.1.12(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-context-menu':
+        specifier: latest
+        version: 2.2.16(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-dialog':
+        specifier: latest
+        version: 1.1.15(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-dropdown-menu':
+        specifier: latest
+        version: 2.1.16(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-hover-card':
+        specifier: latest
+        version: 1.1.15(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-label':
+        specifier: latest
+        version: 2.1.8(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-menubar':
+        specifier: latest
+        version: 1.1.16(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-navigation-menu':
+        specifier: latest
+        version: 1.2.14(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-popover':
+        specifier: latest
+        version: 1.1.15(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-progress':
+        specifier: latest
+        version: 1.1.8(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-radio-group':
+        specifier: latest
+        version: 1.3.8(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-scroll-area':
+        specifier: latest
+        version: 1.2.10(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-select':
+        specifier: latest
+        version: 2.2.6(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-separator':
+        specifier: latest
+        version: 1.1.8(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-slider':
+        specifier: latest
+        version: 1.3.6(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-slot':
+        specifier: latest
+        version: 1.2.4(@types/react@19.2.2)(react@19.2.0)
+      '@radix-ui/react-switch':
+        specifier: latest
+        version: 1.2.6(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-tabs':
+        specifier: latest
+        version: 1.1.13(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-toast':
+        specifier: latest
+        version: 1.2.15(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-toggle':
+        specifier: latest
+        version: 1.1.10(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-toggle-group':
+        specifier: latest
+        version: 1.1.11(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@radix-ui/react-tooltip':
+        specifier: latest
+        version: 1.2.8(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@react-email/render':
+        specifier: latest
+        version: 2.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@stackframe/stack':
+        specifier: latest
+        version: 2.8.49(@aws-sdk/credential-provider-web-identity@3.927.0)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(next@15.2.4(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@stripe/stripe-js':
+        specifier: latest
+        version: 8.3.0
+      '@tidbcloud/serverless':
+        specifier: latest
+        version: 0.2.0
+      '@types/better-sqlite3':
+        specifier: latest
+        version: 7.6.13
+      '@types/node':
+        specifier: latest
+        version: 24.10.0
+      '@types/pg':
+        specifier: latest
+        version: 8.15.6
+      '@types/react':
+        specifier: latest
+        version: 19.2.2
+      '@types/react-dom':
+        specifier: latest
+        version: 19.2.2(@types/react@19.2.2)
+      '@types/sql.js':
+        specifier: latest
+        version: 1.4.9
+      '@upstash/redis':
+        specifier: latest
+        version: 1.35.6
+      '@vercel/postgres':
+        specifier: latest
+        version: 0.10.0
+      '@xata.io/client':
+        specifier: latest
+        version: 0.30.1(typescript@5.9.3)
+      bcryptjs:
+        specifier: latest
+        version: 3.0.3
+      better-sqlite3:
+        specifier: latest
+        version: 12.4.1
+      bun-types:
+        specifier: latest
+        version: 1.3.2(@types/react@19.2.2)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      cmdk:
+        specifier: latest
+        version: 1.1.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      dotenv:
+        specifier: latest
+        version: 17.2.3
+      drizzle-kit:
+        specifier: latest
+        version: 0.31.6
+      drizzle-orm:
+        specifier: latest
+        version: 0.44.7(19d38300beca806babbddf3835009e90)
+      embla-carousel-react:
+        specifier: latest
+        version: 8.6.0(react@19.2.0)
+      expo-sqlite:
+        specifier: latest
+        version: 16.0.9(expo@54.0.23(@babel/core@7.28.5)(bufferutil@4.0.9)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.2.0))(react@19.2.0))(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.2.0))(react@19.2.0)
+      fs:
+        specifier: latest
+        version: 0.0.1-security
+      gel:
+        specifier: latest
+        version: 2.1.1
+      http:
+        specifier: latest
+        version: 0.0.1-security
+      https:
+        specifier: latest
+        version: 1.0.0
+      input-otp:
+        specifier: latest
+        version: 1.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      jose:
+        specifier: latest
+        version: 6.1.0
+      knex:
+        specifier: latest
+        version: 3.1.0(better-sqlite3@12.4.1)(mysql2@3.15.3)(pg@8.16.3)(sqlite3@5.1.7)
+      kysely:
+        specifier: latest
+        version: 0.28.8
+      lucide-react:
+        specifier: ^0.454.0
+        version: 0.454.0(react@19.2.0)
+      mysql2:
+        specifier: latest
+        version: 3.15.3
+      next-themes:
+        specifier: latest
+        version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      path:
+        specifier: latest
+        version: 0.12.7
+      pg:
+        specifier: latest
+        version: 8.16.3
+      postgres:
+        specifier: latest
+        version: 3.4.7
+      react-day-picker:
+        specifier: latest
+        version: 9.11.1(react@19.2.0)
+      react-hook-form:
+        specifier: latest
+        version: 7.66.0(react@19.2.0)
+      react-resizable-panels:
+        specifier: latest
+        version: 3.0.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      recharts:
+        specifier: latest
+        version: 3.3.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react-is@18.3.1)(react@19.2.0)(redux@5.0.1)
+      resend:
+        specifier: latest
+        version: 6.4.2(@react-email/render@2.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
+      sonner:
+        specifier: latest
+        version: 2.0.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      sql.js:
+        specifier: latest
+        version: 1.13.0
+      sqlite3:
+        specifier: latest
+        version: 5.1.7
+      stripe:
+        specifier: latest
+        version: 19.3.0(@types/node@24.10.0)
+      tailwind-merge:
+        specifier: ^2.5.5
+        version: 2.6.0
+      tailwindcss-animate:
+        specifier: ^1.0.7
+        version: 1.0.7
+      url:
+        specifier: latest
+        version: 0.11.4
+      vaul:
+        specifier: latest
+        version: 1.1.2(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
     devDependencies:
+      postcss:
+        specifier: ^8.5
+        version: 8.5.6
       turbo:
         specifier: ^2.0.0
         version: 2.6.0
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5
         version: 5.9.3
 
   apps/web:
@@ -3019,6 +3296,9 @@ packages:
 
   '@types/node@22.19.0':
     resolution: {integrity: sha512-xpr/lmLPQEj+TUnHmR+Ab91/glhJvsqcjB+yY0Ix9GO70H6Lb4FHH5GeqdOE5btAx7eIMwuHkp4H2MSkLcqWbA==}
+
+  '@types/node@24.10.0':
+    resolution: {integrity: sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==}
 
   '@types/pg@8.11.6':
     resolution: {integrity: sha512-/2WmmBXHLsfRqzfHW7BNZ8SbYzE8OSk7i3WjFYvfgRHj7S1xj+16Je5fUKv3lVdVzk/zn9TXOqf+avFCFIE0yQ==}
@@ -6965,6 +7245,9 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+
   undici@6.22.0:
     resolution: {integrity: sha512-hU/10obOIu62MGYjdskASR3CUAiYaFTtC9Pa6vHyf//mAipSvSQg6od2CnJswq7fvzNS3zJhxoRkgNVaHurWKw==}
     engines: {node: '>=18.17'}
@@ -8997,14 +9280,14 @@ snapshots:
     dependencies:
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       jest-mock: 29.7.0
 
   '@jest/fake-timers@29.7.0':
     dependencies:
       '@jest/types': 29.6.3
       '@sinonjs/fake-timers': 10.3.0
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       jest-message-util: 29.7.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
@@ -9038,7 +9321,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       '@types/yargs': 17.0.34
       chalk: 4.1.2
 
@@ -10513,6 +10796,41 @@ snapshots:
       - aws-crt
       - buffer
 
+  '@stackframe/stack@2.8.49(@aws-sdk/credential-provider-web-identity@3.927.0)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(next@15.2.4(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@hookform/resolvers': 3.10.0(react-hook-form@7.66.0(react@19.2.0))
+      '@oslojs/otp': 1.1.0
+      '@simplewebauthn/browser': 11.0.0
+      '@stackframe/stack-sc': 2.8.49(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(next@15.2.4(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@stackframe/stack-shared': 2.8.49(@aws-sdk/credential-provider-web-identity@3.927.0)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(yup@1.7.1)
+      '@stackframe/stack-ui': 2.8.49(@aws-sdk/credential-provider-web-identity@3.927.0)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(yup@1.7.1)
+      '@tanstack/react-table': 8.21.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      browser-image-compression: 2.0.2
+      color: 4.2.3
+      cookie: 0.6.0
+      jose: 5.10.0
+      js-cookie: 3.0.5
+      lucide-react: 0.378.0(react@19.2.0)
+      next: 15.2.4(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      oauth4webapi: 2.17.0
+      qrcode: 1.5.4
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+      react-easy-crop: 5.5.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      react-hook-form: 7.66.0(react@19.2.0)
+      rimraf: 5.0.10
+      tailwindcss-animate: 1.0.7
+      tsx: 4.20.6
+      yup: 1.7.1
+    optionalDependencies:
+      '@types/react': 19.2.2
+      '@types/react-dom': 19.2.2(@types/react@19.2.2)
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-provider-web-identity'
+      - aws-crt
+      - buffer
+      - tailwindcss
+
   '@stackframe/stack@2.8.49(@aws-sdk/credential-provider-web-identity@3.927.0)(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(next@15.2.4(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(tailwindcss@3.4.18(tsx@4.20.6)(yaml@2.8.1))':
     dependencies:
       '@hookform/resolvers': 3.10.0(react-hook-form@7.66.0(react@19.2.0))
@@ -10603,7 +10921,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
 
   '@types/d3-array@3.2.2': {}
 
@@ -10635,7 +10953,7 @@ snapshots:
 
   '@types/graceful-fs@4.1.9':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
 
   '@types/istanbul-lib-coverage@2.0.6': {}
 
@@ -10657,15 +10975,19 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/node@24.10.0':
+    dependencies:
+      undici-types: 7.16.0
+
   '@types/pg@8.11.6':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       pg-protocol: 1.10.3
       pg-types: 4.1.0
 
   '@types/pg@8.15.6':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       pg-protocol: 1.10.3
       pg-types: 2.2.0
 
@@ -10680,7 +11002,7 @@ snapshots:
   '@types/sql.js@1.4.9':
     dependencies:
       '@types/emscripten': 1.41.5
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
 
   '@types/stack-utils@2.0.3': {}
 
@@ -10688,7 +11010,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -11313,7 +11635,7 @@ snapshots:
 
   bun-types@1.3.2(@types/react@19.2.2):
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       '@types/react': 19.2.2
 
   busboy@1.6.0:
@@ -11404,7 +11726,7 @@ snapshots:
 
   chrome-launcher@0.15.2:
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -11413,7 +11735,7 @@ snapshots:
 
   chromium-edge-launcher@0.2.0:
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -12923,7 +13245,7 @@ snapshots:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
@@ -12933,7 +13255,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.9
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -12960,7 +13282,7 @@ snapshots:
   jest-mock@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       jest-util: 29.7.0
 
   jest-regex-util@29.6.3: {}
@@ -12968,7 +13290,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -12985,7 +13307,7 @@ snapshots:
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 24.10.0
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -14407,6 +14729,26 @@ snapshots:
       - '@types/react'
       - redux
 
+  recharts@3.3.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react-is@18.3.1)(react@19.2.0)(redux@5.0.1):
+    dependencies:
+      '@reduxjs/toolkit': 2.10.1(react-redux@9.2.0(@types/react@19.2.2)(react@19.2.0)(redux@5.0.1))(react@19.2.0)
+      clsx: 2.1.1
+      decimal.js-light: 2.5.1
+      es-toolkit: 1.41.0
+      eventemitter3: 5.0.1
+      immer: 10.2.0
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+      react-is: 18.3.1
+      react-redux: 9.2.0(@types/react@19.2.2)(react@19.2.0)(redux@5.0.1)
+      reselect: 5.1.1
+      tiny-invariant: 1.3.3
+      use-sync-external-store: 1.6.0(react@19.2.0)
+      victory-vendor: 37.3.6
+    transitivePeerDependencies:
+      - '@types/react'
+      - redux
+
   rechoir@0.8.0:
     dependencies:
       resolve: 1.22.11
@@ -14920,6 +15262,12 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.19.0
 
+  stripe@19.3.0(@types/node@24.10.0):
+    dependencies:
+      qs: 6.14.0
+    optionalDependencies:
+      '@types/node': 24.10.0
+
   strnum@2.1.1: {}
 
   structured-headers@0.4.1: {}
@@ -14976,6 +15324,8 @@ snapshots:
       use-sync-external-store: 1.6.0(react@19.2.0)
 
   tailwind-merge@2.6.0: {}
+
+  tailwindcss-animate@1.0.7: {}
 
   tailwindcss-animate@1.0.7(tailwindcss@3.4.18(tsx@4.20.6)(yaml@2.8.1)):
     dependencies:
@@ -15204,6 +15554,8 @@ snapshots:
   uncrypto@0.1.3: {}
 
   undici-types@6.21.0: {}
+
+  undici-types@7.16.0: {}
 
   undici@6.22.0: {}
 

@@ -2,7 +2,7 @@
 
 ## 📦 目标结构
 
-```
+\`\`\`
 quadrants/                              # 新的Git根目录
 ├── apps/
 │   ├── web/                           # 🌐 Next.js网页版
@@ -47,13 +47,13 @@ quadrants/                              # 新的Git根目录
 ├── tsconfig.json                      # 根TypeScript配置
 ├── .gitignore
 └── README.md
-```
+\`\`\`
 
 ---
 
 ## 🔧 Workspace配置（package.json）
 
-```json
+\`\`\`json
 {
   "name": "quadrants-monorepo",
   "version": "1.0.0",
@@ -78,7 +78,7 @@ quadrants/                              # 新的Git根目录
     "typescript": "^5.3.3"
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -86,7 +86,7 @@ quadrants/                              # 新的Git根目录
 
 ### packages/shared/types/index.ts
 
-```typescript
+\`\`\`typescript
 // ✅ 100%代码复用
 export interface Task {
   id: number
@@ -115,11 +115,11 @@ export interface Comment {
 }
 
 // ... 所有类型定义
-```
+\`\`\`
 
 ### packages/shared/utils/priority.ts
 
-```typescript
+\`\`\`typescript
 // ✅ 100%代码复用
 export function calculatePriorityScore(
   urgency: number,
@@ -147,11 +147,11 @@ export function getQuadrantColor(
   if (urgency >= 50 && importance < 50) return "#f59e0b"
   return "#6b7280"
 }
-```
+\`\`\`
 
 ### packages/shared/api/tasks.ts
 
-```typescript
+\`\`\`typescript
 // ✅ 100%代码复用
 import { Task } from '../types'
 
@@ -180,11 +180,11 @@ export async function createTask(
 }
 
 // ... 所有API方法
-```
+\`\`\`
 
 ### packages/shared/api/ai.ts
 
-```typescript
+\`\`\`typescript
 // ✅ 100%代码复用 - AI功能核心
 export interface TaskPrediction {
   description: string
@@ -205,7 +205,7 @@ export async function predictTaskPriorities(
   const result = await response.json()
   return result.predictions
 }
-```
+\`\`\`
 
 ---
 
@@ -213,7 +213,7 @@ export async function predictTaskPriorities(
 
 ### apps/web/package.json
 
-```json
+\`\`\`json
 {
   "name": "web",
   "version": "1.0.0",
@@ -231,11 +231,11 @@ export async function predictTaskPriorities(
     "@quadrants/database": "workspace:*"
   }
 }
-```
+\`\`\`
 
 ### apps/web/components/TaskList.tsx
 
-```typescript
+\`\`\`typescript
 // 使用共享类型和工具
 import { Task } from '@quadrants/shared/types'
 import { calculatePriorityScore } from '@quadrants/shared/utils/priority'
@@ -252,7 +252,7 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
     </div>
   )
 }
-```
+\`\`\`
 
 ---
 
@@ -260,7 +260,7 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
 
 ### apps/mobile/package.json
 
-```json
+\`\`\`json
 {
   "name": "mobile",
   "version": "1.0.0",
@@ -277,11 +277,11 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
     "@quadrants/shared": "workspace:*"
   }
 }
-```
+\`\`\`
 
 ### apps/mobile/components/TaskList.tsx
 
-```typescript
+\`\`\`typescript
 // 使用相同的共享代码，但UI层用React Native
 import { View, Text, FlatList } from 'react-native'
 import { Task } from '@quadrants/shared/types'
@@ -300,7 +300,7 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
     />
   )
 }
-```
+\`\`\`
 
 ---
 
@@ -310,7 +310,7 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
 
 #### 共享逻辑（packages/shared/api/ai.ts）
 
-```typescript
+\`\`\`typescript
 // ✅ 100%复用
 export async function bulkAddTasks(
   descriptions: string[],
@@ -333,11 +333,11 @@ export async function bulkAddTasks(
 
   return tasks
 }
-```
+\`\`\`
 
 #### Web UI（apps/web/components/BulkTaskInput.tsx）
 
-```typescript
+\`\`\`typescript
 import { useState } from 'react'
 import { bulkAddTasks } from '@quadrants/shared/api/ai'
 
@@ -356,11 +356,11 @@ export function BulkTaskInput() {
     </div>
   )
 }
-```
+\`\`\`
 
 #### Mobile UI（apps/mobile/components/QuickAdd.tsx）
 
-```typescript
+\`\`\`typescript
 import { useState } from 'react'
 import { View, TextInput, Button } from 'react-native'
 import { bulkAddTasks } from '@quadrants/shared/api/ai'
@@ -380,7 +380,7 @@ export function QuickAdd() {
     </View>
   )
 }
-```
+\`\`\`
 
 **关键**: AI预测逻辑完全相同，只有UI不同！
 
@@ -390,7 +390,7 @@ export function QuickAdd() {
 
 ### 根目录vercel.json
 
-```json
+\`\`\`json
 {
   "version": 2,
   "builds": [
@@ -403,22 +403,22 @@ export function QuickAdd() {
     }
   ]
 }
-```
+\`\`\`
 
 ### apps/web/vercel.json
 
-```json
+\`\`\`json
 {
   "buildCommand": "cd ../.. && npx turbo run build --filter=web",
   "outputDirectory": ".next",
   "installCommand": "npm install --prefix ../..",
   "framework": "nextjs"
 }
-```
+\`\`\`
 
 ### 部署流程
 
-```bash
+\`\`\`bash
 # 1. 改动Web代码
 git add apps/web/
 git commit -m "feat: update web UI"
@@ -449,7 +449,7 @@ git push
 ↓ 只有mobile变更
 ↓ Web无需重新构建
 ↓ 不触发部署（节省时间）
-```
+\`\`\`
 
 ---
 
@@ -472,30 +472,30 @@ git push
 - ✅ 配置文档
 
 ### 阶段2: 创建Monorepo结构（1天）
-```bash
+\`\`\`bash
 1. 创建新目录quadrants/
 2. 移动现有项目到apps/web/
 3. 创建packages/shared/
 4. 提取共享代码
 5. 配置workspace
-```
+\`\`\`
 
 ### 阶段3: 创建React Native应用（2周）
-```bash
+\`\`\`bash
 1. 创建apps/mobile/
 2. 配置Expo
 3. 实现List View
 4. 实现Quick Add
 5. 集成共享API
-```
+\`\`\`
 
 ### 阶段4: 完善和优化（1周）
-```bash
+\`\`\`bash
 1. 优化构建配置
 2. 添加测试
 3. 完善文档
 4. 性能优化
-```
+\`\`\`
 
 ---
 
@@ -516,7 +516,7 @@ git push
 
 ### 一次修改，多端同步
 
-```typescript
+\`\`\`typescript
 // 场景：修改优先级计算公式
 // 位置：packages/shared/utils/priority.ts
 
@@ -534,7 +534,7 @@ export function calculatePriorityScore(u: number, i: number) {
 ✅ Web应用自动使用新公式
 ✅ Mobile应用自动使用新公式
 ✅ 无需任何额外代码
-```
+\`\`\`
 
 ---
 

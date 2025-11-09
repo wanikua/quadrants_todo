@@ -3,7 +3,7 @@
 ## 当前部署（单一项目）
 
 ### 自动部署流程
-```bash
+\`\`\`bash
 git add .
 git commit -m "update"
 git push origin main
@@ -13,7 +13,7 @@ v0.dev 自动检测
 自动构建和部署
 ↓
 网站更新
-```
+\`\`\`
 
 ### 配置文件
 - `v0.config.json` - v0.dev配置
@@ -26,7 +26,7 @@ v0.dev 自动检测
 当我们转换为monorepo结构后，v0.dev配置将调整为：
 
 ### 目录结构（未来）
-```
+\`\`\`
 quadrants/                    # Git根目录
 ├── apps/
 │   ├── web/                 # Next.js网页版
@@ -39,10 +39,10 @@ quadrants/                    # Git根目录
 │   └── shared/              # 共享代码
 ├── v0.config.json           # 更新后的配置
 └── package.json             # Workspace配置
-```
+\`\`\`
 
 ### v0.config.json（Monorepo版本）
-```json
+\`\`\`json
 {
   "buildCommand": "cd apps/web && npm run build",
   "outputDirectory": "apps/web/.next",
@@ -51,10 +51,10 @@ quadrants/                    # Git根目录
   "framework": "nextjs",
   "rootDirectory": "apps/web"
 }
-```
+\`\`\`
 
 ### package.json（Workspace配置）
-```json
+\`\`\`json
 {
   "name": "quadrants-monorepo",
   "private": true,
@@ -68,7 +68,7 @@ quadrants/                    # Git根目录
     "dev:mobile": "npm run dev --workspace=apps/mobile"
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -95,22 +95,22 @@ quadrants/                    # Git根目录
 ## 迁移步骤（当monorepo就绪时）
 
 ### 步骤1: 更新v0.config.json
-```bash
+\`\`\`bash
 # 更新配置文件指向apps/web
-```
+\`\`\`
 
 ### 步骤2: 推送到GitHub
-```bash
+\`\`\`bash
 git add .
 git commit -m "chore: migrate to monorepo structure"
 git push origin main
-```
+\`\`\`
 
 ### 步骤3: 验证部署
-```bash
+\`\`\`bash
 # v0.dev自动检测新配置
 # 检查构建日志确保成功
-```
+\`\`\`
 
 ---
 
@@ -118,19 +118,19 @@ git push origin main
 
 确保在v0.dev项目设置中配置：
 
-```bash
+\`\`\`bash
 DATABASE_URL=postgresql://...
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 QWEN_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
-```
+\`\`\`
 
 ---
 
 ## 测试当前部署
 
-```bash
+\`\`\`bash
 # 本地测试
 npm run build
 npm run start
@@ -139,7 +139,7 @@ npm run start
 
 # 推送部署
 git push origin main
-```
+\`\`\`
 
 ---
 
