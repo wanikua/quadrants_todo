@@ -29,3 +29,9 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# Mobile app (deployed separately via Expo)
+mobile/
+
+# Shared package source (only needs to be in node_modules)
+packages/shared/node_modules
