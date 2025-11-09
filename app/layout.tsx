@@ -5,6 +5,8 @@ import { Toaster } from "sonner"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
 
+export const dynamic = 'force-dynamic'
+
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -36,6 +38,10 @@ export default function RootLayout({
   return (
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/projects"
+      afterSignUpUrl="/projects"
       appearance={{
         baseTheme: undefined,
         variables: {
