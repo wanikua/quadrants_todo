@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-rds-data": "latest",
-    "@clerk/nextjs": "5.7.1",
+    "@clerk/nextjs": "latest",
     "@cloudflare/workers-types": "latest",
     "@electric-sql/pglite": "latest",
     "@eslint/eslintrc": "latest",
