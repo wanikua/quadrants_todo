@@ -12,30 +12,63 @@ import {
 
 // Base URL will be different for web vs mobile
 let baseUrl = ''
+// Auth token getter function (will be set by mobile app)
+let getAuthToken: (() => Promise<string | null>) | null = null
 
 export function setBaseUrl(url: string) {
   baseUrl = url
 }
 
-// Helper function for API calls
+export function setAuthTokenGetter(getter: () => Promise<string | null>) {
+  getAuthToken = getter
+}
+
+// Helper function for API calls with timeout
 async function apiCall<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
-  const response = await fetch(`${baseUrl}${endpoint}`, {
-    ...options,
-    headers: {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+  try {
+    // Get auth token if getter is available
+    const token = getAuthToken ? await getAuthToken() : null
+
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
+      ...options?.headers as Record<string, string>,
+    }
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }))
-    throw new Error(error.error || `HTTP ${response.status}`)
+    // Add Authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+      console.log('[API] Sending request with token:', token.substring(0, 20) + '...')
+    } else {
+      console.log('[API] No auth token available')
+    }
+
+    const response = await fetch(`${baseUrl}${endpoint}`, {
+      ...options,
+      signal: controller.signal,
+      headers,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Network error' }))
+      throw new Error(error.error || `HTTP ${response.status}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('请求超时，请检查网络连接')
+    }
+    throw error
   }
-
-  return response.json()
 }
 
 // ===== TASK OPERATIONS =====
@@ -173,7 +206,8 @@ export async function joinProject(inviteCode: string): Promise<Project> {
 // ===== SYNC OPERATIONS =====
 
 export async function syncProjectData(projectId: string): Promise<SyncData> {
-  return apiCall(`/api/projects/${projectId}/sync`)
+  const response = await apiCall<{ success: boolean; data: SyncData }>(`/api/projects/${projectId}/sync`)
+  return response.data
 }
 
 export async function updateUserActivity(projectId: string): Promise<void> {

@@ -212,8 +212,10 @@ export async function getCurrentUser(): Promise<User | null> {
   // Try Clerk authentication first
   try {
     const { userId: clerkUserId } = await auth()
+    console.log('[Auth] Clerk userId:', clerkUserId)
     if (clerkUserId) {
       const clerkUser = await currentUser()
+      console.log('[Auth] Clerk user:', clerkUser ? 'found' : 'not found')
       if (clerkUser) {
         const email = clerkUser.emailAddresses[0]?.emailAddress || ''
 
