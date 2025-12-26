@@ -25,9 +25,6 @@ export const metadata: Metadata = {
   title: "Quadrant Task Manager",
   description: "Manage your tasks with the Eisenhower Matrix",
   generator: 'v0.app',
-  icons: {
-    icon: '/Original Logo Symbol.png',
-  }
 }
 
 export default function RootLayout({
@@ -54,29 +51,29 @@ export default function RootLayout({
           colorNeutral: "#FFFFFF",
           colorInputBackground: "#FFFFFF",
           colorInputText: "#000000",
-          borderRadius: "20px",
+          borderRadius: "0px",
         },
         elements: {
           rootBox: "bg-white",
-          card: "bg-white border-[3px] border-black shadow-2xl rounded-[20px]",
+          card: "bg-white border-[3px] border-black shadow-bold rounded-2xl",
           main: "bg-white",
           body: "bg-white",
           navbar: "bg-white",
           page: "bg-white",
           pageScrollBox: "bg-white",
           footer: "bg-white",
-          formButtonPrimary: "bg-black hover:bg-gray-800 text-white transition-all duration-[1200ms] ease-[ease] font-bold rounded-[20px] shadow-lg hover:shadow-2xl hover:scale-[1.02]",
+          formButtonPrimary: "bg-black hover:bg-gray-800 text-white transition-all duration-200 font-bold rounded-xl shadow-bold hover:shadow-bold-hover",
           headerTitle: "text-black font-bold text-3xl",
-          headerSubtitle: "text-gray-700",
-          socialButtonsBlockButton: "border-[3px] border-black text-black hover:bg-black hover:text-white transition-all duration-[1200ms] ease-[ease] rounded-[20px] font-bold",
+          headerSubtitle: "text-gray-600",
+          socialButtonsBlockButton: "border-[3px] border-black text-black hover:bg-gray-50 transition-all duration-200 rounded-xl font-bold shadow-bold-sm hover:shadow-bold",
           formFieldLabel: "text-black font-bold",
-          formFieldInput: "border-[3px] border-black focus:border-black transition-all duration-[1200ms] ease-[ease] bg-white rounded-[20px] font-medium",
+          formFieldInput: "border-[3px] border-black focus:border-black transition-all duration-200 bg-white rounded-xl",
           formFieldInputShowPasswordButton: "text-black",
-          footerActionLink: "text-black hover:text-gray-600 transition-colors duration-[1200ms] ease-[ease] font-bold underline",
+          footerActionLink: "text-black hover:text-gray-600 transition-colors duration-200 font-bold underline",
           identityPreviewText: "text-black",
           identityPreviewEditButton: "text-black font-bold",
-          alternativeMethodsBlockButton: "border-[3px] border-black text-black hover:bg-black hover:text-white rounded-[20px] font-bold",
-          otpCodeFieldInput: "border-[3px] border-black focus:border-black rounded-[20px]",
+          alternativeMethodsBlockButton: "border-[3px] border-black text-black hover:bg-gray-50 rounded-xl font-bold shadow-bold-sm",
+          otpCodeFieldInput: "border-[3px] border-black focus:border-black rounded-xl",
         },
         layout: {
           socialButtonsPlacement: "bottom",

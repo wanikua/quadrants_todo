@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Grid3x3, Zap, Users, CheckCircle2 } from "lucide-react"
 import { ScrollReveal } from "@/components/scroll-reveal"
 import { Footer } from "@/components/footer"
 import { useEffect, useState } from "react"
@@ -14,7 +14,6 @@ export default function HomePage() {
   const { isSignedIn, isLoaded } = useUser()
 
   useEffect(() => {
-    // Hide loading overlay after animation
     const timer = setTimeout(() => {
       setIsLoading(false)
     }, 2000)
@@ -35,35 +34,33 @@ export default function HomePage() {
               height={120}
               className="w-[120px] h-[120px] object-contain animate-pulse-scale"
             />
-            <div className="absolute -inset-4 bg-gradient-to-r from-blue-300/20 via-gray-300/20 to-yellow-300/20 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute -inset-4 bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-yellow-400/20 rounded-full blur-2xl animate-pulse"></div>
           </div>
         </div>
       )}
-      {/* Grid Pattern */}
-      <div className="fixed inset-0 grid-pattern pointer-events-none z-0"></div>
 
-      {/* Soft Gradient Background */}
+      {/* 新的背景设计 - 保留 */}
+      {/* Animated gradient background */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute -top-1/2 -left-1/4 w-[800px] h-[800px] bg-gradient-to-br from-blue-100/20 via-gray-100/20 to-transparent rounded-full blur-3xl animate-blob"></div>
-        <div className="absolute top-1/4 -right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-blue-100/20 via-gray-100/20 to-transparent rounded-full blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-blue-200/40 via-purple-200/30 to-transparent rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-yellow-200/30 via-orange-200/20 to-transparent rounded-full blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-r from-purple-100/20 to-transparent rounded-full blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
       </div>
 
-      {/* Gradient fade near header - Positioned with content */}
+      {/* Subtle grid overlay */}
+      <div className="fixed inset-0 opacity-[0.015] pointer-events-none z-0" style={{
+        backgroundImage: `radial-gradient(circle, #000 1px, transparent 1px)`,
+        backgroundSize: '50px 50px'
+      }}></div>
+
+      {/* Gradient fade near header */}
       <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-white via-white to-transparent pointer-events-none z-10"></div>
 
-      {/* Floating decorative circles */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-32 left-[8%] w-20 h-20 rounded-full bg-blue-200 opacity-25 animate-float-gentle"></div>
-        <div className="absolute top-48 right-[15%] w-16 h-16 rounded-full bg-yellow-200 opacity-30 animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-[40%] right-[8%] w-24 h-24 rounded-full bg-gray-200 opacity-20 animate-float-gentle" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-[25%] left-[12%] w-18 h-18 rounded-full bg-blue-200 opacity-25 animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
-      </div>
-
-      {/* Header */}
+      {/* 原有的Header样式 - 恢复 */}
       <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b-[3px] border-black/10">
         <div className="w-full px-[4%] md:px-[10%]">
           <div className="h-24 flex items-center justify-between">
-            {/* Logo - Left aligned */}
+            {/* Logo */}
             <Link href="/" className="flex items-center group">
               <div className="relative">
                 <Image
@@ -76,7 +73,7 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Navigation - Right aligned */}
+            {/* Navigation */}
             <nav className="flex items-center gap-3 md:gap-4">
               {isLoaded && isSignedIn ? (
                 <Link href="/projects">
@@ -113,7 +110,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - 恢复原样式 */}
       <main className="pt-48 pb-32 px-[4%] md:px-[10%]">
         <div className="max-w-7xl mx-auto">
           {/* Heading */}
@@ -129,12 +126,10 @@ export default function HomePage() {
 
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed animate-on-load animate-fade-in-up animation-delay-200">
               The simplest todo management. Yet the most <span className="text-highlight-purple">powerful</span>.
-              <br />
-              
             </p>
           </div>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - 恢复原样式 */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-32 animate-on-load animate-fade-scale animation-delay-400 relative z-10">
             <Link href="/sign-up">
               <Button
@@ -156,70 +151,56 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mt-32">
-            <div className="group space-y-6 animate-on-load animate-fade-scale animation-delay-600 p-10 rounded-[20px] bg-white border-[3px] border-black hover:shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-3 hover:border-blue-500 cursor-pointer relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-gray-50/0 group-hover:from-blue-50/80 group-hover:to-gray-50/80 transition-all duration-[600ms] rounded-[17px]"></div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-blue-200 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
-
-              <div className="relative z-10">
-                <div className="w-16 h-16 rounded-[20px] bg-black flex items-center justify-center group-hover:bg-blue-600 transition-all duration-[600ms] group-hover:scale-110 group-hover:rotate-3">
-                  <div className="w-8 h-8 rounded-[10px] bg-white group-hover:animate-pulse"></div>
-                </div>
-                <h3 className="text-2xl font-bold text-black leading-tight mt-6">Overview</h3>
-                <p className="text-gray-700 leading-relaxed text-lg mt-6">
-                  See everything at once. <span className="text-highlight-purple">Priority is clear.</span>
-                </p>
-              </div>
+          {/* Features Grid - 保留彩色设计 */}
+          <section id="features" className="mb-32">
+            <div className="text-center mb-16 relative z-10">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                Everything you need to stay focused
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Simple, powerful features designed to help you work on what truly matters.
+              </p>
             </div>
 
-            <div className="group space-y-6 animate-on-load animate-fade-scale animation-delay-700 p-10 rounded-[20px] bg-white border-[3px] border-black hover:shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-3 hover:border-blue-500 cursor-pointer relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-gray-50/0 group-hover:from-blue-50/80 group-hover:to-gray-50/80 transition-all duration-[600ms] rounded-[17px]"></div>
-              <div className="absolute bottom-4 left-4 w-6 h-6 rounded-full bg-blue-300 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
-
-              <div className="relative z-10">
-                <div className="w-16 h-16 rounded-[20px] bg-black flex items-center justify-center group-hover:bg-blue-600 transition-all duration-[600ms] group-hover:scale-110 group-hover:rotate-3">
-                  <div className="w-8 h-8 rounded-[10px] bg-white group-hover:animate-pulse"></div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
+              {[
+                {
+                  icon: Grid3x3,
+                  title: "Visual Overview",
+                  description: "See all your tasks at a glance in the intuitive matrix view.",
+                  gradient: "from-blue-500 to-cyan-500"
+                },
+                {
+                  icon: Zap,
+                  title: "AI Smart Organize",
+                  description: "Let AI automatically categorize and prioritize your tasks.",
+                  gradient: "from-yellow-500 to-orange-500"
+                },
+                {
+                  icon: Users,
+                  title: "Team Collaboration",
+                  description: "Work together in real-time with your team members.",
+                  gradient: "from-green-500 to-emerald-500"
+                },
+                {
+                  icon: CheckCircle2,
+                  title: "Quick Capture",
+                  description: "Add multiple tasks instantly with natural language input.",
+                  gradient: "from-purple-500 to-pink-500"
+                },
+              ].map((feature, i) => (
+                <div key={i} className="group text-center bg-white/50 backdrop-blur-sm rounded-[20px] p-8 hover:bg-white transition-all duration-300 hover:shadow-lg">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
+                    <feature.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
                 </div>
-                <h3 className="text-2xl font-bold text-black leading-tight mt-6">Control</h3>
-                <p className="text-gray-700 leading-relaxed text-lg mt-6">
-                  Drag, drop, done. <span className="text-highlight-purple">Simple and full control.</span>
-                </p>
-              </div>
+              ))}
             </div>
+          </section>
 
-            <div className="group space-y-6 animate-on-load animate-fade-scale animation-delay-800 p-10 rounded-[20px] bg-white border-[3px] border-black hover:shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-3 hover:border-yellow-500 cursor-pointer relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-50/0 to-orange-50/0 group-hover:from-yellow-50/80 group-hover:to-orange-50/80 transition-all duration-[600ms] rounded-[17px]"></div>
-              <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-yellow-300 opacity-25 group-hover:opacity-45 transition-opacity duration-300"></div>
-
-              <div className="relative z-10">
-                <div className="w-16 h-16 rounded-[20px] bg-black flex items-center justify-center group-hover:bg-yellow-500 transition-all duration-[600ms] group-hover:scale-110 group-hover:rotate-3">
-                  <div className="w-8 h-8 rounded-[10px] bg-white group-hover:animate-pulse"></div>
-                </div>
-                <h3 className="text-2xl font-bold text-black leading-tight mt-6">Smart Organize</h3>
-                <p className="text-gray-700 leading-relaxed text-lg mt-6">
-                  AI learns your task habits. <span className="text-highlight-yellow">One click optimizes everything.</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="group space-y-6 animate-on-load animate-fade-scale animation-delay-900 p-10 rounded-[20px] bg-white border-[3px] border-black hover:shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-3 hover:border-blue-500 cursor-pointer relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-gray-50/0 group-hover:from-blue-50/80 group-hover:to-gray-50/80 transition-all duration-[600ms] rounded-[17px]"></div>
-              <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-blue-200 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
-
-              <div className="relative z-10">
-                <div className="w-16 h-16 rounded-[20px] bg-black flex items-center justify-center group-hover:bg-blue-600 transition-all duration-[600ms] group-hover:scale-110 group-hover:rotate-3">
-                  <div className="w-8 h-8 rounded-[10px] bg-white group-hover:animate-pulse"></div>
-                </div>
-                <h3 className="text-2xl font-bold text-black leading-tight mt-6">Teamwork</h3>
-                <p className="text-gray-700 leading-relaxed text-lg mt-6">
-                  Share projects. <span className="text-highlight-yellow">Assign tasks. Collaborate seamlessly.</span>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* User Experience Section */}
+          {/* User Experience Section - 恢复原样式 */}
           <div className="mt-48 space-y-32">
             {/* Section 1: Stop Wasting Time */}
             <ScrollReveal animation="fade-in-up">
@@ -240,6 +221,17 @@ export default function HomePage() {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/30 to-gray-100/30 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-100/30 to-gray-100/30 rounded-full blur-3xl"></div>
 
+                {/* SVG Illustration */}
+                <div className="absolute top-8 right-8 w-32 h-32 opacity-20">
+                  <Image
+                    src="/assets/decor_sitting.png"
+                    alt="Decoration"
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+
                 <div className="max-w-4xl mx-auto space-y-8 relative z-10">
                   <h2 className="text-4xl md:text-6xl font-bold text-black leading-[1.1]">
                     See your <span className="text-highlight-yellow">entire workload</span> in one glance
@@ -257,6 +249,17 @@ export default function HomePage() {
                 {/* Decorative shapes */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-yellow-200/30 to-orange-200/30 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-3xl"></div>
+
+                {/* SVG Illustration */}
+                <div className="absolute bottom-8 left-8 w-32 h-32 opacity-30">
+                  <Image
+                    src="/assets/decor_peeking.png"
+                    alt="Decoration"
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
 
                 <div className="max-w-4xl mx-auto space-y-8 relative z-10">
                   <h2 className="text-4xl md:text-6xl font-bold text-black leading-[1.1]">
