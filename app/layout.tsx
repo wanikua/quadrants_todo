@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter, Libre_Baskerville } from "next/font/google"
 import { Toaster } from "sonner"
 import { ClerkProvider } from "@clerk/nextjs"
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 export const dynamic = 'force-dynamic'
@@ -85,6 +86,7 @@ export default function RootLayout({
         <body className={`${inter.variable} ${libreBaskerville.variable} antialiased`}>
           {children}
           <Toaster />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
