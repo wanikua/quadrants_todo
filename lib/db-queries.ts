@@ -19,18 +19,43 @@ import { sql } from './db';
 /**
  * 获取用户可访问的所有项目
  * 包括：自己创建的项目 + 作为成员的项目
+ * Free用户只能访问最近编辑的2个项目
  */
 export async function getUserProjects(userId: string) {
-  return await sql`
-    SELECT DISTINCT
-      p.*,
-      (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
-    FROM projects p
-    LEFT JOIN project_members pm ON p.id = pm.project_id
-    WHERE (p.owner_id = ${userId} OR pm.user_id = ${userId})
-      AND (p.archived IS NULL OR p.archived = FALSE)
-    ORDER BY p.created_at DESC
+  // Get user subscription status
+  const userResult = await sql`
+    SELECT subscription_plan, subscription_status FROM users WHERE id = ${userId} LIMIT 1
   `;
+
+  const user = userResult[0];
+  const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active';
+
+  if (isPro) {
+    // Pro users can see all projects
+    return await sql`
+      SELECT DISTINCT
+        p.*,
+        (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
+      FROM projects p
+      LEFT JOIN project_members pm ON p.id = pm.project_id
+      WHERE (p.owner_id = ${userId} OR pm.user_id = ${userId})
+        AND (p.archived IS NULL OR p.archived = FALSE)
+      ORDER BY p.updated_at DESC NULLS LAST, p.created_at DESC
+    `;
+  } else {
+    // Free users can only see 2 most recently updated projects
+    return await sql`
+      SELECT DISTINCT
+        p.*,
+        (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
+      FROM projects p
+      LEFT JOIN project_members pm ON p.id = pm.project_id
+      WHERE (p.owner_id = ${userId} OR pm.user_id = ${userId})
+        AND (p.archived IS NULL OR p.archived = FALSE)
+      ORDER BY p.updated_at DESC NULLS LAST, p.created_at DESC
+      LIMIT 2
+    `;
+  }
 }
 
 /**

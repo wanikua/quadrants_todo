@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const isPro = user.subscription_plan === 'pro' && user.subscription_status === 'active'
 
     if (!isPro) {
-      // Count total existing projects for free users (max 3)
+      // Count total existing projects for free users (max 2)
       const projectCounts = await sql`
         SELECT COUNT(*) as total_count
         FROM projects
@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
 
       const { total_count } = projectCounts[0]
 
-      if (parseInt(total_count) >= 3) {
+      if (parseInt(total_count) >= 2) {
         return NextResponse.json({
-          error: "Free users can create up to 3 projects. Upgrade to Pro for unlimited projects.",
+          error: "Free users can create up to 2 projects. Upgrade to Pro for unlimited projects.",
           requiresUpgrade: true
         }, { status: 403 })
       }

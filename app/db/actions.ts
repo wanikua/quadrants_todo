@@ -286,6 +286,9 @@ export async function createTask(projectId: string, description: string, urgency
       }
     }
 
+    // Update project's updated_at timestamp
+    await updateProjectTimestamp(projectId)
+
     revalidatePath(`/projects/${projectId}`)
     return { success: true, task }
   } catch (error) {
@@ -340,6 +343,9 @@ export async function updateTask(taskId: number, urgency: number, importance: nu
       }
     }
 
+    // Update project's updated_at timestamp
+    await updateProjectTimestamp(taskList[0].project_id)
+
     revalidatePath(`/projects/${taskList[0].project_id}`)
     return { success: true }
   } catch (error) {
@@ -366,6 +372,10 @@ export async function deleteTask(taskId: number) {
 
     // Permanently delete the task
     await db.delete(tasks).where(eq(tasks.id, taskId))
+
+    // Update project's updated_at timestamp
+    await updateProjectTimestamp(taskList[0].project_id)
+
     revalidatePath(`/projects/${taskList[0].project_id}`)
     return { success: true }
   } catch (error) {
@@ -392,6 +402,10 @@ export async function completeTask(taskId: number) {
 
     // Archive task (complete = archive, not delete)
     await db.update(tasks).set({ archived: true }).where(eq(tasks.id, taskId))
+
+    // Update project's updated_at timestamp
+    await updateProjectTimestamp(taskList[0].project_id)
+
     revalidatePath(`/projects/${taskList[0].project_id}`)
     return { success: true }
   } catch (error) {
@@ -614,6 +628,19 @@ export async function fixPlayerNames() {
 }
 
 // Helper functions
+async function updateProjectTimestamp(projectId: string) {
+  if (!db) return
+
+  try {
+    await db
+      .update(projects)
+      .set({ updated_at: new Date() })
+      .where(eq(projects.id, projectId))
+  } catch (error) {
+    console.error('Error updating project timestamp:', error)
+  }
+}
+
 export async function getUserProjectAccess(userId: string, projectId: string): Promise<boolean> {
   if (!db) {
     console.warn('Database not available, allowing access')
@@ -628,7 +655,26 @@ export async function getUserProjectAccess(userId: string, projectId: string): P
       .where(and(eq(projects.id, projectId), eq(projects.owner_id, userId)))
 
     if (ownedProjects.length > 0) {
-      return true
+      // User is owner, now check if they have access based on subscription
+      const { getUser } = await import('@/lib/auth')
+      const user = await getUser()
+      const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active'
+
+      if (isPro) {
+        // Pro users have access to all their projects
+        return true
+      } else {
+        // Free users can only access their 2 most recently updated projects
+        const userProjects = await db
+          .select({ id: projects.id })
+          .from(projects)
+          .where(eq(projects.owner_id, userId))
+          .orderBy(desc(projects.updated_at), desc(projects.created_at))
+          .limit(2)
+
+        const accessibleProjectIds = userProjects.map(p => p.id)
+        return accessibleProjectIds.includes(projectId)
+      }
     }
 
     // Check if user is a member

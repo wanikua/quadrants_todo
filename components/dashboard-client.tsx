@@ -101,10 +101,17 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
       <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b-3 border-black">
         <div className="w-full px-[4%] md:px-[10%]">
           <div className="h-24 flex items-center justify-between">
-            <Link href="/" className="flex items-center group">
-              <div className="bg-yellow-300 border-3 border-black px-2 py-1 shadow-bold-sm transform -rotate-2 rounded-lg group-hover:rotate-0 transition-all">
-                <span className="text-xl font-black tracking-tight text-black">Q.</span>
+            <Link href="/" className="group relative flex items-center gap-3">
+              <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
+                <Image
+                  src="/Original Logo Symbol.jpeg"
+                  alt="Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+                />
               </div>
+              <span className="text-2xl font-black text-black tracking-tight">Quadrants</span>
             </Link>
             <div className="flex items-center gap-3">
               <Button
@@ -260,7 +267,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                     <>
                       <li className="flex items-start gap-3">
                         <Check className="w-5 h-5 text-black mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">Up to 3 projects</span>
+                        <span className="text-gray-700">Up to 2 projects</span>
                       </li>
                       <li className="flex items-start gap-3">
                         <Check className="w-5 h-5 text-black mt-0.5 flex-shrink-0" />
@@ -293,10 +300,6 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                         <Check className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-700">Priority support</span>
                       </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">Custom themes</span>
-                      </li>
                     </>
                   )}
                 </ul>
@@ -321,7 +324,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                     <h4 className="font-black text-black text-2xl">Upgrade to Pro</h4>
                   </div>
                   <p className="text-lg text-gray-800 mb-8 leading-relaxed font-medium">
-                    Get <span className="font-bold bg-yellow-200 px-1 border border-black rounded-md">unlimited projects</span>, advanced collaboration, priority support, and custom themes for just <span className="font-black">$9.90/month</span>.
+                    Get <span className="font-bold bg-yellow-200 px-1 border border-black rounded-md">unlimited projects</span>, advanced collaboration, and priority support for just <span className="font-black">$9.90/month</span>.
                   </p>
                   {stripeError && (
                     <div className="text-base text-red-900 bg-red-100 p-4 rounded-xl border-3 border-red-900 mb-6 font-bold">
