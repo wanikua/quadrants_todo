@@ -6,54 +6,59 @@ import { Footer } from "@/components/footer"
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Grid Pattern */}
-      <div className="fixed inset-0 grid-pattern pointer-events-none z-0"></div>
-
-      {/* Soft Gradient Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute -top-1/2 -left-1/4 w-[800px] h-[800px] bg-gradient-to-br from-purple-200/40 via-pink-200/40 to-transparent rounded-full blur-3xl animate-blob"></div>
-        <div className="absolute top-1/4 -right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-blue-200/40 via-purple-200/40 to-transparent rounded-full blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+    <div className="min-h-screen bg-white relative overflow-hidden font-sans selection:bg-yellow-200">
+      {/* Background Decorations */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[50vh] h-[50vh] bg-blue-100/40 rounded-full blur-[100px] animate-float opacity-70"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60vh] h-[60vh] bg-yellow-100/40 rounded-full blur-[100px] animate-float opacity-70" style={{ animationDelay: '2s' }}></div>
+        {/* Dot Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.4]" style={{
+          backgroundImage: 'radial-gradient(#e5e7eb 1.5px, transparent 1.5px)',
+          backgroundSize: '24px 24px'
+        }}>
+        </div>
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b-[3px] border-black/10">
-        <div className="w-full px-[4%] md:px-[10%]">
-          <div className="h-24 flex items-center justify-between">
-            <Link href="/" className="flex items-center group">
+      <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 shadow-sm">
+        <div className="w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link href="/" className="group relative flex items-center gap-3">
+            <div className="bg-white p-2 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
               <Image
                 src="/Original Logo Symbol.png"
                 alt="Logo"
-                width={70}
-                height={70}
-                className="w-[70px] h-[70px] object-contain transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:rotate-3"
+                width={50}
+                height={50}
+                className="w-10 h-10 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
               />
+            </div>
+            <span className="text-2xl font-black text-black tracking-tight">Quadrants</span>
+          </Link>
+
+          <nav className="flex items-center gap-4">
+            <Link href="/sign-in">
+              <Button variant="ghost" className="text-black hover:bg-gray-100 font-bold text-base px-4 h-auto rounded-xl">
+                Sign In
+              </Button>
             </Link>
-            <nav className="flex items-center gap-3 md:gap-4">
-              <Link href="/sign-in">
-                <Button variant="ghost" className="text-black hover:text-gray-600 hover:bg-gray-100/50 transition-all duration-[600ms] font-bold text-base md:text-lg px-4 md:px-6 rounded-[15px]">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button className="bg-black hover:bg-gray-800 text-white transition-all duration-[600ms] font-bold shadow-lg hover:shadow-2xl px-6 md:px-8 py-3 md:py-4 rounded-[15px] md:rounded-[20px] hover:scale-[1.05] text-base md:text-lg">
-                  Get Started
-                </Button>
-              </Link>
-            </nav>
-          </div>
+            <Link href="/sign-up">
+              <Button className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-bold-sm hover-lift-shadow font-bold rounded-xl px-6 py-2 h-auto text-base transition-all">
+                Get Started
+              </Button>
+            </Link>
+          </nav>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="pt-48 pb-32 px-[4%] md:px-[10%] relative z-10">
+      <main className="pt-32 pb-20 px-6 relative z-10">
         <div className="max-w-6xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-24">
-            <h1 className="text-5xl md:text-7xl font-bold text-black leading-[1.1] mb-8">
+            <h1 className="text-5xl md:text-7xl font-black text-black leading-[1.1] mb-8">
               Plans for everyone
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
               Start free. Upgrade when you need.
             </p>
           </div>
@@ -61,7 +66,7 @@ export default function PricingPage() {
           {/* Pricing Cards */}
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Plan */}
-            <div className="bg-white border-[3px] border-black rounded-[20px] p-10 hover:shadow-2xl transition-all duration-[600ms] hover:-translate-y-2">
+            <div className="bg-white border-3 border-black rounded-[2.5rem] p-10 shadow-bold-lg hover:-translate-y-2 transition-all duration-300">
               <div className="space-y-8">
                 <div>
                   <h3 className="text-3xl font-bold text-black mb-3">Free</h3>
@@ -92,7 +97,7 @@ export default function PricingPage() {
                 </ul>
 
                 <Link href="/sign-up" className="block">
-                  <Button className="w-full bg-white border-[3px] border-black text-black hover:bg-black hover:text-white transition-all duration-[600ms] font-bold py-6 text-lg rounded-[15px]">
+                  <Button className="w-full bg-white border-3 border-black text-black hover:bg-black hover:text-white transition-all duration-300 font-bold py-6 text-lg rounded-2xl shadow-bold">
                     Start Free
                   </Button>
                 </Link>
@@ -100,7 +105,7 @@ export default function PricingPage() {
             </div>
 
             {/* Pro Plan */}
-            <div className="bg-black text-white border-[3px] border-black rounded-[20px] p-10 hover:shadow-2xl transition-all duration-[600ms] hover:-translate-y-2 relative">
+            <div className="bg-black text-white border-3 border-black rounded-[2.5rem] p-10 shadow-bold-lg hover:-translate-y-2 transition-all duration-300 relative">
               <div className="space-y-8">
                 <div>
                   <h3 className="text-3xl font-bold mb-3">Pro</h3>
@@ -131,7 +136,7 @@ export default function PricingPage() {
                 </ul>
 
                 <Link href="/sign-up" className="block">
-                  <Button className="w-full bg-white text-black hover:bg-gray-100 transition-all duration-[600ms] font-bold py-6 text-lg rounded-[15px]">
+                  <Button className="w-full bg-white text-black hover:bg-gray-100 transition-all duration-300 font-bold py-6 text-lg rounded-2xl shadow-bold">
                     Get Pro
                   </Button>
                 </Link>
@@ -141,28 +146,28 @@ export default function PricingPage() {
 
           {/* FAQ Section */}
           <div className="mt-32 max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-black text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black text-black text-center mb-16">
               Frequently Asked Questions
             </h2>
 
             <div className="space-y-8">
-              <div className="bg-white border-[3px] border-black rounded-[20px] p-8">
+              <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 shadow-bold-lg">
                 <h3 className="text-2xl font-bold text-black mb-4">Can I cancel anytime?</h3>
-                <p className="text-gray-700 text-lg leading-relaxed">
+                <p className="text-gray-700 text-lg leading-relaxed font-medium">
                   Yes! You can cancel your Pro subscription at any time. Your Pro features will remain active until the end of your billing period.
                 </p>
               </div>
 
-              <div className="bg-white border-[3px] border-black rounded-[20px] p-8">
+              <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 shadow-bold-lg">
                 <h3 className="text-2xl font-bold text-black mb-4">What happens to my data if I downgrade?</h3>
-                <p className="text-gray-700 text-lg leading-relaxed">
+                <p className="text-gray-700 text-lg leading-relaxed font-medium">
                   Your data is always safe. Free users can have up to 3 projects. If you downgrade with more projects, you&apos;ll need to upgrade to create new ones.
                 </p>
               </div>
 
-              <div className="bg-white border-[3px] border-black rounded-[20px] p-8">
+              <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 shadow-bold-lg">
                 <h3 className="text-2xl font-bold text-black mb-4">Do you offer team pricing?</h3>
-                <p className="text-gray-700 text-lg leading-relaxed">
+                <p className="text-gray-700 text-lg leading-relaxed font-medium">
                   Currently, each team member needs their own Pro subscription. We&apos;re working on team pricing and will announce it soon!
                 </p>
               </div>

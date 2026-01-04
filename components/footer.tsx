@@ -52,7 +52,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm md:text-base font-bold text-black">
-              © 2025 Quadrants. All rights reserved.
+              © 2026 Quadrants. All rights reserved.
             </p>
           </div>
         </div>
