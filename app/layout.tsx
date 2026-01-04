@@ -22,8 +22,36 @@ const libreBaskerville = Libre_Baskerville({
 })
 
 export const metadata: Metadata = {
-  title: "Quadrant Task Manager",
-  description: "Manage your tasks with the Eisenhower Matrix",
+  title: "Quadrants: AI Task Manager",
+  description: "AI-powered task management. Minimal effort, maximum productivity.",
+  keywords: ["task manager", "AI task management", "Eisenhower Matrix", "productivity", "task organization", "priority matrix", "team collaboration", "quadrants"],
+  authors: [{ name: "Quadrants" }],
+  creator: "Quadrants",
+  publisher: "Quadrants",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://quadrants.ch",
+    title: "Quadrants: AI Task Manager",
+    description: "AI-powered task management. Minimal effort, maximum productivity.",
+    siteName: "Quadrants",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Quadrants: AI Task Manager",
+    description: "AI-powered task management. Minimal effort, maximum productivity.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   generator: 'v0.app',
 }
 
@@ -37,9 +65,11 @@ export default function RootLayout({
   return (
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      proxyUrl="https://clerk.quadrants.ch"
-      domain="clerk.quadrants.ch"
-      isSatellite={false}
+      {...(process.env.NODE_ENV === 'production' && {
+        proxyUrl: "https://clerk.quadrants.ch",
+        domain: "clerk.quadrants.ch",
+        isSatellite: false,
+      })}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
       afterSignInUrl="/projects"
@@ -83,8 +113,8 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en">
-        <body className={`${inter.variable} ${libreBaskerville.variable} antialiased`}>
+      <html lang="en" suppressHydrationWarning>
+        <body className={`${inter.variable} ${libreBaskerville.variable} antialiased`} suppressHydrationWarning>
           {children}
           <Toaster />
           <Analytics />

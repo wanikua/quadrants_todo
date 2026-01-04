@@ -3,7 +3,7 @@ import Image from "next/image"
 
 export function Footer() {
   return (
-    <footer className="border-t-[3px] border-black/10 mt-32 bg-white relative">
+    <footer className="mt-32 bg-gradient-to-b from-white to-gray-50/30 relative">
       <div className="px-[4%] md:px-[10%] py-16">
         <div className="max-w-7xl mx-auto">
           {/* Links */}

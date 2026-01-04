@@ -8,6 +8,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { Footer } from "@/components/footer"
 import { useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
+import QuadrantPlayground from "@/components/QuadrantPlayground"
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -52,16 +53,19 @@ export default function HomePage() {
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b-3 border-black">
+      <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 shadow-sm">
         <div className="w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="group relative">
-            <Image
-              src="/Original Logo Symbol.png"
-              alt="Logo"
-              width={50}
-              height={50}
-              className="w-12 h-12 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
-            />
+          <Link href="/" className="group relative flex items-center gap-3">
+            <div className="bg-white p-2 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
+              <Image
+                src="/Original Logo Symbol.png"
+                alt="Logo"
+                width={50}
+                height={50}
+                className="w-10 h-10 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+              />
+            </div>
+            <span className="text-2xl font-black text-black tracking-tight">Quadrants</span>
           </Link>
 
           <nav className="flex items-center gap-4">
@@ -93,7 +97,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
 
           {/* Hero Section */}
-          <div className="flex flex-col items-center text-center space-y-8 mb-24 lg:mb-32">
+          <div className="flex flex-col items-center text-center space-y-8 mb-12 lg:mb-16">
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-black leading-[1.1] tracking-tight animate-slide-up max-w-5xl">
               Minimal Effort, <br className="hidden md:block" />
               <span className="text-highlight-yellow inline-block mt-2 transform -rotate-1">Maximum Productivity</span>
@@ -120,39 +124,39 @@ export default function HomePage() {
             {/* Hero Image / Decoration */}
             <div className="mt-16 relative w-full max-w-4xl mx-auto aspect-[16/9] hidden md:block animate-scale-in" style={{ animationDelay: '0.3s' }}>
               <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-white to-transparent z-20"></div>
-              <div className="relative z-10 grid grid-cols-2 gap-8 p-8">
+              <div className="relative z-10 flex items-center justify-center gap-6 p-8">
                 {/* Floating Mockup Card Left - Bulk Add Simulation */}
-                <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-bold rotate-[-2deg] hover:rotate-0 transition-transform duration-500 w-[240px]">
-                  <div className="flex items-center gap-3 mb-4 border-b-2 border-dashed border-gray-100 pb-3">
-                    <div className="w-3 h-3 rounded-full bg-red-400 border border-black"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400 border border-black"></div>
+                <div className="bg-white border-3 border-black rounded-3xl p-8 shadow-bold rotate-[-2deg] hover:rotate-0 transition-transform duration-500 w-[320px]">
+                  <div className="flex items-center gap-4 mb-5 border-b-2 border-dashed border-gray-100 pb-4">
+                    <div className="w-4 h-4 rounded-full bg-red-400 border border-black"></div>
+                    <div className="w-4 h-4 rounded-full bg-yellow-400 border border-black"></div>
                   </div>
-                  <div className="space-y-3 font-mono text-[10px] leading-tight text-gray-400">
-                    <div className="p-2 bg-gray-50 rounded border border-gray-200">
-                      <span className="text-black font-bold">Buy milk</span> <span className="text-blue-500">tomorrow</span>
+                  <div className="space-y-4 font-mono text-xs leading-tight text-gray-400">
+                    <div className="p-3 bg-gray-50 rounded border border-gray-200">
+                      <span className="text-black font-bold">Fix API bug</span> <span className="text-red-500">urgent</span>
                     </div>
-                    <div className="p-2 bg-gray-50 rounded border border-gray-200">
-                      <span className="text-black font-bold">Email Sarah</span> <span className="text-red-500">urgent</span>
+                    <div className="p-3 bg-gray-50 rounded border border-gray-200">
+                      <span className="text-black font-bold">Buy groceries</span> <span className="text-blue-500">today</span>
                     </div>
                     <div className="flex gap-1 mt-2">
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full border border-purple-200 text-[9px] font-bold">AI Parsing...</span>
+                      <span className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full border border-purple-200 text-[10px] font-bold">AI Parsing...</span>
                     </div>
                   </div>
                 </div>
                 {/* Floating Mockup Card Right */}
-                <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-bold rotate-[2deg] hover:rotate-0 transition-transform duration-500 mt-12 w-[220px]">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-lg">My Tasks</h3>
-                    <span className="bg-yellow-100 text-black px-2 py-1 rounded-md text-sm border-2 border-black font-bold">Urgent</span>
+                <div className="bg-white border-3 border-black rounded-3xl p-8 shadow-bold rotate-[2deg] hover:rotate-0 transition-transform duration-500 mt-12 w-[300px]">
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <h3 className="font-bold text-xl">My Tasks</h3>
+                    <span className="bg-yellow-100 text-black px-3 py-1.5 rounded-md text-sm border-2 border-black font-bold flex-shrink-0">Urgent</span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="p-3 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transform hover:-translate-y-1 transition-transform">
-                      <div className="w-4 h-4 rounded-full border-2 border-black flex-shrink-0"></div>
-                      <span className="font-bold text-xs">Design System</span>
+                  <div className="space-y-3">
+                    <div className="p-4 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transform hover:-translate-y-1 transition-transform">
+                      <div className="w-5 h-5 rounded-full border-2 border-black flex-shrink-0"></div>
+                      <span className="font-bold text-sm">Code review</span>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-xl border-2 border-black/10 flex items-center gap-3">
-                      <div className="w-4 h-4 rounded-full border-2 border-black bg-black flex-shrink-0"></div>
-                      <span className="font-medium line-through text-gray-400 text-xs">Coffee Break</span>
+                    <div className="p-4 bg-gray-50 rounded-xl border-2 border-black/10 flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 border-black bg-black flex-shrink-0"></div>
+                      <span className="font-medium line-through text-gray-400 text-sm">Gym workout</span>
                     </div>
                   </div>
                 </div>
@@ -242,16 +246,8 @@ export default function HomePage() {
                       ))}
                     </ul>
                   </div>
-                  <div className="relative h-[300px] bg-gray-50 border-3 border-black rounded-3xl p-6 flex flex-col justify-center items-center shadow-bold-sm rotate-1 group-hover:rotate-0 transition-transform duration-500">
-                    {/* Abstract UI Representation */}
-                    <div className="w-full max-w-sm bg-white border-2 border-black rounded-xl p-4 shadow-sm mb-4">
-                      <div className="h-4 w-1/3 bg-gray-200 rounded-full mb-2"></div>
-                      <div className="h-3 w-3/4 bg-gray-100 rounded-full"></div>
-                    </div>
-                    <div className="w-full max-w-sm bg-white border-2 border-black rounded-xl p-4 shadow-sm opacity-60 scale-95">
-                      <div className="h-4 w-1/3 bg-gray-200 rounded-full mb-2"></div>
-                      <div className="h-3 w-1/2 bg-gray-100 rounded-full"></div>
-                    </div>
+                  <div className="relative h-[300px] md:h-[400px] bg-gray-50 rounded-3xl p-2 shadow-bold-sm rotate-1 group-hover:rotate-0 transition-transform duration-500">
+                    <QuadrantPlayground />
                   </div>
                 </div>
               </div>
@@ -263,7 +259,7 @@ export default function HomePage() {
                 <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-10 mix-blend-overlay"></div>
                 <div className="relative z-10 max-w-3xl mx-auto space-y-8">
                   <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                    See your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">entire workload</span> in one glance
+                    See your <span className="text-yellow-400">entire workload</span> in one glance
                   </h2>
                   <p className="text-xl md:text-2xl text-gray-300 leading-relaxed">
                     No endless scrolling. No hidden tasks. Everything visible on one screen.
@@ -290,22 +286,22 @@ export default function HomePage() {
                       }}
                     />
                     {/* Fallback geometric if image missing (ensures layout stability) */}
-                    <div className="absolute inset-0 bg-yellow-50 flex flex-col items-center justify-center p-6 space-y-4">
-                      <div className="w-full bg-white border-2 border-black rounded-xl p-4 shadow-sm">
+                    <div className="absolute inset-0 bg-yellow-50 flex flex-row items-start justify-center px-6 pt-48 pb-4 gap-4">
+                      <div className="flex-1 bg-white border-2 border-black rounded-xl p-4 shadow-sm">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full bg-green-500"></div>
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Input</span>
                         </div>
                         <p className="font-mono text-sm">"Meeting with Tom at 2pm"</p>
                       </div>
-                      <ArrowRight className="text-gray-400 rotate-90" />
-                      <div className="w-full bg-purple-100 border-2 border-purple-300 rounded-xl p-4 shadow-sm">
+                      <ArrowRight className="text-gray-400 flex-shrink-0" />
+                      <div className="flex-1 bg-purple-100 border-2 border-purple-300 rounded-xl p-4 shadow-sm flex flex-col items-end">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full bg-purple-500"></div>
                           <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">AI Sorted</span>
                         </div>
                         <div className="flex gap-2">
-                          <span className="px-2 py-1 bg-white rounded border border-purple-200 text-xs font-bold">Q1: Important</span>
+                          <span className="px-2 py-1 bg-white rounded border border-purple-200 text-xs font-bold">Important</span>
                           <span className="px-2 py-1 bg-white rounded border border-purple-200 text-xs font-bold">14:00</span>
                         </div>
                       </div>
@@ -339,21 +335,30 @@ export default function HomePage() {
                   Assign tasks with colors. Track who&apos;s doing what. <span className="text-highlight-yellow">Share projects</span>.
                   Or use it for personal productivity.
                 </p>
-                <div className="flex justify-center gap-4 pt-4">
-                  <div className="flex -space-x-4">
-                    {['JD', 'RK', 'AM', 'LZ'].map((initials, i) => (
-                      <div key={i} className={`w-12 h-12 rounded-full border-2 border-white flex items-center justify-center font-bold text-sm shadow-md
-                           ${i === 0 ? 'bg-blue-100 text-blue-700' : ''}
-                           ${i === 1 ? 'bg-yellow-100 text-yellow-700' : ''}
-                           ${i === 2 ? 'bg-green-100 text-green-700' : ''}
-                           ${i === 3 ? 'bg-pink-100 text-pink-700' : ''}
-                         `}>
-                        {initials}
+                <div className="flex flex-col items-center gap-3 pt-4">
+                  <div className="flex -space-x-3">
+                    {[
+                      { seed: "Felix" },
+                      { seed: "Aneka" },
+                      { seed: "Luna" },
+                      { seed: "Oscar" }
+                    ].map((user, index) => (
+                      <div key={index} className="w-12 h-12 rounded-full border-3 border-white shadow-md overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 transition-transform hover:scale-110 hover:z-10">
+                        <Image
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.seed}`}
+                          alt={`Team member ${index + 1}`}
+                          width={48}
+                          height={48}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     ))}
-                    <div className="w-12 h-12 rounded-full border-2 border-white bg-black text-white flex items-center justify-center font-bold shadow-md z-10 text-sm">
-                      +12
+                    <div className="w-12 h-12 rounded-full border-3 border-white bg-black text-white flex items-center justify-center font-bold shadow-md z-10 text-sm">
+                      26+
                     </div>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-bold text-black">+26 more</span>
                   </div>
                 </div>
               </div>
