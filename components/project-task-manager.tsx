@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, Archive } from "lucide-react"
+import { Copy, Check, Archive, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 import { toast } from "sonner"
@@ -91,18 +91,16 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
             <div className="flex justify-between items-center h-14">
               <button
                 onClick={() => router.push("/projects")}
-                title="Back to Projects"
-                className="group relative flex items-center -ml-2"
+                title="Back to My Projects"
+                className="group relative flex items-center gap-2 -ml-2 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
-                  <Image
-                    src="/logo.png"
-                    alt="Quadrants"
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
-                  />
-                </div>
+                <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
+                <span className="text-base font-semibold text-gray-700 group-hover:text-black transition-colors hidden sm:inline">
+                  Back to My Projects
+                </span>
+                <span className="text-base font-semibold text-gray-700 group-hover:text-black transition-colors sm:hidden">
+                  Back
+                </span>
               </button>
               <div className="flex items-center gap-2 -mr-2">
                 {project.type === "team" && project.invite_code && (

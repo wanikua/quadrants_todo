@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Folder, Settings, Users, Crown, Sparkles, User, Archive, X as CloseIcon } from "lucide-react"
+import { Plus, Folder, Settings, Users, Crown, Sparkles, User, Archive, X as CloseIcon, Clock } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -30,6 +30,7 @@ interface Project {
   description: string | null
   type?: string
   created_at: string
+  updated_at?: string
   member_count?: number
 }
 
@@ -39,6 +40,26 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
 
   // Check if user is Pro
   const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active'
+
+  // Format relative time (e.g., "2h ago", "3d ago")
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    const diffWeeks = Math.floor(diffMs / 604800000)
+    const diffMonths = Math.floor(diffMs / 2592000000)
+
+    if (diffMins < 1) return 'just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffWeeks < 4) return `${diffWeeks}w ago`
+    if (diffMonths < 12) return `${diffMonths}mo ago`
+    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+  }
 
   // Count current projects by type
   const personalProjectCount = projects.filter(p => p.type === 'personal').length
@@ -351,14 +372,18 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                       <CardDescription className="text-gray-600 text-base font-medium line-clamp-2 min-h-[3rem]">{project.description || "No description"}</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 pt-0 mt-4">
-                      <div className="flex items-center justify-between text-sm pt-4 border-t-2 border-gray-100">
-                        <p className="text-gray-500 font-bold">
-                          {new Date(project.created_at).toLocaleDateString('en-GB')}
-                        </p>
+                      <div className="flex items-center justify-between text-xs pt-4 border-t-2 border-gray-100">
+                        <div
+                          className="flex items-center gap-1.5 text-gray-400"
+                          title={`Last updated: ${new Date(project.updated_at || project.created_at).toLocaleString('en-GB')}`}
+                        >
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="font-medium">{getRelativeTime(project.updated_at || project.created_at)}</span>
+                        </div>
                         {project.type === 'team' && project.member_count && (
-                          <div className="flex items-center gap-2 text-black font-black bg-gray-100 px-2 py-1 rounded-lg border-2 border-black">
-                            <Users className="h-4 w-4" />
-                            <span>{project.member_count}</span>
+                          <div className="flex items-center gap-1.5 text-black font-black bg-gray-100 px-2 py-1 rounded-lg border-2 border-black">
+                            <Users className="h-3.5 w-3.5" />
+                            <span className="text-xs">{project.member_count}</span>
                           </div>
                         )}
                       </div>

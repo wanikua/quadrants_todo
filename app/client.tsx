@@ -99,6 +99,7 @@ export default function QuadrantTodoClient({
   // One-click organize state
   const [isOrganizing, setIsOrganizing] = useState(false)
   const [isOrganizingInProgress, setIsOrganizingInProgress] = useState(false) // Prevent rapid double-clicks
+  const [isOrganizingLoading, setIsOrganizingLoading] = useState(false) // Full-screen loading overlay
   const [originalTaskPositions, setOriginalTaskPositions] = useState<Map<number, { urgency: number; importance: number }>>(new Map())
 
   // Fullscreen state
@@ -720,6 +721,7 @@ export default function QuadrantTodoClient({
 
     // Immediately set in-progress flag to prevent double-clicks
     setIsOrganizingInProgress(true)
+    setIsOrganizingLoading(true) // Show full-screen loading overlay
 
     // Try to acquire distributed lock
     try {
@@ -741,12 +743,14 @@ export default function QuadrantTodoClient({
           toast.error('Failed to start organize operation')
         }
         setIsOrganizingInProgress(false) // Reset on lock failure
+        setIsOrganizingLoading(false) // Hide loading overlay
         return
       }
     } catch (error) {
       console.error('Lock acquire error:', error)
       toast.error('Failed to start organize operation')
       setIsOrganizingInProgress(false) // Reset on error
+      setIsOrganizingLoading(false) // Hide loading overlay
       return
     }
 
@@ -757,8 +761,6 @@ export default function QuadrantTodoClient({
     })
     setOriginalTaskPositions(originalPositions)
     console.log('🔵 Original positions saved:', originalPositions.size, 'tasks')
-
-    toast.info("Organizing tasks...")
 
     try {
       const requestBody = {
@@ -810,6 +812,7 @@ export default function QuadrantTodoClient({
       console.log('🔵 Setting', updatedTasks.length, 'updated tasks')
       setTasks(updatedTasks)
       setIsOrganizing(true)
+      setIsOrganizingLoading(false) // Hide loading overlay after success
       // Keep isOrganizingInProgress true until user accepts/reverts
       toast.success("Tasks organized! Review changes and Accept or Revert.")
     } catch (error) {
@@ -818,6 +821,7 @@ export default function QuadrantTodoClient({
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
       setIsOrganizingInProgress(false) // Reset on error
+      setIsOrganizingLoading(false) // Hide loading overlay on error
 
       // Release lock on error with error handling
       try {
@@ -1679,6 +1683,24 @@ export default function QuadrantTodoClient({
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Full-screen organizing overlay */}
+      {isOrganizingLoading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative">
+              {/* Animated spinner */}
+              <div className="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+              {/* Inner pulse */}
+              <div className="absolute inset-0 w-20 h-20 border-4 border-white/40 rounded-full animate-ping"></div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-white mb-2">Organizing...</h3>
+              <p className="text-white/80 text-lg">AI is reorganizing your tasks</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

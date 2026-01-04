@@ -452,6 +452,7 @@ export async function getArchivedTasks(projectId: string) {
         eq(tasks.project_id, projectId),
         eq(tasks.archived, true)
       ))
+      .orderBy(desc(tasks.updated_at))
 
     // Group tasks by ID and collect assignees
     const tasksMap = new Map()
@@ -766,6 +767,7 @@ export async function getProjectWithData(projectId: string) {
         eq(tasks.project_id, projectId),
         or(eq(tasks.archived, false), isNull(tasks.archived))
       ))
+      .orderBy(desc(tasks.updated_at))
 
     // Group tasks by ID and collect assignees
     const tasksMap = new Map()
