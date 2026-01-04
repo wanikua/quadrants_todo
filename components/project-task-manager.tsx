@@ -103,6 +103,7 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                     className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
                   />
                 </div>
+                <span className="text-2xl font-black text-black tracking-tight">Quadrants</span>
               </button>
               <div className="flex items-center gap-2 -mr-2">
                 {project.type === "team" && project.invite_code && (
@@ -120,8 +121,8 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                     ) : (
                       <>
                         <Copy className="w-4 h-4 mr-2" />
-                        <span className="hidden sm:inline">Invite Code</span>
-                        <span className="sm:hidden">Invite</span>
+                        <span className="hidden sm:inline">Share Project</span>
+                        <span className="sm:hidden">Share</span>
                       </>
                     )}
                   </Button>

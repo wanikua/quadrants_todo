@@ -8,6 +8,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { Footer } from "@/components/footer"
 import { useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
+import { ProductHuntBadge } from "@/components/product-hunt-badge"
 import QuadrantPlayground from "@/components/QuadrantPlayground"
 
 export default function HomePage() {
@@ -426,6 +427,9 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+
+      <ProductHuntBadge />
+
       <Footer />
     </div>
   )
