@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   authors: [{ name: "Quadrants" }],
   creator: "Quadrants",
   publisher: "Quadrants",
+  icons: {
+    icon: "/Original Logo Symbol.jpeg",
+    shortcut: "/Original Logo Symbol.jpeg",
+    apple: "/Original Logo Symbol.jpeg",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -35,11 +40,20 @@ export const metadata: Metadata = {
     title: "Quadrants: AI Task Manager",
     description: "AI-powered task management. Minimal effort, maximum productivity.",
     siteName: "Quadrants",
+    images: [
+      {
+        url: "/Original Logo Symbol.jpeg",
+        width: 1200,
+        height: 1200,
+        alt: "Quadrants Logo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Quadrants: AI Task Manager",
     description: "AI-powered task management. Minimal effort, maximum productivity.",
+    images: ["/Original Logo Symbol.jpeg"],
   },
   robots: {
     index: true,

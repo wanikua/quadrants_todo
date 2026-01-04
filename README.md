@@ -1,68 +1,67 @@
-# Quadrant Task Manager
+# Quadrants
 
-A task management application using the Eisenhower Matrix (Urgent/Important quadrants) built with Next.js 15, Neon PostgreSQL, and custom JWT authentication.
+A minimal task management application using the Eisenhower Matrix.
 
-## Features
+## Overview
 
-- 🔐 Custom JWT authentication with bcrypt password hashing
-- 📊 Eisenhower Matrix task organization (4 quadrants)
-- 🗂️ Project-based task management
-- 💳 Stripe subscription integration
-- 🎨 Modern UI with Tailwind CSS and shadcn/ui
-- 🔒 Row Level Security (RLS) with Neon PostgreSQL
+Quadrants helps you prioritize tasks by urgency and importance. Built with Next.js, PostgreSQL, and AI-powered task organization.
+
+## Key Features
+
+- Eisenhower Matrix visualization (urgent/important quadrants)
+- AI-powered task prioritization with Qwen API
+- Real-time collaboration for team projects
+- Drag-and-drop task management
+- Bulk task creation with natural language
+- Personal and team project support
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15 (App Router), React 19, TypeScript
-- **Database**: Neon PostgreSQL with RLS
-- **Authentication**: Custom JWT with jose library
-- **Payments**: Stripe
-- **Styling**: Tailwind CSS, shadcn/ui
-- **Deployment**: Vercel
+- Next.js 15 with App Router
+- React 19 and TypeScript
+- Neon PostgreSQL
+- Clerk Authentication
+- Stripe for payments
+- Tailwind CSS and shadcn/ui
 
-## Getting Started
+## Quick Start
 
-### Prerequisites
+```bash
+# Install dependencies
+pnpm install
 
-- Node.js 18+
-- Neon PostgreSQL database
-- Stripe account (for payments)
+# Set up environment variables
+cp .env.example .env.local
 
-### Installation
+# Run development server
+pnpm dev
+```
 
-1. Clone the repository
-2. Install dependencies:
-   \`\`\`bash
-   npm install
-   \`\`\`
+Visit `http://localhost:3000`
 
-3. Set up environment variables (see `.env.example`)
+## Environment Variables
 
-4. Run database migrations:
-   \`\`\`bash
-   npm run db:setup
-   \`\`\`
+Required variables:
 
-5. Start the development server:
-   \`\`\`bash
-   npm run dev
-   \`\`\`
+- `DATABASE_URL` - Neon PostgreSQL connection string
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk public key
+- `CLERK_SECRET_KEY` - Clerk secret key
+- `QWEN_API_KEY` - Qwen API key for AI features
+- `STRIPE_SECRET_KEY` - Stripe secret key
+- `NEXT_PUBLIC_APP_URL` - Application URL
 
-## Authentication
+## Project Structure
 
-This app uses custom JWT authentication:
-- Passwords are hashed with bcrypt
-- JWTs are signed with jose library
-- Tokens stored in HTTP-only cookies
-- 30-day token expiration
-
-## Database Schema
-
-Key tables:
-- `users` - User accounts with password hashes
-- `projects` - User projects
-- `tasks` - Tasks with quadrant assignment
-- `promo_codes` - Promotional codes for subscriptions
+```
+app/                    # Next.js app directory
+  actions.ts           # Server actions
+  client.tsx           # Main client component
+  db/                  # Database layer
+  api/                 # API routes
+components/            # React components
+lib/                   # Shared utilities
+styles/                # Global styles
+```
 
 ## License
 

@@ -148,16 +148,19 @@
   .animate-float { animation: float 3s ease-in-out infinite; }
 
   @keyframes slide-up-fade {
-    from { 
+    from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(30px);
     }
-    to { 
+    to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  .animate-slide-up { animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-slide-up {
+    opacity: 0;
+    animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 
   @keyframes scale-in {
     from {

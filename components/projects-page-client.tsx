@@ -368,7 +368,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
       {/* Floating Archives Button */}
       <Button
         onClick={handleOpenArchives}
-        className="fixed bottom-8 right-8 rounded-full w-14 h-14 shadow-bold-lg bg-black hover:bg-gray-800 text-white border-3 border-black hover:-translate-y-1 transition-all z-40"
+        className="fixed bottom-8 right-8 rounded-full w-14 h-14 bg-black hover:bg-gray-800 text-white border-3 border-black hover:-translate-y-1 transition-all z-40"
         title="View Archived Projects"
       >
         <Archive className="w-6 h-6" />

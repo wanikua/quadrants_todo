@@ -3,56 +3,60 @@ import Image from "next/image"
 
 export function Footer() {
   return (
-    <footer className="mt-32 bg-gradient-to-b from-white to-gray-50/30 relative">
-      <div className="px-[4%] md:px-[10%] py-16">
-        <div className="max-w-7xl mx-auto">
-          {/* Links */}
-          <div className="flex flex-wrap justify-center gap-6 md:gap-8 mb-8">
-            <Link
-              href="/pricing"
-              className="text-gray-600 hover:text-black transition-colors duration-300 text-sm md:text-base font-medium"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/about"
-              className="text-gray-600 hover:text-black transition-colors duration-300 text-sm md:text-base font-medium"
-            >
-              About
-            </Link>
-            <Link
-              href="/contact"
-              className="text-gray-600 hover:text-black transition-colors duration-300 text-sm md:text-base font-medium"
-            >
-              Contact
-            </Link>
-            <Link
-              href="/privacy"
-              className="text-gray-600 hover:text-black transition-colors duration-300 text-sm md:text-base font-medium"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/terms"
-              className="text-gray-600 hover:text-black transition-colors duration-300 text-sm md:text-base font-medium"
-            >
-              Terms
+    <footer className="mt-32 border-t border-gray-200 bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 mb-12">
+          {/* Left: Logo */}
+          <div className="flex flex-col items-center md:items-start">
+            <Link href="/" className="inline-block group">
+              <Image
+                src="/Original Logo Symbol.jpeg"
+                alt="Quadrants Logo"
+                width={48}
+                height={48}
+                className="w-12 h-12 object-contain rounded-lg transition-transform duration-500 group-hover:scale-110"
+              />
             </Link>
           </div>
 
-          {/* Logo and Copyright */}
-          <div className="flex flex-col items-center gap-4 pt-8 border-t border-gray-200">
-            <Link href="/" className="inline-block group">
-              <Image
-                src="/Original Logo Symbol.png"
-                alt="Quadrants Logo"
-                width={60}
-                height={60}
-                className="w-[60px] h-[60px] object-contain transition-transform duration-500 group-hover:scale-110"
-              />
+          {/* Center: Navigation Links */}
+          <div className="flex flex-col items-center gap-3">
+            <h3 className="text-sm font-bold text-black mb-2">Quick Links</h3>
+            <Link href="/" className="text-sm text-gray-600 hover:text-black transition-colors">
+              Home
             </Link>
-            <p className="text-sm md:text-base font-bold text-black">
+            <Link href="/pricing" className="text-sm text-gray-600 hover:text-black transition-colors">
+              Pricing
+            </Link>
+            <Link href="/about" className="text-sm text-gray-600 hover:text-black transition-colors">
+              About
+            </Link>
+            <Link href="/contact" className="text-sm text-gray-600 hover:text-black transition-colors">
+              Contact
+            </Link>
+          </div>
+
+          {/* Right: Legal Links */}
+          <div className="flex flex-col items-center md:items-end gap-3">
+            <h3 className="text-sm font-bold text-black mb-2">Legal</h3>
+            <Link href="/privacy" className="text-sm text-gray-600 hover:text-black transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="text-sm text-gray-600 hover:text-black transition-colors">
+              Terms of Service
+            </Link>
+          </div>
+        </div>
+
+        {/* Bottom: Copyright */}
+        <div className="pt-8 border-t border-gray-200">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm font-medium text-gray-600 text-center md:text-left">
               © 2026 Quadrants. All rights reserved.
+            </p>
+            <p className="text-sm font-medium text-gray-600">
+              Made with ❤️ in Switzerland
             </p>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, Home, Archive } from "lucide-react"
+import { Copy, Check, Archive } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 import { toast } from "sonner"
@@ -89,15 +89,21 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         <div className="p-2 sm:p-4">
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center h-14">
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => router.push("/projects")}
                 title="Back to Projects"
-                className="p-2 -ml-2 text-black hover:text-gray-600 transition-all duration-200"
+                className="group relative flex items-center gap-3 -ml-2"
               >
-                <Home className="w-5 h-5" />
-              </Button>
+                <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
+                  <Image
+                    src="/Original Logo Symbol.jpeg"
+                    alt="Logo"
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+                  />
+                </div>
+              </button>
               <div className="flex items-center gap-2 -mr-2">
                 {project.type === "team" && project.invite_code && (
                   <Button

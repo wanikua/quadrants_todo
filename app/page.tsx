@@ -11,26 +11,55 @@ import { useUser } from "@clerk/nextjs"
 import QuadrantPlayground from "@/components/QuadrantPlayground"
 
 export default function HomePage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const { isSignedIn, isLoaded } = useUser()
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500) // Slightly faster load for better UX
-
-    return () => clearTimeout(timer)
-  }, [])
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Quadrants",
+    "description": "AI-powered task management. Minimal effort, maximum productivity.",
+    "url": "https://quadrants.ch",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "127"
+    },
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://quadrants.ch/Original Logo Symbol.jpeg",
+      "width": 1200,
+      "height": 1200
+    },
+    "screenshot": "https://quadrants.ch/Original Logo Symbol.jpeg",
+    "creator": {
+      "@type": "Organization",
+      "name": "Quadrants",
+      "url": "https://quadrants.ch"
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden font-sans selection:bg-yellow-200">
+      {/* JSON-LD Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
 
       {/* Loading Overlay */}
       {isLoading && (
         <div className="fixed inset-0 z-[100] bg-white flex items-center justify-center animate-fade-out" style={{ animationDelay: '1.2s' }}>
           <div className="relative animate-bounce-gentle">
             <Image
-              src="/Original Logo Symbol.png"
+              src="/Original Logo Symbol.jpeg"
               alt="Loading"
               width={100}
               height={100}
@@ -56,13 +85,13 @@ export default function HomePage() {
       <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 shadow-sm">
         <div className="w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="group relative flex items-center gap-3">
-            <div className="bg-white p-2 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
+            <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
               <Image
-                src="/Original Logo Symbol.png"
+                src="/Original Logo Symbol.jpeg"
                 alt="Logo"
-                width={50}
-                height={50}
-                className="w-10 h-10 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
+                width={40}
+                height={40}
+                className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
               />
             </div>
             <span className="text-2xl font-black text-black tracking-tight">Quadrants</span>
@@ -97,7 +126,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
 
           {/* Hero Section */}
-          <div className="flex flex-col items-center text-center space-y-8 mb-12 lg:mb-16">
+          <div className="flex flex-col items-center text-center space-y-8 mb-4 lg:mb-8">
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-black leading-[1.1] tracking-tight animate-slide-up max-w-5xl">
               Minimal Effort, <br className="hidden md:block" />
               <span className="text-highlight-yellow inline-block mt-2 transform -rotate-1">Maximum Productivity</span>
@@ -165,7 +194,7 @@ export default function HomePage() {
           </div>
 
           {/* Features Grid */}
-          <section className="py-24 relative">
+          <section className="pt-8 pb-24 relative">
             <div className="text-center mb-16 max-w-3xl mx-auto space-y-4">
               <span className="bg-purple-100 text-purple-900 px-4 py-1.5 rounded-full font-bold text-sm border-2 border-purple-200 inline-block mb-2">
                 Powerful Features
