@@ -80,7 +80,7 @@ export default function PricingPage() {
                 <ul className="space-y-4">
                   <li className="flex items-start gap-3">
                     <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
-                    <span className="text-gray-700 text-lg">Up to 3 projects</span>
+                    <span className="text-gray-700 text-lg">Up to 2 projects</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <Check className="w-6 h-6 text-black mt-1 flex-shrink-0" />
@@ -161,7 +161,7 @@ export default function PricingPage() {
               <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 shadow-bold-lg">
                 <h3 className="text-2xl font-bold text-black mb-4">What happens to my data if I downgrade?</h3>
                 <p className="text-gray-700 text-lg leading-relaxed font-medium">
-                  Your data is always safe. Free users can have up to 3 projects. If you downgrade with more projects, you&apos;ll need to upgrade to create new ones.
+                  Your data is always safe. Free users can have up to 2 projects. If you downgrade with more projects, you&apos;ll need to upgrade to create new ones.
                 </p>
               </div>
 
