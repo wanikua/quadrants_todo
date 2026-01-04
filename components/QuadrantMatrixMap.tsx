@@ -72,7 +72,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | number | null>(null)
   const [isLongPress, setIsLongPress] = useState(false)
   const [draggedTask, setDraggedTask] = useState<TaskWithAssignees | null>(null)
   const [selectedTaskForLine, setSelectedTaskForLine] = useState<number | null>(null)
@@ -92,6 +92,9 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
         handleToggleLine(selectedTaskForLine, task.id)
         setSelectedTaskForLine(null)
         onToggleDrawingMode()
+      } else {
+        // Clicked same task again - deselect
+        setSelectedTaskForLine(null)
       }
     } else if (!draggedTask && !isLongPress) {
       onTaskDetailClick(task)
@@ -465,11 +468,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   return (
     <Card
       ref={cardRef}
-      className={`transition-all duration-300 ${
-        isFullscreen
-          ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
-          : "p-2 sm:p-6"
-      }`}
+      className={`transition-all duration-300 ${isFullscreen
+        ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
+        : "p-2 sm:p-6"
+        }`}
     >
       {/* Exit Fullscreen Button - Higher z-index than Card but lower than Dialog */}
       {isFullscreen && (
@@ -557,9 +559,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       )}
       <CardContent className={`${isFullscreen ? "h-screen p-0 relative" : "px-2 sm:px-6"}`}>
         <div
-          className={`relative w-full bg-white overflow-hidden cursor-crosshair ${
-            isFullscreen ? "h-screen border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
-          }`}
+          className={`relative w-full bg-white overflow-hidden cursor-crosshair ${isFullscreen ? "h-screen border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
+            }`}
           style={{
             height: isFullscreen ? "100vh" : (isMobile ? "400px" : "700px"),
             // Remove touchAction: "none" to allow proper event handling
@@ -729,13 +730,12 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                 <div
                   key={task.id}
                   data-task-id={task.id}
-                  className={`absolute group transition-all duration-200 ${
-                    isDrawingLine
-                      ? "hover:ring-2 hover:ring-primary cursor-pointer"
-                      : draggedTask?.id === task.id
+                  className={`absolute group transition-all duration-200 ${isDrawingLine
+                    ? "hover:ring-2 hover:ring-primary cursor-pointer"
+                    : draggedTask?.id === task.id
                       ? "opacity-50 cursor-grabbing"
                       : "hover:ring-2 hover:ring-primary hover:scale-105 cursor-grab"
-                  } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                    } ${isSelected ? "ring-2 ring-primary" : ""}`}
                   style={{
                     left: `calc(${marginX}px + (100% - ${marginX * 2}px) * ${x / 100} - ${offset}px)`,
                     top: `calc(${marginY}px + (100% - ${marginY * 2}px) * ${y / 100} - ${offset}px)`,
@@ -757,9 +757,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
                     {/* Task Description Tooltip - switches side based on position */}
                     {!isMobile && (
-                      <div className={`absolute top-0 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border shadow-lg ${
-                        task.urgency > 70 ? "right-full mr-2" : "left-full ml-2"
-                      }`}>
+                      <div className={`absolute top-0 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border shadow-lg ${task.urgency > 70 ? "right-full mr-2" : "left-full ml-2"
+                        }`}>
                         <div className="font-medium">{task.description}</div>
                         {task.assignees && task.assignees.length > 0 && (
                           <div className="text-muted-foreground">{task.assignees.map((p) => p.name).join(", ")}</div>
@@ -772,13 +771,12 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                   </div>
 
                   {/* Task Description Label - adjusts position for edges */}
-                  <div className={`absolute top-full mt-1 bg-card border border-border rounded px-2 py-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity ${
-                    task.urgency > 70
-                      ? "right-0"
-                      : task.urgency < 30
+                  <div className={`absolute top-full mt-1 bg-card border border-border rounded px-2 py-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity ${task.urgency > 70
+                    ? "right-0"
+                    : task.urgency < 30
                       ? "left-0"
                       : "left-1/2 transform -translate-x-1/2"
-                  }`}>
+                    }`}>
                     <div className={`text-xs font-medium text-center truncate ${isMobile ? "max-w-16" : "max-w-24"}`}>
                       {task.description}
                     </div>
@@ -793,11 +791,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
             <>
               {/* Complete Zone - Left bottom corner */}
               <div
-                className={`absolute bottom-4 left-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${
-                  isOverComplete
-                    ? "bg-green-500 border-green-600 scale-110 shadow-green-500/50"
-                    : "bg-green-50/90 border-green-300 hover:bg-green-100/90 hover:scale-105"
-                }`}
+                className={`absolute bottom-4 left-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${isOverComplete
+                  ? "bg-green-500 border-green-600 scale-110 shadow-green-500/50"
+                  : "bg-green-50/90 border-green-300 hover:bg-green-100/90 hover:scale-105"
+                  }`}
                 style={{ zIndex: 20, pointerEvents: "auto" }}
                 onDragOver={handleCompleteDragOver}
                 onDragLeave={handleCompleteDragLeave}
@@ -811,11 +808,10 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
               {/* Trash Zone - Right bottom corner */}
               <div
-                className={`absolute bottom-4 right-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${
-                  isOverTrash
-                    ? "bg-red-500 border-red-600 scale-110 shadow-red-500/50"
-                    : "bg-red-50/90 border-red-300 hover:bg-red-100/90 hover:scale-105"
-                }`}
+                className={`absolute bottom-4 right-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${isOverTrash
+                  ? "bg-red-500 border-red-600 scale-110 shadow-red-500/50"
+                  : "bg-red-50/90 border-red-300 hover:bg-red-100/90 hover:scale-105"
+                  }`}
                 style={{ zIndex: 20, pointerEvents: "auto" }}
                 onDragOver={handleTrashDragOver}
                 onDragLeave={handleTrashDragLeave}

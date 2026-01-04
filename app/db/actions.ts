@@ -887,26 +887,33 @@ export async function toggleLine(projectId: string, fromTaskId: number, toTaskId
     return { success: false, error: 'Database not available' }
   }
 
+  // Prevent self-connection
+  if (fromTaskId === toTaskId) {
+    return { success: false, error: 'Cannot connect a task to itself' }
+  }
+
   try {
     const hasAccess = await getUserProjectAccess(userId, projectId)
     if (!hasAccess) return { success: false, error: 'Access denied' }
 
-    // Check if line exists
+    // Check if line exists in EITHER direction
     const existingLines = await db.select().from(lines).where(
       and(
         eq(lines.project_id, projectId),
-        eq(lines.from_task_id, fromTaskId),
-        eq(lines.to_task_id, toTaskId)
+        or(
+          and(eq(lines.from_task_id, fromTaskId), eq(lines.to_task_id, toTaskId)),
+          and(eq(lines.from_task_id, toTaskId), eq(lines.to_task_id, fromTaskId))
+        )
       )
     )
 
     if (existingLines.length > 0) {
-      // Delete existing line
+      // Delete existing line (whichever direction it is)
       await db.delete(lines).where(eq(lines.id, existingLines[0].id))
       revalidatePath(`/projects/${projectId}`)
       return { success: true, action: 'deleted', lineId: existingLines[0].id }
     } else {
-      // Create new line
+      // Create new line (default direction)
       const [line] = await db.insert(lines).values({
         project_id: projectId,
         from_task_id: fromTaskId,

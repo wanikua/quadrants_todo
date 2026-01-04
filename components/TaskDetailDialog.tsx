@@ -430,13 +430,13 @@ export const TaskDetailDialog = React.memo(function TaskDetailDialog({
       {/* Actions */}
       <div className="flex gap-2 pt-4 border-t border-border">
         <Button
-          variant="destructive"
+          variant="ghost"
           size="sm"
           onClick={() => {
             onDeleteTask(task.id)
             onOpenChange(false)
           }}
-          className="flex items-center gap-2"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 rounded-md h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
         >
           <Trash2 className="w-4 h-4" />
           Delete Task
