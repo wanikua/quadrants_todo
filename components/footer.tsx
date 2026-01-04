@@ -11,7 +11,7 @@ export function Footer() {
           <div className="flex flex-col items-center md:items-start">
             <Link href="/" className="inline-block group">
               <Image
-                src="/Original Logo Symbol.jpeg"
+                src="/logo.png"
                 alt="Quadrants Logo"
                 width={48}
                 height={48}

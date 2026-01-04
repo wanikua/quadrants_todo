@@ -182,17 +182,16 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
       {/* Header */}
       <header className="bg-white border-b-3 border-black">
         <div className="w-full px-[4%] md:px-[10%] h-24 flex items-center justify-between">
-          <Link href="/" className="group relative flex items-center gap-3">
+          <Link href="/" className="group relative flex items-center">
             <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
               <Image
-                src="/Original Logo Symbol.jpeg"
-                alt="Logo"
+                src="/logo.png"
+                alt="Quadrants"
                 width={40}
                 height={40}
                 className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
               />
             </div>
-            <span className="text-2xl font-black text-black tracking-tight">Quadrants</span>
           </Link>
           <div className="flex items-center gap-2">
             <Button

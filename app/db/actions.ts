@@ -71,6 +71,7 @@ export async function createProject(name: string, type: 'personal' | 'team', des
       : null
 
     // Create project
+    const now = new Date()
     await db.insert(projects).values({
       id: projectId,
       name,
@@ -78,6 +79,8 @@ export async function createProject(name: string, type: 'personal' | 'team', des
       type,
       owner_id: userId,
       invite_code: inviteCode,
+      created_at: now,
+      updated_at: now,
     })
 
     // Add owner as member

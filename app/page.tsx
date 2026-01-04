@@ -35,11 +35,11 @@ export default function HomePage() {
     },
     "logo": {
       "@type": "ImageObject",
-      "url": "https://quadrants.ch/Original Logo Symbol.jpeg",
+      "url": "https://quadrants.ch/logo.png",
       "width": 1200,
       "height": 1200
     },
-    "screenshot": "https://quadrants.ch/Original Logo Symbol.jpeg",
+    "screenshot": "https://quadrants.ch/logo.png",
     "creator": {
       "@type": "Organization",
       "name": "Quadrants",
@@ -60,7 +60,7 @@ export default function HomePage() {
         <div className="fixed inset-0 z-[100] bg-white flex items-center justify-center animate-fade-out" style={{ animationDelay: '1.2s' }}>
           <div className="relative animate-bounce-gentle">
             <Image
-              src="/Original Logo Symbol.jpeg"
+              src="/logo.png"
               alt="Loading"
               width={100}
               height={100}
@@ -88,7 +88,7 @@ export default function HomePage() {
           <Link href="/" className="group relative flex items-center gap-3">
             <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
               <Image
-                src="/Original Logo Symbol.jpeg"
+                src="/logo.png"
                 alt="Logo"
                 width={40}
                 height={40}

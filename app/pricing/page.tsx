@@ -25,7 +25,7 @@ export default function PricingPage() {
           <Link href="/" className="group relative flex items-center gap-3">
             <div className="bg-white p-2 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
               <Image
-                src="/Original Logo Symbol.jpeg"
+                src="/logo.png"
                 alt="Logo"
                 width={50}
                 height={50}

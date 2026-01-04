@@ -9,7 +9,9 @@ export const projects = pgTable('projects', {
   type: text('type').notNull(), // 'personal' | 'team'
   owner_id: text('owner_id').notNull(),
   invite_code: text('invite_code'),
+  archived: boolean('archived').default(false),
   created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
 })
 
 // Project members table
