@@ -121,36 +121,38 @@ export default function HomePage() {
             <div className="mt-16 relative w-full max-w-4xl mx-auto aspect-[16/9] hidden md:block animate-scale-in" style={{ animationDelay: '0.3s' }}>
               <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-white to-transparent z-20"></div>
               <div className="relative z-10 grid grid-cols-2 gap-8 p-8">
-                {/* Floating Mockup Card Left */}
-                <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-bold rotate-[-2deg] hover:rotate-0 transition-transform duration-500">
+                {/* Floating Mockup Card Left - Bulk Add Simulation */}
+                <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-bold rotate-[-2deg] hover:rotate-0 transition-transform duration-500 w-[240px]">
                   <div className="flex items-center gap-3 mb-4 border-b-2 border-dashed border-gray-100 pb-3">
                     <div className="w-3 h-3 rounded-full bg-red-400 border border-black"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-400 border border-black"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400 border border-black"></div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="h-4 w-3/4 bg-gray-100 rounded-full"></div>
-                    <div className="h-4 w-1/2 bg-gray-100 rounded-full"></div>
-                    <div className="flex gap-2 mt-4">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 border-2 border-black"></div>
-                      <div className="h-8 w-8 rounded-full bg-purple-100 border-2 border-black"></div>
+                  <div className="space-y-3 font-mono text-[10px] leading-tight text-gray-400">
+                    <div className="p-2 bg-gray-50 rounded border border-gray-200">
+                      <span className="text-black font-bold">Buy milk</span> <span className="text-blue-500">tomorrow</span>
+                    </div>
+                    <div className="p-2 bg-gray-50 rounded border border-gray-200">
+                      <span className="text-black font-bold">Email Sarah</span> <span className="text-red-500">urgent</span>
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full border border-purple-200 text-[9px] font-bold">AI Parsing...</span>
                     </div>
                   </div>
                 </div>
                 {/* Floating Mockup Card Right */}
-                <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-bold rotate-[2deg] hover:rotate-0 transition-transform duration-500 mt-12">
+                <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-bold rotate-[2deg] hover:rotate-0 transition-transform duration-500 mt-12 w-[220px]">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-lg">My Tasks</h3>
                     <span className="bg-yellow-100 text-black px-2 py-1 rounded-md text-sm border-2 border-black font-bold">Urgent</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="p-3 bg-gray-50 rounded-xl border-2 border-black/5 flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full border-2 border-black"></div>
-                      <span className="font-medium">Design System</span>
+                    <div className="p-3 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transform hover:-translate-y-1 transition-transform">
+                      <div className="w-4 h-4 rounded-full border-2 border-black flex-shrink-0"></div>
+                      <span className="font-bold text-xs">Design System</span>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-xl border-2 border-black/5 flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full border-2 border-black bg-black"></div>
-                      <span className="font-medium line-through text-gray-400">Coffee Break</span>
+                    <div className="p-3 bg-gray-50 rounded-xl border-2 border-black/10 flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full border-2 border-black bg-black flex-shrink-0"></div>
+                      <span className="font-medium line-through text-gray-400 text-xs">Coffee Break</span>
                     </div>
                   </div>
                 </div>
@@ -275,21 +277,38 @@ export default function HomePage() {
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div className="order-2 md:order-1 relative">
                   <div className="absolute inset-0 bg-gradient-to-tr from-purple-200 to-blue-200 rounded-3xl blur-2xl opacity-50 transform rotate-3"></div>
-                  <div className="relative bg-white border-3 border-black rounded-3xl p-8 shadow-bold hover:rotate-1 transition-transform duration-500">
+                  <div className="relative bg-white border-3 border-black rounded-3xl p-8 shadow-bold hover:rotate-1 transition-transform duration-500 overflow-hidden">
                     <Image
                       src="/assets/feature_smart.png"
                       alt="AI Intelligence"
                       width={400}
                       height={300}
-                      className="w-full h-auto object-contain"
+                      className="w-full h-auto object-contain relative z-10"
                       onError={(e) => {
                         // Fallback if image fails, showing a placeholder UI
                         e.currentTarget.style.display = 'none';
                       }}
                     />
                     {/* Fallback geometric if image missing (ensures layout stability) */}
-                    <div className="w-full h-48 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 font-bold">
-                      AI Visualization
+                    <div className="absolute inset-0 bg-yellow-50 flex flex-col items-center justify-center p-6 space-y-4">
+                      <div className="w-full bg-white border-2 border-black rounded-xl p-4 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Input</span>
+                        </div>
+                        <p className="font-mono text-sm">"Meeting with Tom at 2pm"</p>
+                      </div>
+                      <ArrowRight className="text-gray-400 rotate-90" />
+                      <div className="w-full bg-purple-100 border-2 border-purple-300 rounded-xl p-4 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                          <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">AI Sorted</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="px-2 py-1 bg-white rounded border border-purple-200 text-xs font-bold">Q1: Important</span>
+                          <span className="px-2 py-1 bg-white rounded border border-purple-200 text-xs font-bold">14:00</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -322,8 +341,15 @@ export default function HomePage() {
                 </p>
                 <div className="flex justify-center gap-4 pt-4">
                   <div className="flex -space-x-4">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="w-12 h-12 rounded-full border-2 border-white bg-gray-200 shadow-md"></div>
+                    {['JD', 'RK', 'AM', 'LZ'].map((initials, i) => (
+                      <div key={i} className={`w-12 h-12 rounded-full border-2 border-white flex items-center justify-center font-bold text-sm shadow-md
+                           ${i === 0 ? 'bg-blue-100 text-blue-700' : ''}
+                           ${i === 1 ? 'bg-yellow-100 text-yellow-700' : ''}
+                           ${i === 2 ? 'bg-green-100 text-green-700' : ''}
+                           ${i === 3 ? 'bg-pink-100 text-pink-700' : ''}
+                         `}>
+                        {initials}
+                      </div>
                     ))}
                     <div className="w-12 h-12 rounded-full border-2 border-white bg-black text-white flex items-center justify-center font-bold shadow-md z-10 text-sm">
                       +12
