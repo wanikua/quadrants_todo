@@ -27,6 +27,8 @@ export const metadata: Metadata = {
   generator: 'v0.app',
 }
 
+import { Analytics } from "@vercel/analytics/next"
+
 export default function RootLayout({
   children,
 }: {
@@ -85,6 +87,7 @@ export default function RootLayout({
         <body className={`${inter.variable} ${libreBaskerville.variable} antialiased`}>
           {children}
           <Toaster />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
