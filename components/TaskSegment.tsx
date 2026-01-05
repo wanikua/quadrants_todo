@@ -9,9 +9,11 @@ interface TaskSegmentProps {
   projectType?: "personal" | "team"
   isHighestPriority?: boolean
   hasMoved?: boolean
+  isFocused?: boolean
+  isDimmed?: boolean
 }
 
-const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName, projectType, isHighestPriority = false, hasMoved = false }: TaskSegmentProps) {
+const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName, projectType, isHighestPriority = false, hasMoved = false, isFocused = false, isDimmed = false }: TaskSegmentProps) {
   // Filter out auto-generated user names (e.g., "User c0eea5c2")
   const assignedPlayers = (task.assignees || []).filter(player => !player.name.startsWith('User '))
 
@@ -20,10 +22,22 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
     return name.charAt(0).toUpperCase()
   }
 
+  const containerClass = `relative transition-all duration-500 ease-out ${isFocused ? 'z-50 scale-[2]' : ''
+    } ${isDimmed ? 'opacity-30 blur-[1px] pointer-events-none grayscale' : ''
+    }`
+
+  const glowEffect = isFocused && (
+    <>
+      <div className="absolute -inset-4 bg-yellow-400/30 rounded-full blur-xl animate-pulse" />
+      <div className="absolute -inset-2 bg-yellow-400/50 rounded-full blur-md" />
+    </>
+  )
+
   // Personal project - always show empty circle without initials
   if (projectType === "personal") {
     return (
-      <div className="relative" style={{ width: size, height: size }}>
+      <div className={containerClass} style={{ width: size, height: size }}>
+        {glowEffect}
         {isHighestPriority && (
           <div
             className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
@@ -60,7 +74,8 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
   // Team project with no assignees (or only auto-generated users) - show empty circle
   if (assignedPlayers.length === 0) {
     return (
-      <div className="relative" style={{ width: size, height: size }}>
+      <div className={containerClass} style={{ width: size, height: size }}>
+        {glowEffect}
         {isHighestPriority && (
           <div
             className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
@@ -98,7 +113,8 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
   if (assignedPlayers.length === 1) {
     const initial = getInitial(assignedPlayers[0].name)
     return (
-      <div className="relative" style={{ width: size, height: size }}>
+      <div className={containerClass} style={{ width: size, height: size }}>
+        {glowEffect}
         {isHighestPriority && (
           <div
             className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
@@ -138,7 +154,8 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
   const segmentAngle = 360 / assignedPlayers.length
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className={containerClass} style={{ width: size, height: size }}>
+      {glowEffect}
       {isHighestPriority && (
         <div
           className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
@@ -164,39 +181,39 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
         title={`${task.description} - ${assignedPlayers.map((p) => p.name).join(", ")}${isHighestPriority ? ' (Highest Priority)' : ''}${hasMoved ? ' (Repositioned)' : ''}`}
       >
         <svg width={size} height={size} className="absolute inset-0">
-        <circle cx={size / 2} cy={size / 2} r={size / 2 - 1} fill="white" stroke="#e5e7eb" strokeWidth="2" />
-        {assignedPlayers.map((player, index) => {
-          const startAngle = index * segmentAngle - 90
-          const endAngle = (index + 1) * segmentAngle - 90
-          const startRad = (startAngle * Math.PI) / 180
-          const endRad = (endAngle * Math.PI) / 180
-          const radius = size / 2 - 2
-          const centerX = size / 2
-          const centerY = size / 2
+          <circle cx={size / 2} cy={size / 2} r={size / 2 - 1} fill="white" stroke="#e5e7eb" strokeWidth="2" />
+          {assignedPlayers.map((player, index) => {
+            const startAngle = index * segmentAngle - 90
+            const endAngle = (index + 1) * segmentAngle - 90
+            const startRad = (startAngle * Math.PI) / 180
+            const endRad = (endAngle * Math.PI) / 180
+            const radius = size / 2 - 2
+            const centerX = size / 2
+            const centerY = size / 2
 
-          const x1 = centerX + radius * Math.cos(startRad)
-          const y1 = centerY + radius * Math.sin(startRad)
-          const x2 = centerX + radius * Math.cos(endRad)
-          const y2 = centerY + radius * Math.sin(endRad)
+            const x1 = centerX + radius * Math.cos(startRad)
+            const y1 = centerY + radius * Math.sin(startRad)
+            const x2 = centerX + radius * Math.cos(endRad)
+            const y2 = centerY + radius * Math.sin(endRad)
 
-          const largeArcFlag = segmentAngle > 180 ? 1 : 0
+            const largeArcFlag = segmentAngle > 180 ? 1 : 0
 
-          const pathData = [
-            `M ${centerX} ${centerY}`,
-            `L ${x1} ${y1}`,
-            `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-            "Z",
-          ].join(" ")
+            const pathData = [
+              `M ${centerX} ${centerY}`,
+              `L ${x1} ${y1}`,
+              `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+              "Z",
+            ].join(" ")
 
-          return <path key={player.id} d={pathData} fill={player.color} stroke="white" strokeWidth="1" />
-        })}
-      </svg>
-      <div
-        className="absolute inset-0 flex items-center justify-center text-white font-bold drop-shadow-sm"
-        style={{ fontSize: size * 0.3 }}
-      >
-        {assignedPlayers.map((p) => getInitial(p.name)).join("")}
-      </div>
+            return <path key={player.id} d={pathData} fill={player.color} stroke="white" strokeWidth="1" />
+          })}
+        </svg>
+        <div
+          className="absolute inset-0 flex items-center justify-center text-white font-bold drop-shadow-sm"
+          style={{ fontSize: size * 0.3 }}
+        >
+          {assignedPlayers.map((p) => getInitial(p.name)).join("")}
+        </div>
       </div>
     </div>
   )

@@ -42,6 +42,13 @@ interface QuadrantMatrixMapProps {
   onFullscreenChange?: (isFullscreen: boolean) => void
   onDragStart?: (taskId: number) => void
   onDragEnd?: (taskId: number) => void
+  // Focus mode props
+  isFocusMode?: boolean
+  focusedTaskId?: number
+  focusedTaskDescription?: string
+  focusIndex?: number
+  totalFocusTasks?: number
+  onFocusClick?: () => void
 }
 
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
@@ -65,6 +72,13 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   onFullscreenChange,
   onDragStart,
   onDragEnd,
+  // Focus mode props
+  isFocusMode,
+  focusedTaskId,
+  focusedTaskDescription,
+  focusIndex,
+  totalFocusTasks,
+  onFocusClick,
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
@@ -625,6 +639,15 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
           {/* Tasks - positioned within safe area to prevent edge clipping */}
           <div className="absolute inset-0" style={{ zIndex: 15 }}>
+            {/* Focus Mode Overlay */}
+            {isFocusMode && (
+              <div
+                className="absolute inset-0 bg-black/50 transition-opacity duration-300 cursor-pointer"
+                style={{ zIndex: 40 }}
+                onClick={onFocusClick}
+              />
+            )}
+
             {tasks.map((task) => {
               const x = task.urgency
               const y = 100 - task.importance
@@ -634,23 +657,38 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
               const marginX = offset + (isMobile ? 25 : 40)
               const marginY = offset + (isMobile ? 35 : 50) // Extra margin at bottom for action zones
 
+              const isFocused = isFocusMode && task.id === focusedTaskId
+              const isDimmed = isFocusMode && !isFocused
+
               return (
                 <div
                   key={task.id}
                   data-task-id={task.id}
-                  className={`absolute group transition-all duration-200 ${draggedTask?.id === task.id
+                  className={`absolute group transition-all duration-500 ${draggedTask?.id === task.id
                     ? "opacity-50 cursor-grabbing"
-                    : "hover:ring-2 hover:ring-primary hover:scale-105 cursor-grab"
+                    : isFocusMode
+                      ? isFocused
+                        ? "cursor-default scale-110"
+                        : "pointer-events-none"
+                      : "hover:ring-2 hover:ring-primary hover:scale-105 cursor-grab"
                     }`}
                   style={{
                     left: `calc(${marginX}px + (100% - ${marginX * 2}px) * ${x / 100} - ${offset}px)`,
                     top: `calc(${marginY}px + (100% - ${marginY * 2}px) * ${y / 100} - ${offset}px)`,
                     transform: "translate(0, 0)",
+                    zIndex: isFocused ? 50 : undefined
                   }}
-                  draggable={!isMobile && !isOrganizing}
+                  draggable={!isMobile && !isOrganizing && !isFocusMode}
                   onDragStart={(e) => handleTaskDragStart(task, e)}
                   onDragEnd={handleTaskDragEnd}
-                  onClick={(e) => handleTaskClick(task, e)}
+                  onClick={(e) => {
+                    if (isFocusMode) {
+                      e.stopPropagation() // Prevent triggering map click (if any)
+                      if (onFocusClick) onFocusClick()
+                    } else {
+                      handleTaskClick(task, e)
+                    }
+                  }}
                 >
                   <div className="relative">
                     <TaskSegment
@@ -659,6 +697,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                       userName={userName}
                       projectType={projectType}
                       isHighestPriority={task.id === highestPriorityTaskId}
+                      isFocused={isFocused}
+                      isDimmed={isDimmed}
                     />
 
                     {/* Task Description Tooltip - switches side based on position */}
@@ -690,6 +730,26 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                 </div>
               )
             })}
+
+            {/* Focus Mode Floating Card */}
+            {isFocusMode && focusedTaskDescription && (
+              <div
+                className="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-none"
+                style={{ zIndex: 60 }}
+              >
+                <div className="bg-white/95 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border border-gray-200">
+                  <div className="text-sm text-gray-500 mb-1">
+                    Priority {(focusIndex || 0) + 1} of {totalFocusTasks || 0}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {focusedTaskDescription}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {(focusIndex || 0) < (totalFocusTasks || 0) - 1 ? "Click to continue" : "Click to finish"}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Zones - Only visible when dragging a task */}

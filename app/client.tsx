@@ -78,6 +78,8 @@ export default function QuadrantTodoClient({
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
   const [isBulkAddOpen, setIsBulkAddOpen] = useState(false)
   const [showHelpDialog, setShowHelpDialog] = useState(false)
+  const [isFocusMode, setIsFocusMode] = useState(false)
+  const [focusIndex, setFocusIndex] = useState(0)
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -96,6 +98,21 @@ export default function QuadrantTodoClient({
   const [isArchiving, setIsArchiving] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
 
+  // Calculate top 3 priority tasks for Focus mode
+  const topPriorityTasks = useMemo(() => {
+    return [...tasks]
+      .sort((a, b) => {
+        // Balanced priority algorithm: importance (60%) + urgency (40%)
+        const priorityA = a.importance * 0.6 + a.urgency * 0.4
+        const priorityB = b.importance * 0.6 + b.urgency * 0.4
+        return priorityB - priorityA
+      })
+      .slice(0, 3)
+  }, [tasks])
+
+  // Current focused task for Focus mode
+  const focusedTask = isFocusMode && topPriorityTasks[focusIndex] ? topPriorityTasks[focusIndex] : null
+
   // One-click organize state
   const [isOrganizing, setIsOrganizing] = useState(false)
   const [isOrganizingInProgress, setIsOrganizingInProgress] = useState(false) // Prevent rapid double-clicks
@@ -104,6 +121,21 @@ export default function QuadrantTodoClient({
 
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Focus mode: Listen for ESC key globally
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFocusMode) {
+        setIsFocusMode(false)
+        setFocusIndex(0)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isFocusMode])
 
   // User activity detection for pausing sync during interactions
   const [lastUserActivity, setLastUserActivity] = useState<number>(Date.now())
@@ -402,10 +434,10 @@ export default function QuadrantTodoClient({
     }
 
     return [...filtered].sort((a, b) => {
-      if (a.importance !== b.importance) {
-        return b.importance - a.importance
-      }
-      return b.urgency - a.urgency
+      // Balanced priority algorithm: importance (60%) + urgency (40%)
+      const priorityA = a.importance * 0.6 + a.urgency * 0.4
+      const priorityB = b.importance * 0.6 + b.urgency * 0.4
+      return priorityB - priorityA
     })
   }, [tasks, selectedPlayerFilter])
 
@@ -1060,6 +1092,22 @@ export default function QuadrantTodoClient({
               Bulk Add
             </Button>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsFocusMode(true)
+                setFocusIndex(0)
+              }}
+              className="border-3 border-black bg-yellow-400 hover:bg-yellow-500 text-black font-bold shadow-bold hover-lift"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Focus
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -1214,6 +1262,19 @@ export default function QuadrantTodoClient({
               onRevertOrganize={handleRevertOrganize}
               isFullscreen={isFullscreen}
               onFullscreenChange={handleFullscreenChange}
+              isFocusMode={isFocusMode}
+              focusedTaskId={focusedTask?.id}
+              focusedTaskDescription={focusedTask?.description}
+              focusIndex={focusIndex}
+              totalFocusTasks={topPriorityTasks.length}
+              onFocusClick={() => {
+                if (focusIndex < topPriorityTasks.length - 1) {
+                  setFocusIndex(focusIndex + 1)
+                } else {
+                  setIsFocusMode(false)
+                  setFocusIndex(0)
+                }
+              }}
               onDragStart={(taskId) => {
                 console.log('🔵 [Drag] Starting drag for task:', taskId)
                 handleUserActivity() // Mark user as active
