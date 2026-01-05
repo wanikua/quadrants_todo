@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import TaskSegment from "@/components/TaskSegment"
 import type { TaskWithAssignees, Player, Line } from "@/app/types"
-import { updateTask, toggleLine, deleteLine, deleteTask, completeTask } from "@/app/db/actions"
+import { updateTask, deleteTask, completeTask } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Trash2, Maximize2, Minimize2, CheckCircle2, Check, X, Sparkles, Wand2 } from "lucide-react"
 import { toast } from "sonner"
@@ -27,9 +27,7 @@ interface QuadrantMatrixMapProps {
   lines: Line[]
   projectId: string
   isMobile: boolean
-  isDrawingLine: boolean
   onTaskDetailClick: (task: TaskWithAssignees) => void
-  onToggleDrawingMode: () => void
   onLongPress: (urgency: number, importance: number) => void
   userName?: string
   projectType?: "personal" | "team"
@@ -52,9 +50,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   lines,
   projectId,
   isMobile,
-  isDrawingLine,
   onTaskDetailClick,
-  onToggleDrawingMode,
   onLongPress,
   userName,
   projectType,
@@ -75,7 +71,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | number | null>(null)
   const [isLongPress, setIsLongPress] = useState(false)
   const [draggedTask, setDraggedTask] = useState<TaskWithAssignees | null>(null)
-  const [selectedTaskForLine, setSelectedTaskForLine] = useState<number | null>(null)
+
   const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null)
   const [isOverTrash, setIsOverTrash] = useState(false)
   const [isOverComplete, setIsOverComplete] = useState(false)
@@ -84,38 +80,14 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
   const handleTaskClick = useCallback((task: TaskWithAssignees, e: React.MouseEvent) => {
     e.stopPropagation()
-
-    if (isDrawingLine) {
-      if (selectedTaskForLine === null) {
-        setSelectedTaskForLine(task.id)
-      } else if (selectedTaskForLine !== task.id) {
-        handleToggleLine(selectedTaskForLine, task.id)
-        setSelectedTaskForLine(null)
-        onToggleDrawingMode()
-      } else {
-        // Clicked same task again - deselect
-        setSelectedTaskForLine(null)
-      }
-    } else if (!draggedTask && !isLongPress) {
+    if (!draggedTask && !isLongPress) {
       onTaskDetailClick(task)
     }
-  }, [isDrawingLine, selectedTaskForLine, draggedTask, isLongPress, onTaskDetailClick, onToggleDrawingMode])
+  }, [draggedTask, isLongPress, onTaskDetailClick])
 
-  const handleToggleLine = async (fromTaskId: number, toTaskId: number) => {
-    await toggleLine(projectId, fromTaskId, toTaskId)
-    // Rely on sync polling to update lines
-  }
 
-  const handleDeleteLine = async (lineId: number) => {
-    await deleteLine(lineId)
-    // Rely on sync polling to update lines
-  }
 
   const handleTaskDragStart = (task: TaskWithAssignees, e: React.DragEvent) => {
-    if (isDrawingLine) {
-      e.preventDefault()
-      return
-    }
     onDragStart?.(task.id) // Mark task as pending and pause sync
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = "move"
@@ -193,7 +165,6 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   }
 
   const handleMatrixMouseDown = (e: React.MouseEvent) => {
-    if (isDrawingLine) return
 
     const target = e.target as HTMLElement
     // Only ignore clicks on tasks
@@ -260,7 +231,6 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
   // Touch event handlers for mobile support
   const handleMatrixTouchStart = (e: React.TouchEvent) => {
-    if (isDrawingLine) return
 
     const target = e.target as HTMLElement
     // Only ignore touches on tasks
@@ -543,13 +513,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
               <Maximize2 className="w-5 h-5" />
             </button>
           </div>
-          {isDrawingLine && (
-            <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg">
-              {selectedTaskForLine === null
-                ? "Click on a task to start connecting"
-                : "Click on another task to complete the connection"}
-            </div>
-          )}
+
           {isMobile && (
             <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
               Long press (0.8s) on empty space to create a task
@@ -657,69 +621,13 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
             />
           </svg>
 
-          {/* Lines */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 2 }}>
-            <defs>
-              <marker id="arrowhead-filled" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" className="text-primary" />
-              </marker>
-            </defs>
 
-            {lines.map((line) => {
-              const fromTask = tasks.find((t) => String(t.id) === String(line.from_task_id))
-              const toTask = tasks.find((t) => String(t.id) === String(line.to_task_id))
-
-              if (!fromTask || !toTask) return null
-
-              const fromX = fromTask.urgency
-              const fromY = 100 - fromTask.importance
-              const toX = toTask.urgency
-              const toY = 100 - toTask.importance
-
-              const dx = toX - fromX
-              const dy = toY - fromY
-              const length = Math.sqrt(dx * dx + dy * dy)
-
-              if (length === 0) return null
-
-              const unitX = dx / length
-              const unitY = dy / length
-
-              const startX = fromX + unitX * 4
-              const startY = fromY + unitY * 4
-              const endX = toX - unitX * 4
-              const endY = toY - unitY * 4
-
-              return (
-                <g key={line.id}>
-                  <line
-                    x1={`${startX}%`}
-                    y1={`${startY}%`}
-                    x2={`${endX}%`}
-                    y2={`${endY}%`}
-                    stroke="currentColor"
-                    className="text-primary cursor-pointer hover:text-destructive transition-all duration-200"
-                    strokeWidth="2"
-                    markerEnd="url(#arrowhead-filled)"
-                    style={{ pointerEvents: "stroke" }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (confirm('Delete this connection?')) {
-                        handleDeleteLine(line.id)
-                      }
-                    }}
-                  />
-                </g>
-              )
-            })}
-          </svg>
 
           {/* Tasks - positioned within safe area to prevent edge clipping */}
           <div className="absolute inset-0" style={{ zIndex: 15 }}>
             {tasks.map((task) => {
               const x = task.urgency
               const y = 100 - task.importance
-              const isSelected = selectedTaskForLine === task.id
               const taskSize = isMobile ? 40 : 60
               const offset = taskSize / 2
               // Add larger margin to prevent clipping and ensure draggability in corners
@@ -730,18 +638,16 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                 <div
                   key={task.id}
                   data-task-id={task.id}
-                  className={`absolute group transition-all duration-200 ${isDrawingLine
-                    ? "hover:ring-2 hover:ring-primary cursor-pointer"
-                    : draggedTask?.id === task.id
-                      ? "opacity-50 cursor-grabbing"
-                      : "hover:ring-2 hover:ring-primary hover:scale-105 cursor-grab"
-                    } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                  className={`absolute group transition-all duration-200 ${draggedTask?.id === task.id
+                    ? "opacity-50 cursor-grabbing"
+                    : "hover:ring-2 hover:ring-primary hover:scale-105 cursor-grab"
+                    }`}
                   style={{
                     left: `calc(${marginX}px + (100% - ${marginX * 2}px) * ${x / 100} - ${offset}px)`,
                     top: `calc(${marginY}px + (100% - ${marginY * 2}px) * ${y / 100} - ${offset}px)`,
                     transform: "translate(0, 0)",
                   }}
-                  draggable={!isDrawingLine && !isMobile && !isOrganizing}
+                  draggable={!isMobile && !isOrganizing}
                   onDragStart={(e) => handleTaskDragStart(task, e)}
                   onDragEnd={handleTaskDragEnd}
                   onClick={(e) => handleTaskClick(task, e)}
@@ -764,7 +670,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
                           <div className="text-muted-foreground">{task.assignees.map((p) => p.name).join(", ")}</div>
                         )}
                         <div className="text-muted-foreground text-xs mt-1">
-                          {isDrawingLine ? "Click to connect" : "Click for details • Drag to move"}
+                          Click for details • Drag to move
                         </div>
                       </div>
                     )}

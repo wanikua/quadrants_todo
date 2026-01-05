@@ -247,6 +247,16 @@ export function BulkTaskInput({
   const createTasks = async () => {
     if (parsedTasks.length === 0) return
 
+    // 保存任务数据副本
+    const tasksToCreate = [...parsedTasks]
+    const taskCount = tasksToCreate.length
+
+    // 立即关闭对话框并重置状态,提供即时反馈
+    setInputText("")
+    setParsedTasks([])
+    onOpenChange(false)
+
+    // 后台创建任务
     setIsCreating(true)
     try {
       const response = await fetch('/api/tasks/bulk-create', {
@@ -254,7 +264,7 @@ export function BulkTaskInput({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,
-          tasks: parsedTasks.map(task => ({
+          tasks: tasksToCreate.map(task => ({
             description: task.description,
             urgency: task.finalUrgency!,
             importance: task.finalImportance!,
@@ -271,11 +281,6 @@ export function BulkTaskInput({
 
       const result = await response.json()
       toast.success(`Created ${result.created} tasks successfully!`)
-
-      // Reset state
-      setInputText("")
-      setParsedTasks([])
-      onOpenChange(false)
       onTasksCreated()
     } catch (error) {
       console.error('Create tasks error:', error)
