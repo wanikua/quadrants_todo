@@ -77,6 +77,7 @@ export default function QuadrantTodoClient({
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
   const [isBulkAddOpen, setIsBulkAddOpen] = useState(false)
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false)
   const [showHelpDialog, setShowHelpDialog] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [focusIndex, setFocusIndex] = useState(0)
@@ -593,27 +594,34 @@ export default function QuadrantTodoClient({
   }
 
   const handleSubmitTask = async () => {
-    if (!newTaskData.description.trim()) return
+    if (!newTaskData.description.trim() || isSubmittingTask) return
 
-    // 保存任务数据
-    const taskData = { ...newTaskData }
+    // 防止重复提交
+    setIsSubmittingTask(true)
 
-    // 立即关闭对话框和重置表单,提供即时反馈
-    setIsAddTaskOpen(false)
-    setNewTaskData({
-      description: "",
-      urgency: 50,
-      importance: 50,
-      assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
-    })
+    try {
+      // 保存任务数据
+      const taskData = { ...newTaskData }
 
-    // 后台创建任务
-    await handleTaskCreate(
-      taskData.description,
-      taskData.urgency,
-      taskData.importance,
-      taskData.assigneeIds
-    )
+      // 后台创建任务
+      await handleTaskCreate(
+        taskData.description,
+        taskData.urgency,
+        taskData.importance,
+        taskData.assigneeIds
+      )
+
+      // 任务创建成功后才关闭对话框和重置表单
+      setIsAddTaskOpen(false)
+      setNewTaskData({
+        description: "",
+        urgency: 50,
+        importance: 50,
+        assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
+      })
+    } finally {
+      setIsSubmittingTask(false)
+    }
   }
 
 
@@ -1448,11 +1456,11 @@ export default function QuadrantTodoClient({
               )}
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddTaskOpen(false)}>
+                <Button variant="outline" onClick={() => setIsAddTaskOpen(false)} disabled={isSubmittingTask}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmitTask} disabled={!newTaskData.description.trim()}>
-                  Create Task
+                <Button onClick={handleSubmitTask} disabled={!newTaskData.description.trim() || isSubmittingTask}>
+                  {isSubmittingTask ? "Creating..." : "Create Task"}
                 </Button>
               </div>
             </div>

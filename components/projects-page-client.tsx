@@ -23,6 +23,7 @@ import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { joinProject } from "@/app/db/actions"
+import QuickLookTodos from "@/components/quick-look-todos"
 
 interface Project {
   id: string
@@ -244,14 +245,15 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
           </div>
         </div>
 
-        <div className="mb-12 flex flex-wrap gap-4">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-black hover:bg-gray-800 text-white transition-all font-bold h-12 px-6 rounded-xl border-3 border-black shadow-bold hover:shadow-bold-hover hover:-translate-y-1">
-                <Plus className="mr-2 h-5 w-5" />
-                New Project
-              </Button>
-            </DialogTrigger>
+        <div className="mb-12 flex flex-wrap gap-4 items-start justify-between">
+          <div className="flex flex-wrap gap-4">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-black hover:bg-gray-800 text-white transition-all font-bold h-12 px-6 rounded-xl border-3 border-black shadow-bold hover:shadow-bold-hover hover:-translate-y-1">
+                  <Plus className="mr-2 h-5 w-5" />
+                  New Project
+                </Button>
+              </DialogTrigger>
             <DialogContent className="border-3 border-black shadow-bold-lg rounded-2xl p-6 sm:p-8">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black">Create New Project</DialogTitle>
@@ -298,15 +300,15 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                 </Button>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
 
-          <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="bg-white hover:bg-gray-50 text-black border-3 border-black transition-all font-bold h-12 px-6 rounded-xl shadow-bold hover:shadow-bold-hover hover:-translate-y-1">
-                <Folder className="mr-2 h-5 w-5" />
-                Join Project
-              </Button>
-            </DialogTrigger>
+            <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="bg-white hover:bg-gray-50 text-black border-3 border-black transition-all font-bold h-12 px-6 rounded-xl shadow-bold hover:shadow-bold-hover hover:-translate-y-1">
+                  <Folder className="mr-2 h-5 w-5" />
+                  Join Project
+                </Button>
+              </DialogTrigger>
             <DialogContent className="border-3 border-black shadow-bold-lg rounded-2xl p-6 sm:p-8">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black">Join Existing Project</DialogTitle>
@@ -338,7 +340,11 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                 </Button>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
+
+          {/* Quick Look on the right side */}
+          <QuickLookTodos />
         </div>
 
         {projects.length === 0 ? (
