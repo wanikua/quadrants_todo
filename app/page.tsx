@@ -375,7 +375,7 @@ export default function HomePage() {
                     ].map((user, index) => (
                       <div key={index} className="w-12 h-12 rounded-full border-3 border-white shadow-md overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 transition-transform hover:scale-110 hover:z-10">
                         <Image
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.seed}`}
+                          src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${user.seed}`}
                           alt={`Team member ${index + 1}`}
                           width={48}
                           height={48}
