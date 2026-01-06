@@ -2,9 +2,10 @@
 
 import { db } from './index'
 import { projects, projectMembers, tasks, players, taskAssignments, lines, comments, userActivity } from './schema'
-import { eq, and, desc, gte, sql, or, isNull } from 'drizzle-orm'
+import { eq, and, desc, gte, sql as sqlOperator, or, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getUserId } from '@/lib/auth'
+import { sql } from '@/lib/database'
 
 // Fallback data for when database is not available
 const fallbackProject = {
@@ -645,6 +646,43 @@ async function updateProjectTimestamp(projectId: string) {
   }
 }
 
+// Cache for user subscription status to avoid repeated DB queries within the same request
+const userSubscriptionCache = new Map<string, { isPro: boolean, timestamp: number }>()
+const CACHE_TTL = 5000 // 5 seconds
+
+async function getUserSubscriptionStatus(userId: string): Promise<boolean> {
+  // Check cache first
+  const cached = userSubscriptionCache.get(userId)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.isPro
+  }
+
+  if (!sql) {
+    return false
+  }
+
+  try {
+    // Query database directly instead of calling getUser() to avoid Clerk API calls
+    const result = await sql`
+      SELECT subscription_plan, subscription_status
+      FROM users
+      WHERE id = ${userId}
+      LIMIT 1
+    `
+
+    const isPro = result.length > 0 &&
+                  result[0].subscription_plan === 'pro' &&
+                  result[0].subscription_status === 'active'
+
+    // Cache the result
+    userSubscriptionCache.set(userId, { isPro, timestamp: Date.now() })
+    return isPro
+  } catch (error) {
+    console.error('Error getting user subscription status:', error)
+    return false
+  }
+}
+
 export async function getUserProjectAccess(userId: string, projectId: string): Promise<boolean> {
   if (!db) {
     console.warn('Database not available, allowing access')
@@ -660,9 +698,7 @@ export async function getUserProjectAccess(userId: string, projectId: string): P
 
     if (ownedProjects.length > 0) {
       // User is owner, now check if they have access based on subscription
-      const { getUser } = await import('@/lib/auth')
-      const user = await getUser()
-      const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active'
+      const isPro = await getUserSubscriptionStatus(userId)
 
       if (isPro) {
         // Pro users have access to all their projects
@@ -676,7 +712,7 @@ export async function getUserProjectAccess(userId: string, projectId: string): P
           .orderBy(desc(projects.updated_at), desc(projects.created_at))
           .limit(2)
 
-        const accessibleProjectIds = userProjects.map(p => p.id)
+        const accessibleProjectIds = userProjects.map((p: { id: string }) => p.id)
         return accessibleProjectIds.includes(projectId)
       }
     }
