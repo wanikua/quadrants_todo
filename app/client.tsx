@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo, useEffect } from "react"
+import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import type { TaskWithAssignees, Player, Line } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
 import { logger, debug } from "@/lib/debug"
@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Sparkles, LogOut, HelpCircle, Share2 } from "lucide-react"
+import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Wand2, Sparkles, LogOut, HelpCircle, Share2 } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -126,6 +126,12 @@ export default function QuadrantTodoClient({
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  // Toolbar drag state
+  const [toolbarX, setToolbarX] = useState(0) // Offset from center
+  const [isDraggingToolbar, setIsDraggingToolbar] = useState(false)
+  const toolbarDragStartX = useRef(0)
+  const toolbarStartOffset = useRef(0)
+
   // Focus mode: Listen for ESC key globally
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -150,6 +156,47 @@ export default function QuadrantTodoClient({
     setIsFullscreen(value)
     onFullscreenChange?.(value)
   }, [onFullscreenChange])
+
+  // Toolbar drag handlers
+  const handleToolbarDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    setIsDraggingToolbar(true)
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    toolbarDragStartX.current = clientX
+    toolbarStartOffset.current = toolbarX
+  }, [toolbarX])
+
+  const handleToolbarDrag = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isDraggingToolbar) return
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const deltaX = clientX - toolbarDragStartX.current
+    const maxOffset = window.innerWidth / 2 - 150 // Keep toolbar visible
+    const newX = Math.max(-maxOffset, Math.min(maxOffset, toolbarStartOffset.current + deltaX))
+    setToolbarX(newX)
+  }, [isDraggingToolbar])
+
+  const handleToolbarDragEnd = useCallback(() => {
+    setIsDraggingToolbar(false)
+  }, [])
+
+  // Toolbar drag event listeners
+  useEffect(() => {
+    if (isDraggingToolbar) {
+      const onMove = (e: MouseEvent | TouchEvent) => handleToolbarDrag(e)
+      const onEnd = () => handleToolbarDragEnd()
+
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onEnd)
+      window.addEventListener('touchmove', onMove)
+      window.addEventListener('touchend', onEnd)
+
+      return () => {
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onEnd)
+        window.removeEventListener('touchmove', onMove)
+        window.removeEventListener('touchend', onEnd)
+      }
+    }
+  }, [isDraggingToolbar, handleToolbarDrag, handleToolbarDragEnd])
 
   // Track user activity to pause sync during interactions
   const handleUserActivity = useCallback(() => {
@@ -1117,7 +1164,7 @@ export default function QuadrantTodoClient({
                 disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Sparkles className="w-4 h-4" />
+                <Wand2 className="w-4 h-4" />
                 Organize
               </button>
               {/* Fullscreen Button */}
@@ -1143,7 +1190,7 @@ export default function QuadrantTodoClient({
                 disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Sparkles className="w-4 h-4" />
+                <Wand2 className="w-4 h-4" />
                 Organize
               </button>
               {/* Exit Fullscreen Button */}
@@ -1276,8 +1323,8 @@ export default function QuadrantTodoClient({
                         <div
                           key={task.id}
                           className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-black rounded-2xl transition-all ${isCompleted
-                              ? 'bg-gray-100 opacity-70'
-                              : 'bg-white hover:shadow-md cursor-pointer'
+                            ? 'bg-gray-100 opacity-70'
+                            : 'bg-white hover:shadow-md cursor-pointer'
                             }`}
                         >
                           {/* Checkbox Circle */}
@@ -1287,8 +1334,8 @@ export default function QuadrantTodoClient({
                               handleToggleTaskComplete(task.id)
                             }}
                             className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-black flex items-center justify-center transition-all ${isCompleted
-                                ? 'bg-black'
-                                : 'bg-white hover:bg-gray-100'
+                              ? 'bg-black'
+                              : 'bg-white hover:bg-gray-100'
                               }`}
                           >
                             {isCompleted && (
@@ -1312,8 +1359,8 @@ export default function QuadrantTodoClient({
                                 <Badge
                                   variant="outline"
                                   className={`text-xs ${getQuadrantLabel(task.urgency, task.importance).includes('Urgent')
-                                      ? 'bg-yellow-200 border-yellow-400'
-                                      : ''
+                                    ? 'bg-yellow-200 border-yellow-400'
+                                    : ''
                                     }`}
                                 >
                                   {getQuadrantLabel(task.urgency, task.importance)}
@@ -1346,370 +1393,392 @@ export default function QuadrantTodoClient({
 
       {/* Add Task Dialog */}
       <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add New Task</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={newTaskData.description}
+                onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
+                placeholder="Enter task description..."
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newTaskData.description}
-                  onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
-                  placeholder="Enter task description..."
+                <Label htmlFor="urgency">Urgency: {newTaskData.urgency}%</Label>
+                <Input
+                  id="urgency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={newTaskData.urgency}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, urgency: parseInt(e.target.value) })}
                   className="mt-1"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="urgency">Urgency: {newTaskData.urgency}%</Label>
-                  <Input
-                    id="urgency"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={newTaskData.urgency}
-                    onChange={(e) => setNewTaskData({ ...newTaskData, urgency: parseInt(e.target.value) })}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="importance">Importance: {newTaskData.importance}%</Label>
-                  <Input
-                    id="importance"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={newTaskData.importance}
-                    onChange={(e) => setNewTaskData({ ...newTaskData, importance: parseInt(e.target.value) })}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              {projectType === "team" && players.length > 0 && (
-                <div>
-                  <Label>Assign to Players</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {players.map((player) => (
-                      <Badge
-                        key={player.id}
-                        variant={newTaskData.assigneeIds.includes(player.id) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        style={newTaskData.assigneeIds.includes(player.id) ? { backgroundColor: player.color } : {}}
-                        onClick={() => {
-                          const isSelected = newTaskData.assigneeIds.includes(player.id)
-                          setNewTaskData({
-                            ...newTaskData,
-                            assigneeIds: isSelected
-                              ? newTaskData.assigneeIds.filter(id => id !== player.id)
-                              : [...newTaskData.assigneeIds, player.id]
-                          })
-                        }}
-                      >
-                        {player.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddTaskOpen(false)} disabled={isSubmittingTask}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSubmitTask} disabled={!newTaskData.description.trim() || isSubmittingTask}>
-                  {isSubmittingTask ? "Creating..." : "Create Task"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Task Detail Dialog */}
-        {selectedTask && (
-          <TaskDetailDialog
-            task={selectedTask}
-            players={players}
-            projectType={projectType}
-            userName={userName}
-            isOpen={isTaskDetailOpen}
-            onOpenChange={setIsTaskDetailOpen}
-            isMobile={isMobile}
-            onDeleteTask={handleTaskDelete}
-            onUpdateTask={handleTaskUpdate}
-            onAddComment={async (taskId: number, content: string, authorName: string) => {
-              const result = await addComment(taskId, content, authorName)
-              if (result.success) {
-                // Update selectedTask with the new comment for immediate UI feedback
-                if (selectedTask && selectedTask.id === taskId && result.comment) {
-                  setSelectedTask({
-                    ...selectedTask,
-                    comments: [...(selectedTask.comments || []), result.comment]
-                  })
-                }
-                setLastSyncTime(new Date())
-                toast.success("Comment added")
-                router.refresh()
-              } else {
-                toast.error(result.error || "Failed to add comment")
-                // Throw error so TaskDetailDialog knows operation failed
-                throw new Error(result.error || "Failed to add comment")
-              }
-            }}
-            onDeleteComment={async (commentId: number, taskId: number) => {
-              const result = await deleteCommentAction(commentId)
-              if (result.success) {
-                // Update selectedTask by removing the deleted comment
-                if (selectedTask && selectedTask.id === taskId) {
-                  setSelectedTask({
-                    ...selectedTask,
-                    comments: selectedTask.comments?.filter(c => c.id !== commentId) || []
-                  })
-                }
-                setLastSyncTime(new Date())
-                toast.success("Comment deleted")
-                router.refresh()
-              } else {
-                toast.error(result.error || "Failed to delete comment")
-              }
-            }}
-          />
-        )}
-
-        {/* Manage Players Dialog */}
-        <Dialog open={isManagePlayersOpen} onOpenChange={setIsManagePlayersOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Project Members</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              {/* Players List */}
               <div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {userRole === "owner"
-                    ? "Members are automatically created when they join the project. Click the color dot to change a member's color."
-                    : "Project members list"}
-                </p>
-                <div className="mt-2 space-y-3 max-h-[400px] overflow-y-auto">
-                  {players.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No members yet</p>
-                  ) : (
-                    players.map((player) => (
-                      <div key={player.id} className="p-3 border rounded-lg">
-                        <div className="flex items-center gap-3 mb-2">
-                          {userRole === "owner" ? (
-                            <button
-                              onClick={() => setEditingPlayerId(editingPlayerId === player.id ? null : player.id)}
-                              className="w-6 h-6 rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform cursor-pointer"
-                              style={{ backgroundColor: player.color }}
-                              title="Click to change color"
-                            />
-                          ) : (
-                            <div
-                              className="w-6 h-6 rounded-full border-2 border-white shadow-md"
-                              style={{ backgroundColor: player.color }}
-                            />
-                          )}
-                          <span className="text-sm font-medium flex-1">{player.name}</span>
-                          {userRole === "owner" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeletePlayer(player.id, player.name)}
-                              className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              title="Delete member"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                <Label htmlFor="importance">Importance: {newTaskData.importance}%</Label>
+                <Input
+                  id="importance"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={newTaskData.importance}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, importance: parseInt(e.target.value) })}
+                  className="mt-1"
+                />
+              </div>
+            </div>
 
-                        {/* Color Picker - shown when editing (owner only) */}
-                        {userRole === "owner" && editingPlayerId === player.id && (
-                          <div className="mt-3 p-3 bg-muted/50 rounded-md">
-                            <p className="text-xs text-muted-foreground mb-2">Choose new color:</p>
-                            <div className="grid grid-cols-8 gap-2">
-                              {['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'].map((color) => (
-                                <button
-                                  key={color}
-                                  onClick={async () => {
-                                    setPlayers(prev => prev.map(p =>
-                                      p.id === player.id ? { ...p, color } : p
-                                    ))
-                                    await updatePlayer(player.id, player.name, color)
-                                    setEditingPlayerId(null)
-                                  }}
-                                  className="w-8 h-8 rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform"
-                                  style={{ backgroundColor: color }}
-                                  title={color}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
+            {projectType === "team" && players.length > 0 && (
+              <div>
+                <Label>Assign to Players</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {players.map((player) => (
+                    <Badge
+                      key={player.id}
+                      variant={newTaskData.assigneeIds.includes(player.id) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      style={newTaskData.assigneeIds.includes(player.id) ? { backgroundColor: player.color } : {}}
+                      onClick={() => {
+                        const isSelected = newTaskData.assigneeIds.includes(player.id)
+                        setNewTaskData({
+                          ...newTaskData,
+                          assigneeIds: isSelected
+                            ? newTaskData.assigneeIds.filter(id => id !== player.id)
+                            : [...newTaskData.assigneeIds, player.id]
+                        })
+                      }}
+                    >
+                      {player.name}
+                    </Badge>
+                  ))}
                 </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            )}
 
-        {/* Delete Project Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to delete this project?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the project{" "}
-                <span className="font-bold text-black">&quot;{projectName}&quot;</span> and all of its tasks, comments, and data.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteProject}
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              >
-                {isDeleting ? "Deleting..." : "Delete Project"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Delete Task Confirmation Dialog */}
-        <AlertDialog open={deleteTaskDialogOpen} onOpenChange={setDeleteTaskDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirm Task Deletion?</AlertDialogTitle>
-              <AlertDialogDescription>
-                {taskToDelete && (
-                  <>
-                    Are you sure you want to permanently delete the task <strong>&quot;{taskToDelete.description}&quot;</strong>? This action cannot be undone.
-                  </>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setTaskToDelete(null)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeleteTask} className="bg-red-600 hover:bg-red-700">
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Edit Project Dialog */}
-        <Dialog open={isEditingProject} onOpenChange={setIsEditingProject}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Project</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Project Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editedProjectName}
-                  onChange={(e) => setEditedProjectName(e.target.value)}
-                  placeholder="Project name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Description (optional)</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editedProjectDescription}
-                  onChange={(e) => setEditedProjectDescription(e.target.value)}
-                  placeholder="Project description"
-                  rows={3}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setIsEditingProject(false)}>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddTaskOpen(false)} disabled={isSubmittingTask}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveProjectEdit}>
-                Save Changes
+              <Button onClick={handleSubmitTask} disabled={!newTaskData.description.trim() || isSubmittingTask}>
+                {isSubmittingTask ? "Creating..." : "Create Task"}
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Archive Project Confirmation */}
-        <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Archive this project?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will archive the project <span className="font-bold text-black">&quot;{projectName}&quot;</span>.
-                You can restore it later from the archived projects list.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleArchiveProject}
-                disabled={isArchiving}
-                className="bg-green-600 hover:bg-green-700 focus:ring-green-600"
-              >
-                {isArchiving ? "Archiving..." : "Archive Project"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Bulk Task Creation with AI */}
-        <BulkTaskInput
-          projectId={projectId}
+      {/* Task Detail Dialog */}
+      {selectedTask && (
+        <TaskDetailDialog
+          task={selectedTask}
           players={players}
-          onTasksCreated={() => router.refresh()}
-          open={isBulkAddOpen}
-          onOpenChange={setIsBulkAddOpen}
           projectType={projectType}
           userName={userName}
+          isOpen={isTaskDetailOpen}
+          onOpenChange={setIsTaskDetailOpen}
+          isMobile={isMobile}
+          onDeleteTask={handleTaskDelete}
+          onUpdateTask={handleTaskUpdate}
+          onAddComment={async (taskId: number, content: string, authorName: string) => {
+            const result = await addComment(taskId, content, authorName)
+            if (result.success) {
+              // Update selectedTask with the new comment for immediate UI feedback
+              if (selectedTask && selectedTask.id === taskId && result.comment) {
+                setSelectedTask({
+                  ...selectedTask,
+                  comments: [...(selectedTask.comments || []), result.comment]
+                })
+              }
+              setLastSyncTime(new Date())
+              toast.success("Comment added")
+              router.refresh()
+            } else {
+              toast.error(result.error || "Failed to add comment")
+              // Throw error so TaskDetailDialog knows operation failed
+              throw new Error(result.error || "Failed to add comment")
+            }
+          }}
+          onDeleteComment={async (commentId: number, taskId: number) => {
+            const result = await deleteCommentAction(commentId)
+            if (result.success) {
+              // Update selectedTask by removing the deleted comment
+              if (selectedTask && selectedTask.id === taskId) {
+                setSelectedTask({
+                  ...selectedTask,
+                  comments: selectedTask.comments?.filter(c => c.id !== commentId) || []
+                })
+              }
+              setLastSyncTime(new Date())
+              toast.success("Comment deleted")
+              router.refresh()
+            } else {
+              toast.error(result.error || "Failed to delete comment")
+            }
+          }}
         />
+      )}
 
-        {/* Help Dialog */}
-        <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
-          <DialogContent className="max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-medium">Usage Instructions</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <div>
-                <h4 className="font-medium mb-1">Create Task</h4>
-                <p className="text-muted-foreground">Long press on empty space or use &quot;Add Task&quot;</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">Move Task</h4>
-                <p className="text-muted-foreground">Drag to change urgency/importance</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">Edit Task</h4>
-                <p className="text-muted-foreground">Click on task to view details</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">Complete/Delete</h4>
-                <p className="text-muted-foreground">Drag to green checkmark or red trash</p>
-              </div>
+      {/* Manage Players Dialog */}
+      <Dialog open={isManagePlayersOpen} onOpenChange={setIsManagePlayersOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Project Members</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Players List */}
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                {userRole === "owner"
+                  ? "Members are automatically created when they join the project. Click the color dot to change a member's color."
+                  : "Project members list"}
+              </p>
+              <div className="mt-2 space-y-3 max-h-[400px] overflow-y-auto">
+                {players.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No members yet</p>
+                ) : (
+                  players.map((player) => (
+                    <div key={player.id} className="p-3 border rounded-lg">
+                      <div className="flex items-center gap-3 mb-2">
+                        {userRole === "owner" ? (
+                          <button
+                            onClick={() => setEditingPlayerId(editingPlayerId === player.id ? null : player.id)}
+                            className="w-6 h-6 rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform cursor-pointer"
+                            style={{ backgroundColor: player.color }}
+                            title="Click to change color"
+                          />
+                        ) : (
+                          <div
+                            className="w-6 h-6 rounded-full border-2 border-white shadow-md"
+                            style={{ backgroundColor: player.color }}
+                          />
+                        )}
+                        <span className="text-sm font-medium flex-1">{player.name}</span>
+                        {userRole === "owner" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeletePlayer(player.id, player.name)}
+                            className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            title="Delete member"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
 
-              <div>
-                <h4 className="font-medium mb-1">Priority Highlight</h4>
-                <p className="text-muted-foreground">Highest priority task is auto-highlighted</p>
+                      {/* Color Picker - shown when editing (owner only) */}
+                      {userRole === "owner" && editingPlayerId === player.id && (
+                        <div className="mt-3 p-3 bg-muted/50 rounded-md">
+                          <p className="text-xs text-muted-foreground mb-2">Choose new color:</p>
+                          <div className="grid grid-cols-8 gap-2">
+                            {['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'].map((color) => (
+                              <button
+                                key={color}
+                                onClick={async () => {
+                                  setPlayers(prev => prev.map(p =>
+                                    p.id === player.id ? { ...p, color } : p
+                                  ))
+                                  await updatePlayer(player.id, player.name, color)
+                                  setEditingPlayerId(null)
+                                }}
+                                className="w-8 h-8 rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform"
+                                style={{ backgroundColor: color }}
+                                title={color}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {/* Floating Bottom Toolbar - Always visible */}
-      <div className={`fixed ${isFullscreen ? 'bottom-4' : 'bottom-4'} left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200`}>
+      {/* Delete Project Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project{" "}
+              <span className="font-bold text-black">&quot;{projectName}&quot;</span> and all of its tasks, comments, and data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProject}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? "Deleting..." : "Delete Project"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Task Confirmation Dialog */}
+      <AlertDialog open={deleteTaskDialogOpen} onOpenChange={setDeleteTaskDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Task Deletion?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {taskToDelete && (
+                <>
+                  Are you sure you want to permanently delete the task <strong>&quot;{taskToDelete.description}&quot;</strong>? This action cannot be undone.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTaskToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTask} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={isEditingProject} onOpenChange={setIsEditingProject}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Project Name</Label>
+              <Input
+                id="edit-name"
+                value={editedProjectName}
+                onChange={(e) => setEditedProjectName(e.target.value)}
+                placeholder="Project name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description (optional)</Label>
+              <Textarea
+                id="edit-description"
+                value={editedProjectDescription}
+                onChange={(e) => setEditedProjectDescription(e.target.value)}
+                placeholder="Project description"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsEditingProject(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveProjectEdit}>
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Archive Project Confirmation */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will archive the project <span className="font-bold text-black">&quot;{projectName}&quot;</span>.
+              You can restore it later from the archived projects list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchiveProject}
+              disabled={isArchiving}
+              className="bg-green-600 hover:bg-green-700 focus:ring-green-600"
+            >
+              {isArchiving ? "Archiving..." : "Archive Project"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Task Creation with AI */}
+      <BulkTaskInput
+        projectId={projectId}
+        players={players}
+        onTasksCreated={() => router.refresh()}
+        open={isBulkAddOpen}
+        onOpenChange={setIsBulkAddOpen}
+        projectType={projectType}
+        userName={userName}
+      />
+
+      {/* Help Dialog */}
+      <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-medium">Usage Instructions</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <h4 className="font-medium mb-1">Create Task</h4>
+              <p className="text-muted-foreground">Long press on empty space or use &quot;Add Task&quot;</p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-1">Move Task</h4>
+              <p className="text-muted-foreground">Drag to change urgency/importance</p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-1">Edit Task</h4>
+              <p className="text-muted-foreground">Click on task to view details</p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-1">Complete/Delete</h4>
+              <p className="text-muted-foreground">Drag to green checkmark or red trash</p>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-1">Priority Highlight</h4>
+              <p className="text-muted-foreground">Highest priority task is auto-highlighted</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Floating Bottom Toolbar - Draggable */}
+      <div
+        className={`fixed bottom-4 z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
+        style={{
+          left: `calc(50% + ${toolbarX}px)`,
+          transform: 'translateX(-50%)',
+        }}
+      >
+        {/* Drag Handle */}
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center cursor-grab hover:bg-gray-100 transition-colors"
+          onMouseDown={handleToolbarDragStart}
+          onTouchStart={handleToolbarDragStart}
+          title="Drag to move"
+        >
+          <svg className="w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="8" cy="8" r="2" />
+            <circle cx="16" cy="8" r="2" />
+            <circle cx="8" cy="16" r="2" />
+            <circle cx="16" cy="16" r="2" />
+          </svg>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200" />
         {/* Map/List Toggle */}
         <div className="flex items-center bg-gray-100 rounded-full p-0.5">
           <button

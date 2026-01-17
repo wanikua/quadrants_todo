@@ -470,7 +470,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       )}
 
       {!isFullscreen && (
-        <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6">
+        <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6 pt-2">
           {/* Organize Mode Banner */}
           {isOrganizing && onAcceptOrganize && onRevertOrganize && originalTaskPositions && (
             <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-950 border-2 border-purple-300 dark:border-purple-700 rounded-lg">
@@ -503,30 +503,6 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
               </div>
             </div>
           )}
-
-          <div className="flex items-center justify-end gap-2 mb-2">
-            {onOrganizeTasks && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onOrganizeTasks()
-                }}
-                disabled={tasks.length === 0 || isOrganizing}
-                className="flex items-center justify-center gap-1.5 px-3 h-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm font-medium group"
-                title="AI Organize tasks"
-              >
-                <Wand2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform duration-300" />
-                Organize
-              </button>
-            )}
-            <button
-              onClick={toggleFullscreen}
-              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200 hover:scale-110"
-              title="Enter fullscreen"
-            >
-              <Maximize2 className="w-5 h-5" />
-            </button>
-          </div>
 
           {isMobile && (
             <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
