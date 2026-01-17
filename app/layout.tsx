@@ -77,6 +77,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
+    // @ts-expect-error - routerPush/routerReplace are optional in Next.js App Router but types require them
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       {...(process.env.NODE_ENV === 'production' && {
