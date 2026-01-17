@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react"
 import type { TaskWithAssignees, Player, Line } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
+import { logger, debug } from "@/lib/debug"
 import { createTask, deleteTask, updateTask as updateTaskAction, deletePlayer, updatePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount, getArchivedTasks } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -217,14 +218,14 @@ export default function QuadrantTodoClient({
   const syncData = useCallback(async () => {
     // Skip sync if in organize mode to preserve preview
     if (isOrganizing) {
-      console.log('⏸️ [Sync] Skipping during organize preview')
+      logger.sync('Skipping during organize preview')
       return
     }
 
     // Skip sync if user is actively interacting (within 2 seconds of last activity)
     const timeSinceActivity = Date.now() - lastUserActivity
     if (isUserActive && timeSinceActivity < 2000) {
-      console.log('⏸️ [Sync] Skipping during user activity')
+      logger.sync('Skipping during user activity')
       return
     }
 
@@ -234,11 +235,11 @@ export default function QuadrantTodoClient({
     }
 
     try {
-      console.log('🔄 [Sync] Fetching data from server...')
+      logger.sync('Fetching data from server...')
       const response = await fetch(`/api/projects/${projectId}/sync`)
       if (response.ok) {
         const result = await response.json()
-        console.log('✅ [Sync] Data received:', {
+        logger.sync('Data received:', {
           tasks: result.data?.tasks?.length || 0,
           players: result.data?.players?.length || 0,
           lines: result.data?.lines?.length || 0,
@@ -261,7 +262,7 @@ export default function QuadrantTodoClient({
             serverTasks.forEach((serverTask: TaskWithAssignees) => {
               // Skip tasks that have pending updates
               if (pendingUpdateTaskIds.has(serverTask.id)) {
-                console.log('⏭️ [Sync] Skipping task with pending update:', serverTask.id)
+                logger.sync('Skipping task with pending update:', serverTask.id)
                 return
               }
 
@@ -275,14 +276,14 @@ export default function QuadrantTodoClient({
 
                 if (serverTime >= localTime) {
                   mergedTasks[localIndex] = serverTask
-                  console.log(`📥 [Sync] Updated task ${serverTask.id} (server newer)`)
+                  logger.sync(`Updated task ${serverTask.id} (server newer)`)
                 } else {
-                  console.log(`⏭️ [Sync] Keeping local task ${serverTask.id} (local newer)`)
+                  logger.sync(`Keeping local task ${serverTask.id} (local newer)`)
                 }
               } else {
                 // Add new task from server
                 mergedTasks.push(serverTask)
-                console.log(`➕ [Sync] Added new task ${serverTask.id}`)
+                logger.sync(`Added new task ${serverTask.id}`)
               }
             })
 
@@ -300,10 +301,10 @@ export default function QuadrantTodoClient({
           setLastSyncTime(new Date())
         }
       } else {
-        console.error('❌ [Sync] Failed:', response.status, response.statusText)
+        logger.sync('Failed:', response.status, response.statusText)
       }
     } catch (error) {
-      console.error('❌ [Sync] Error:', error)
+      logger.sync('Error:', error)
     }
   }, [projectId, isOrganizing, pendingUpdateTaskIds, lastUserActivity, isUserActive])
 
@@ -331,10 +332,10 @@ export default function QuadrantTodoClient({
 
   // Real-time sync - always enabled for team projects
   useEffect(() => {
-    console.log('🔍 [Sync] Effect triggered - projectType:', projectType, 'isOfflineMode:', isOfflineMode, 'activeUserCount:', activeUserCount)
+    logger.sync('Effect triggered - projectType:', projectType, 'isOfflineMode:', isOfflineMode, 'activeUserCount:', activeUserCount)
 
     if (projectType === 'team' && !isOfflineMode) {
-      console.log('🚀 [Sync] Starting real-time sync, activeUserCount:', activeUserCount)
+      logger.sync('Starting real-time sync, activeUserCount:', activeUserCount)
       let interval: ReturnType<typeof setInterval> | null = null
       let isPageVisible = true
 
@@ -342,14 +343,14 @@ export default function QuadrantTodoClient({
       // Multiple users: 1500ms (balanced, prevents conflicts)
       // Single user: 3000ms (conserves resources)
       const syncInterval = activeUserCount > 1 ? 1500 : 3000
-      console.log(`📊 [Sync] Using interval: ${syncInterval}ms (${activeUserCount > 1 ? 'multi-user' : 'single-user'} mode)`)
+      logger.sync(`Using interval: ${syncInterval}ms (${activeUserCount > 1 ? 'multi-user' : 'single-user'} mode)`)
 
       // Check if page is visible
       const handleVisibilityChange = () => {
         isPageVisible = !document.hidden
 
         if (isPageVisible) {
-          console.log('👁️ [Sync] Page visible, resuming sync')
+          logger.sync('Page visible, resuming sync')
           // Immediately sync when page becomes visible
           syncData()
 
@@ -361,7 +362,7 @@ export default function QuadrantTodoClient({
             }
           }, syncInterval)
         } else {
-          console.log('👁️ [Sync] Page hidden, pausing sync')
+          logger.sync('Page hidden, pausing sync')
           // Pause polling when page is hidden to save resources
           if (interval) clearInterval(interval)
         }
@@ -371,7 +372,7 @@ export default function QuadrantTodoClient({
       document.addEventListener('visibilitychange', handleVisibilityChange)
 
       // Start initial polling
-      console.log(`⏰ [Sync] Starting polling every ${syncInterval}ms`)
+      logger.sync(`Starting polling every ${syncInterval}ms`)
       interval = setInterval(() => {
         if (isPageVisible) {
           syncData()
@@ -382,7 +383,7 @@ export default function QuadrantTodoClient({
       syncData()
 
       return () => {
-        console.log('🛑 [Sync] Stopping sync')
+        logger.sync('Stopping sync')
         if (interval) clearInterval(interval)
         document.removeEventListener('visibilitychange', handleVisibilityChange)
       }
@@ -617,7 +618,7 @@ export default function QuadrantTodoClient({
             newUrgency: urgency,
             newImportance: importance
           })
-        }).catch(err => console.error('Failed to record learning:', err))
+        }).catch(err => debug.error('Failed to record learning:', err))
       }
 
       // Refresh to get latest data from server
@@ -721,7 +722,7 @@ export default function QuadrantTodoClient({
       router.refresh()
     } catch (error) {
       toast.error("Failed to delete project")
-      console.error(error)
+      debug.error(error)
     } finally {
       setIsDeleting(false)
     }
@@ -749,7 +750,7 @@ export default function QuadrantTodoClient({
       router.refresh()
     } catch (error) {
       toast.error("Failed to leave project")
-      console.error(error)
+      debug.error(error)
     }
   }
 
@@ -780,7 +781,7 @@ export default function QuadrantTodoClient({
       router.refresh()
     } catch (error) {
       toast.error("Failed to update project")
-      console.error(error)
+      debug.error(error)
     }
   }
 
@@ -816,7 +817,7 @@ export default function QuadrantTodoClient({
       router.refresh()
     } catch (error) {
       toast.error("Failed to archive project")
-      console.error(error)
+      debug.error(error)
     } finally {
       setIsArchiving(false)
     }
@@ -824,11 +825,11 @@ export default function QuadrantTodoClient({
 
   // One-click organize: intelligently redistribute tasks using AI
   const handleOrganizeTasks = async () => {
-    console.log('🔵 handleOrganizeTasks called, tasks.length:', tasks.length, 'isOrganizing:', isOrganizing, 'isOrganizingInProgress:', isOrganizingInProgress)
+    logger.component('QuadrantTodo', 'handleOrganizeTasks called, tasks:', tasks.length, 'isOrganizing:', isOrganizing, 'isOrganizingInProgress:', isOrganizingInProgress)
 
     // Prevent organizing if already in organize mode or in progress
     if (isOrganizing || isOrganizingInProgress) {
-      console.log('⚠️ Already in organize mode or processing, ignoring request')
+      logger.component('QuadrantTodo', 'Already in organize mode, ignoring')
       toast.warning("Please accept or revert current changes first")
       return
     }
@@ -866,7 +867,7 @@ export default function QuadrantTodoClient({
         return
       }
     } catch (error) {
-      console.error('Lock acquire error:', error)
+      debug.error('Lock acquire error:', error)
       toast.error('Failed to start organize operation')
       setIsOrganizingInProgress(false) // Reset on error
       setIsOrganizingLoading(false) // Hide loading overlay
@@ -879,7 +880,7 @@ export default function QuadrantTodoClient({
       originalPositions.set(task.id, { urgency: task.urgency, importance: task.importance })
     })
     setOriginalTaskPositions(originalPositions)
-    console.log('🔵 Original positions saved:', originalPositions.size, 'tasks')
+    debug.log('Original positions saved:', originalPositions.size, 'tasks')
 
     try {
       const requestBody = {
@@ -890,8 +891,8 @@ export default function QuadrantTodoClient({
           importance: t.importance
         }))
       }
-      console.log('🔵 Calling API with', requestBody.tasks.length, 'tasks')
-      console.log('🔵 Task positions before:', requestBody.tasks.map(t => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
+      debug.log('Calling API with', requestBody.tasks.length, 'tasks')
+      debug.log('Task positions before:', requestBody.tasks.map(t => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
 
       // Call AI API to organize tasks
       const response = await fetch('/api/ai/organize-tasks', {
@@ -900,20 +901,20 @@ export default function QuadrantTodoClient({
         body: JSON.stringify(requestBody)
       })
 
-      console.log('🔵 API response status:', response.status)
+      debug.log('API response status:', response.status)
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('🔴 API error:', response.status, errorText)
+        debug.error('API error:', response.status, errorText)
         throw new Error(`Failed to organize tasks: ${response.status}`)
       }
 
       const responseData = await response.json()
-      console.log('🔵 API response data:', responseData)
+      debug.log('API response data:', responseData)
       const { organizedTasks } = responseData
 
-      console.log('🔵 Organized tasks received:', organizedTasks.length)
-      console.log('🔵 Task positions after:', organizedTasks.map((t: TaskWithAssignees) => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
+      debug.log('Organized tasks received:', organizedTasks.length)
+      debug.log('Task positions after:', organizedTasks.map((t: TaskWithAssignees) => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
 
       // Apply organized positions to tasks
       const updatedTasks = tasks.map(task => {
@@ -928,14 +929,14 @@ export default function QuadrantTodoClient({
         return task
       })
 
-      console.log('🔵 Setting', updatedTasks.length, 'updated tasks')
+      debug.log('Setting', updatedTasks.length, 'updated tasks')
       setTasks(updatedTasks)
       setIsOrganizing(true)
       setIsOrganizingLoading(false) // Hide loading overlay after success
       // Keep isOrganizingInProgress true until user accepts/reverts
       toast.success("Tasks organized! Review changes and Accept or Revert.")
     } catch (error) {
-      console.error('🔴 Organization error:', error)
+      debug.error('Organization error:', error)
       toast.error('Failed to organize tasks. Please try again.')
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
@@ -948,13 +949,13 @@ export default function QuadrantTodoClient({
           method: 'DELETE'
         })
       } catch (lockError) {
-        console.error('Failed to release lock on error:', lockError)
+        debug.error('Failed to release lock on error:', lockError)
       }
     }
   }
 
   const handleAcceptOrganize = async () => {
-    console.log('🟢 Accepting organize changes...')
+    debug.log('Accepting organize changes...')
 
     // Only update tasks that actually moved
     const tasksToUpdate = tasks.filter(task => {
@@ -963,10 +964,10 @@ export default function QuadrantTodoClient({
       return original.urgency !== task.urgency || original.importance !== task.importance
     })
 
-    console.log(`📊 Updating ${tasksToUpdate.length} out of ${tasks.length} tasks`)
+    debug.log(`Updating ${tasksToUpdate.length} out of ${tasks.length} tasks`)
 
     if (tasksToUpdate.length === 0) {
-      console.log('⚠️ No tasks to update')
+      debug.log('No tasks to update')
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
       setIsOrganizingInProgress(false) // Reset on completion
@@ -976,7 +977,7 @@ export default function QuadrantTodoClient({
       try {
         await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
       } catch (error) {
-        console.error('Failed to release lock:', error)
+        debug.error('Failed to release lock:', error)
       }
       return
     }
@@ -1012,10 +1013,10 @@ export default function QuadrantTodoClient({
 
     try {
       await Promise.all(updatePromises)
-      console.log('🟢 Organization changes saved to database successfully')
+      debug.log('Organization changes saved to database successfully')
       toast.success(`✓ ${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? 's' : ''} organized!`)
     } catch (error) {
-      console.error("🔴 Failed to save organization:", error)
+      debug.error("Failed to save organization:", error)
       toast.error("Failed to save changes to database")
     } finally {
       // Clear pending state after save completes (with delay)
@@ -1031,7 +1032,7 @@ export default function QuadrantTodoClient({
       try {
         await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
       } catch (error) {
-        console.error('Failed to release lock:', error)
+        debug.error('Failed to release lock:', error)
       }
     }
   }
@@ -1056,7 +1057,7 @@ export default function QuadrantTodoClient({
     try {
       await fetch(`/api/projects/${projectId}/organize-lock`, { method: 'DELETE' })
     } catch (error) {
-      console.error('Failed to release lock:', error)
+      debug.error('Failed to release lock:', error)
     }
   }
 
@@ -1324,19 +1325,19 @@ export default function QuadrantTodoClient({
                 }
               }}
               onDragStart={(taskId) => {
-                console.log('🔵 [Drag] Starting drag for task:', taskId)
+                debug.log('[Drag] Starting drag for task:', taskId)
                 handleUserActivity() // Mark user as active
                 setPendingUpdateTaskIds(prev => new Set([...prev, taskId]))
               }}
               onDragEnd={(taskId) => {
-                console.log('🔵 [Drag] Ending drag for task:', taskId)
+                debug.log('[Drag] Ending drag for task:', taskId)
                 handleUserActivity() // Mark user as active
                 // Remove from pending after longer delay (1500ms to ensure DB completes)
                 setTimeout(() => {
                   setPendingUpdateTaskIds(prev => {
                     const next = new Set(prev)
                     next.delete(taskId)
-                    console.log('✅ [Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
+                    debug.log('[Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
                     return next
                   })
                 }, 1500)
