@@ -8,7 +8,7 @@ import { ScrollReveal } from "@/components/scroll-reveal"
 import { Footer } from "@/components/footer"
 import { useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { ProductHuntBadge } from "@/components/product-hunt-badge"
+import { PeerPushBadge } from "@/components/peer-push-badge"
 import QuadrantPlayground from "@/components/QuadrantPlayground"
 
 export default function HomePage() {
@@ -438,7 +438,7 @@ export default function HomePage() {
           </div>
         </main>
 
-        <ProductHuntBadge />
+        <PeerPushBadge />
 
         <Footer />
       </div>
