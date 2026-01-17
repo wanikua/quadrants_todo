@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,19 +50,19 @@ export function QuadrantMatrix({
   const matrixRef = useRef<HTMLDivElement>(null)
 
   // Categorize tasks into quadrants
-  const getQuadrant = (urgency: number, importance: number) => {
+  const getQuadrant = useCallback((urgency: number, importance: number) => {
     if (urgency >= 50 && importance >= 50) return 'urgent-important'
     if (urgency < 50 && importance >= 50) return 'not-urgent-important'
     if (urgency >= 50 && importance < 50) return 'urgent-not-important'
     return 'not-urgent-not-important'
-  }
+  }, [])
 
-  const quadrants = {
+  const quadrants = useMemo(() => ({
     'urgent-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'urgent-important'),
     'not-urgent-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'not-urgent-important'),
     'urgent-not-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'urgent-not-important'),
     'not-urgent-not-important': tasks.filter(task => getQuadrant(task.urgency, task.importance) === 'not-urgent-not-important')
-  }
+  }), [tasks, getQuadrant])
 
   const handleCreateTask = async () => {
     if (!newTask.description.trim()) return

@@ -11,7 +11,7 @@ const pool = new Pool({
 // 简单的内存缓存实现
 class SimpleCache {
   private cache = new Map<string, { data: any; expires: number }>()
-  private cleanupInterval: NodeJS.Timeout | null = null
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null
 
   constructor() {
     // 每5分钟清理过期缓存

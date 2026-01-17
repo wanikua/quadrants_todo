@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, serial, varchar, boolean, jsonb, real } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, serial, varchar, boolean, jsonb, real, index } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Projects table
@@ -35,7 +35,12 @@ export const tasks = pgTable('tasks', {
   archived: boolean('archived').default(false),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => ({
+  projectIdIdx: index('tasks_project_id_idx').on(table.project_id),
+  archivedIdx: index('tasks_archived_idx').on(table.archived),
+  projectArchivedIdx: index('tasks_project_archived_idx').on(table.project_id, table.archived),
+  updatedAtIdx: index('tasks_updated_at_idx').on(table.updated_at),
+}))
 
 // Players table (links users to projects for task assignments)
 export const players = pgTable('players', {
@@ -45,7 +50,10 @@ export const players = pgTable('players', {
   name: text('name').notNull(),
   color: text('color').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
-})
+}, (table) => ({
+  projectIdIdx: index('players_project_id_idx').on(table.project_id),
+  userIdIdx: index('players_user_id_idx').on(table.user_id),
+}))
 
 // Task assignments table (many-to-many relationship between tasks and players)
 export const taskAssignments = pgTable('task_assignments', {
@@ -53,7 +61,10 @@ export const taskAssignments = pgTable('task_assignments', {
   task_id: integer('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
   player_id: integer('player_id').notNull().references(() => players.id, { onDelete: 'cascade' }),
   assigned_at: timestamp('assigned_at').defaultNow().notNull(),
-})
+}, (table) => ({
+  taskIdIdx: index('task_assignments_task_id_idx').on(table.task_id),
+  playerIdIdx: index('task_assignments_player_id_idx').on(table.player_id),
+}))
 
 // Lines table (task connections)
 export const lines = pgTable('lines', {
@@ -65,7 +76,11 @@ export const lines = pgTable('lines', {
   size: integer('size').notNull().default(8),
   color: varchar('color', { length: 7 }).notNull().default('#374151'),
   created_at: timestamp('created_at').defaultNow().notNull(),
-})
+}, (table) => ({
+  projectIdIdx: index('lines_project_id_idx').on(table.project_id),
+  fromTaskIdIdx: index('lines_from_task_id_idx').on(table.from_task_id),
+  toTaskIdIdx: index('lines_to_task_id_idx').on(table.to_task_id),
+}))
 
 // Comments table
 export const comments = pgTable('comments', {
@@ -74,7 +89,9 @@ export const comments = pgTable('comments', {
   content: text('content').notNull(),
   author_name: text('author_name').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
-})
+}, (table) => ({
+  taskIdIdx: index('comments_task_id_idx').on(table.task_id),
+}))
 
 // User activity table (for tracking online users)
 export const userActivity = pgTable('user_activity', {
@@ -82,7 +99,10 @@ export const userActivity = pgTable('user_activity', {
   project_id: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   user_id: text('user_id').notNull(),
   last_seen: timestamp('last_seen').defaultNow().notNull(),
-})
+}, (table) => ({
+  projectIdIdx: index('user_activity_project_id_idx').on(table.project_id),
+  lastSeenIdx: index('user_activity_last_seen_idx').on(table.last_seen),
+}))
 
 // Define relations
 export const projectsRelations = relations(projects, ({ many }: { many: any }) => ({

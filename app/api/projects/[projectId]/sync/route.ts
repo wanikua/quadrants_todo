@@ -14,7 +14,7 @@ export async function GET(
   try {
     const { projectId } = await params
 
-    // Get all tasks with their assignees
+    // Get all tasks with their assignees (exclude archived/completed tasks)
     const tasksRaw = await sql`
       SELECT
         t.*,
@@ -32,6 +32,7 @@ export async function GET(
       LEFT JOIN task_assignments ta ON t.id = ta.task_id
       LEFT JOIN players p ON ta.player_id = p.id
       WHERE t.project_id = ${projectId}
+        AND (t.archived = false OR t.archived IS NULL)
       GROUP BY t.id
       ORDER BY t.created_at DESC
     `

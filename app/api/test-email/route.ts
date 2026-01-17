@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendTestEmail } from '@/lib/email'
 
 /**
  * 测试邮件发送 API
@@ -28,6 +27,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`Testing email send to: ${to}`)
 
+    // 动态导入避免构建时依赖
+    const { sendTestEmail } = await import('@/lib/email')
     const result = await sendTestEmail(to)
 
     if (result.success) {

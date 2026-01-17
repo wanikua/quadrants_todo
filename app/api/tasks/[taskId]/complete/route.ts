@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const userId = await getUserId()
@@ -14,7 +14,8 @@ export async function POST(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const taskId = parseInt(params.taskId)
+    const { taskId: taskIdParam } = await params
+    const taskId = parseInt(taskIdParam)
     if (isNaN(taskId)) {
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 })
     }

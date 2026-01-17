@@ -51,7 +51,6 @@
     "@radix-ui/react-toggle": "latest",
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
-    "@react-email/render": "latest",
     "@stackframe/stack": "latest",
     "@stripe/stripe-js": "latest",
     "@tanstack/react-query": "latest",

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const userId = await getUserId()
@@ -14,7 +14,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const taskId = parseInt(params.taskId)
+    const { taskId: taskIdParam } = await params
+    const taskId = parseInt(taskIdParam)
     if (isNaN(taskId)) {
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 })
     }
@@ -66,7 +67,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const userId = await getUserId()
@@ -74,7 +75,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const taskId = parseInt(params.taskId)
+    const { taskId: taskIdParam } = await params
+    const taskId = parseInt(taskIdParam)
     if (isNaN(taskId)) {
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 })
     }

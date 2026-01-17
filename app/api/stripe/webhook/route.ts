@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe'
 import { sql } from '@/lib/db'
 import Stripe from 'stripe'
-import { sendWelcomeEmail } from '@/lib/email'
 
 // Map Stripe subscription status to app status
 function mapStripeStatusToAppStatus(stripeStatus: string): 'free' | 'pro' | 'team' {
@@ -130,11 +129,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     if (user?.email) {
       console.log(`Sending welcome email to ${user.email}...`)
 
-      // 发送欢迎邮件（异步，不阻塞订阅激活）
-      sendWelcomeEmail({
-        to: user.email,
-        userName: user.name || user.email.split('@')[0],
-      })
+      // 发送欢迎邮件（异步，不阻塞订阅激活）- 动态导入避免构建时依赖
+      import('@/lib/email')
+        .then(({ sendWelcomeEmail }) =>
+          sendWelcomeEmail({
+            to: user.email,
+            userName: user.name || user.email.split('@')[0],
+          })
+        )
         .then((emailResult) => {
           if (emailResult.success) {
             console.log(`Welcome email sent successfully to ${user.email}`)

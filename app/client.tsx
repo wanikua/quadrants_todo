@@ -82,6 +82,7 @@ export default function QuadrantTodoClient({
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [focusIndex, setFocusIndex] = useState(0)
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all")
+  const [filterQuadrant, setFilterQuadrant] = useState<'all' | 'urgent-important' | 'urgent-not-important' | 'not-urgent-important' | 'not-urgent-not-important'>('all')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState<TaskWithAssignees | null>(null)
@@ -91,6 +92,7 @@ export default function QuadrantTodoClient({
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
   const [activeUserCount, setActiveUserCount] = useState<number>(0)
   const [pendingUpdateTaskIds, setPendingUpdateTaskIds] = useState<Set<number>>(new Set())
+  const [completedTaskIds, setCompletedTaskIds] = useState<Set<number>>(new Set())
 
   // Project editing state
   const [isEditingProject, setIsEditingProject] = useState(false)
@@ -257,7 +259,7 @@ export default function QuadrantTodoClient({
             const mergedTasks = [...prevTasks]
             const localTaskMap = new Map(prevTasks.map(t => [t.id, t]))
 
-            serverTasks.forEach(serverTask => {
+            serverTasks.forEach((serverTask: TaskWithAssignees) => {
               // Skip tasks that have pending updates
               if (pendingUpdateTaskIds.has(serverTask.id)) {
                 console.log('⏭️ [Sync] Skipping task with pending update:', serverTask.id)
@@ -286,8 +288,8 @@ export default function QuadrantTodoClient({
             })
 
             // Remove tasks that don't exist on server (unless they have pending updates)
-            const serverTaskIds = new Set(serverTasks.map(t => t.id))
-            const filteredTasks = mergedTasks.filter(task =>
+            const serverTaskIds = new Set(serverTasks.map((t: TaskWithAssignees) => t.id))
+            const filteredTasks = mergedTasks.filter((task: TaskWithAssignees) =>
               serverTaskIds.has(task.id) || pendingUpdateTaskIds.has(task.id)
             )
 
@@ -309,7 +311,7 @@ export default function QuadrantTodoClient({
   // Check for active users - only enables sync if multiple users detected
   useEffect(() => {
     if (projectType === 'team' && !isOfflineMode) {
-      let checkInterval: NodeJS.Timeout | null = null
+      let checkInterval: ReturnType<typeof setInterval> | null = null
 
       const checkActiveUsers = async () => {
         const result = await getActiveUserCount(projectId)
@@ -334,7 +336,7 @@ export default function QuadrantTodoClient({
 
     if (projectType === 'team' && !isOfflineMode) {
       console.log('🚀 [Sync] Starting real-time sync, activeUserCount:', activeUserCount)
-      let interval: NodeJS.Timeout | null = null
+      let interval: ReturnType<typeof setInterval> | null = null
       let isPageVisible = true
 
       // Determine sync interval based on user count
@@ -434,13 +436,34 @@ export default function QuadrantTodoClient({
       }
     }
 
+    // Apply quadrant filter
+    if (filterQuadrant !== 'all') {
+      filtered = filtered.filter(task => {
+        const isUrgent = task.urgency >= 50
+        const isImportant = task.importance >= 50
+
+        switch (filterQuadrant) {
+          case 'urgent-important':
+            return isUrgent && isImportant
+          case 'urgent-not-important':
+            return isUrgent && !isImportant
+          case 'not-urgent-important':
+            return !isUrgent && isImportant
+          case 'not-urgent-not-important':
+            return !isUrgent && !isImportant
+          default:
+            return true
+        }
+      })
+    }
+
     return [...filtered].sort((a, b) => {
       // Balanced priority algorithm: importance (60%) + urgency (40%)
       const priorityA = a.importance * 0.6 + a.urgency * 0.4
       const priorityB = b.importance * 0.6 + b.urgency * 0.4
       return priorityB - priorityA
     })
-  }, [tasks, selectedPlayerFilter])
+  }, [tasks, selectedPlayerFilter, filterQuadrant])
 
   // Get highest priority task ID
   const highestPriorityTaskId = useMemo(() => {
@@ -503,6 +526,59 @@ export default function QuadrantTodoClient({
   const handleTaskDetailClick = (task: TaskWithAssignees) => {
     setSelectedTask(task)
     setIsTaskDetailOpen(true)
+  }
+
+  const handleToggleTaskComplete = async (taskId: number) => {
+    // Toggle completion state
+    setCompletedTaskIds(prev => {
+      const next = new Set(prev)
+      if (next.has(taskId)) {
+        next.delete(taskId)
+      } else {
+        next.add(taskId)
+      }
+      return next
+    })
+
+    // Optionally archive the task in database when marked as complete
+    // Only archive if marking as complete (not un-completing)
+    if (!completedTaskIds.has(taskId)) {
+      try {
+        const response = await fetch(`/api/tasks/${taskId}/complete`, {
+          method: 'POST',
+        })
+
+        if (response.ok) {
+          // Remove from local tasks list after a short delay to show the strikethrough animation
+          setTimeout(() => {
+            setTasks(prev => prev.filter(t => t.id !== taskId))
+            setCompletedTaskIds(prev => {
+              const next = new Set(prev)
+              next.delete(taskId)
+              return next
+            })
+          }, 1000)
+          setLastSyncTime(new Date())
+          toast.success("Task completed!")
+        } else {
+          // If API call fails, revert the completion state
+          setCompletedTaskIds(prev => {
+            const next = new Set(prev)
+            next.delete(taskId)
+            return next
+          })
+          toast.error("Failed to complete task")
+        }
+      } catch (error) {
+        // If API call fails, revert the completion state
+        setCompletedTaskIds(prev => {
+          const next = new Set(prev)
+          next.delete(taskId)
+          return next
+        })
+        toast.error("Failed to complete task")
+      }
+    }
   }
 
   const handleTaskUpdate = async (taskId: number, description: string, urgency: number, importance: number, assigneeIds: number[]) => {
@@ -1307,8 +1383,23 @@ export default function QuadrantTodoClient({
           {/* List View Tab */}
           <TabsContent value="list" className="mt-4 sm:mt-6">
             <Card>
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-lg sm:text-xl">Tasks by Priority</CardTitle>
+              <CardHeader className="px-4 sm:px-6 flex flex-row items-center justify-between">
+                <CardTitle className="text-2xl sm:text-3xl font-bold">My Tasks</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`rounded-full px-4 py-2 font-semibold ${filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important' ? 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300' : ''
+                    }`}
+                  onClick={() => {
+                    if (filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important') {
+                      setFilterQuadrant('all')
+                    } else {
+                      setFilterQuadrant('urgent-important')
+                    }
+                  }}
+                >
+                  Urgent
+                </Button>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <div className="space-y-3">
@@ -1317,65 +1408,72 @@ export default function QuadrantTodoClient({
                       No tasks yet. Create your first task!
                     </p>
                   ) : (
-                    filteredAndSortedTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-accent cursor-pointer gap-3 sm:gap-4 transition-all ${task.id === highestPriorityTaskId ? 'border-yellow-400 border-2 bg-yellow-50 shadow-lg' : ''
-                          }`}
-                        onClick={() => handleTaskDetailClick(task)}
-                      >
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <TaskSegment
-                            task={task}
-                            size={isMobile ? 28 : 32}
-                            userName={userName}
-                            projectType={projectType}
-                            isHighestPriority={task.id === highestPriorityTaskId}
-                            hasMoved={
-                              isOrganizing &&
-                              originalTaskPositions.has(task.id) &&
-                              (originalTaskPositions.get(task.id)!.urgency !== task.urgency ||
-                                originalTaskPositions.get(task.id)!.importance !== task.importance)
-                            }
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm sm:text-base truncate">{task.description}</p>
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-1">
-                              <span>Urgency: {task.urgency}</span>
-                              <span>Importance: {task.importance}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {getQuadrantLabel(task.urgency, task.importance)}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between sm:justify-end gap-2">
-                          <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                            {!task.assignees || task.assignees.length === 0 ? (
-                              <span className="text-xs text-muted-foreground italic">Unassigned</span>
-                            ) : (
-                              task.assignees.map((player) => (
-                                <div key={player.id} className="flex items-center gap-1">
-                                  <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                                  <span className="text-xs text-muted-foreground">{player.name}</span>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                    filteredAndSortedTasks.map((task) => {
+                      const isCompleted = completedTaskIds.has(task.id)
+                      return (
+                        <div
+                          key={task.id}
+                          className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-black rounded-2xl transition-all ${isCompleted
+                              ? 'bg-gray-100 opacity-70'
+                              : 'bg-white hover:shadow-md cursor-pointer'
+                            }`}
+                        >
+                          {/* Checkbox Circle */}
+                          <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleTaskDelete(task.id)
+                              handleToggleTaskComplete(task.id)
                             }}
-                            className="text-destructive hover:text-destructive h-8 w-8 sm:h-auto sm:w-auto"
+                            className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-black flex items-center justify-center transition-all ${isCompleted
+                                ? 'bg-black'
+                                : 'bg-white hover:bg-gray-100'
+                              }`}
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                            {isCompleted && (
+                              <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-black" />
+                            )}
+                          </button>
+
+                          {/* Task Content */}
+                          <div
+                            className="flex-1 min-w-0"
+                            onClick={() => !isCompleted && handleTaskDetailClick(task)}
+                          >
+                            <p
+                              className={`font-medium text-base sm:text-lg ${isCompleted ? 'line-through text-gray-400' : 'text-black'
+                                }`}
+                            >
+                              {task.description}
+                            </p>
+                            {!isCompleted && (
+                              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${getQuadrantLabel(task.urgency, task.importance).includes('Urgent')
+                                      ? 'bg-yellow-200 border-yellow-400'
+                                      : ''
+                                    }`}
+                                >
+                                  {getQuadrantLabel(task.urgency, task.importance)}
+                                </Badge>
+                                {task.assignees && task.assignees.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    {task.assignees.map((player) => (
+                                      <div
+                                        key={player.id}
+                                        className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
+                                        style={{ backgroundColor: player.color }}
+                                        title={player.name}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                   )}
                 </div>
               </CardContent>

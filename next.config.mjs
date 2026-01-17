@@ -39,6 +39,14 @@ const nextConfig = {
   // 生产环境优化
   compress: true,
   poweredByHeader: false,
+
+  // Turbopack 配置：email 功能的可选依赖使用stub（运行时动态加载）
+  turbopack: {
+    resolveAlias: {
+      'prettier/plugins/html': './lib/stubs/prettier-html.js',
+      'prettier/standalone': './lib/stubs/prettier-standalone.js',
+    },
+  },
 }
 
 export default nextConfig
