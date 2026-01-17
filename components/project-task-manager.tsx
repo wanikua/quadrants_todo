@@ -89,8 +89,8 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Minimal Header - sticky below promo banner */}
-      <header className="sticky top-10 bg-white/80 backdrop-blur-sm border-b z-40">
+      {/* Minimal Header - scrolls with page */}
+      <header className="bg-white border-b">
         <div className="px-2 py-1">
           <button
             onClick={() => router.push("/projects")}

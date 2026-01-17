@@ -100,7 +100,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="fixed top-10 left-0 right-0 bg-white z-50 border-b-3 border-black">
+      <header className="relative bg-white z-50 border-b-3 border-black">
         <div className="w-full px-[4%] md:px-[10%]">
           <div className="h-24 flex items-center justify-between">
             <Link href="/" className="group relative flex items-center">
@@ -134,8 +134,6 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
         </div>
       </header>
 
-      {/* Spacer for fixed header */}
-      <div className="h-24"></div>
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-[4%] md:px-[10%] py-16">
