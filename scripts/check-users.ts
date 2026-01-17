@@ -26,7 +26,7 @@ async function main() {
 
   console.log('\n👤 Users without any projects:', usersWithoutProjects.length)
   if (usersWithoutProjects.length > 0) {
-    usersWithoutProjects.forEach(u => {
+    usersWithoutProjects.forEach((u: any) => {
       console.log(`  - ${u.name || u.email} (${u.id})`)
     })
   }

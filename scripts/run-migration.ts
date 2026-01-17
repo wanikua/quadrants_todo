@@ -1,4 +1,4 @@
-import postgres from 'postgres'
+import { Pool } from '@neondatabase/serverless'
 import fs from 'fs'
 import path from 'path'
 import dotenv from 'dotenv'
@@ -7,6 +7,9 @@ import dotenv from 'dotenv'
 dotenv.config({ path: '.env.local' })
 
 async function runMigration() {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  const client = await pool.connect()
+
   try {
     console.log('Reading migration file...')
     const migrationPath = path.join(process.cwd(), 'scripts', 'add_subscription_fields.sql')
@@ -18,8 +21,6 @@ async function runMigration() {
       throw new Error('DATABASE_URL not found in environment')
     }
 
-    const sql = postgres(databaseUrl)
-
     console.log('Running migration...')
 
     // Split by semicolons and run each statement
@@ -30,17 +31,18 @@ async function runMigration() {
 
     for (const statement of statements) {
       console.log(`Executing: ${statement.substring(0, 50)}...`)
-      await sql.unsafe(statement)
+      await client.query(statement)
     }
 
     console.log('✓ Migration completed successfully!')
 
-    // Close the database connection
-    await sql.end()
     process.exit(0)
   } catch (error) {
     console.error('✗ Migration failed:', error)
     process.exit(1)
+  } finally {
+    client.release()
+    await pool.end()
   }
 }
 

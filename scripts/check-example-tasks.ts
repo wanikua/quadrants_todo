@@ -31,7 +31,7 @@ async function main() {
   `
 
   console.log(`\n✅ Tasks found: ${tasks.length}`)
-  tasks.forEach((task, i) => {
+  tasks.forEach((task: any, i: number) => {
     console.log(`   ${i + 1}. ${task.description}`)
     console.log(`      U: ${task.urgency}, I: ${task.importance}`)
   })
@@ -44,7 +44,7 @@ async function main() {
   `
 
   console.log(`\n👥 Players found: ${players.length}`)
-  players.forEach((player, i) => {
+  players.forEach((player: any, i: number) => {
     console.log(`   ${i + 1}. ${player.name} (${player.color}) - User: ${player.user_id || 'N/A'}`)
   })
 
@@ -58,7 +58,7 @@ async function main() {
   `
 
   console.log(`\n🔗 Task assignments found: ${assignments.length}`)
-  assignments.forEach((a, i) => {
+  assignments.forEach((a: any, i: number) => {
     console.log(`   ${i + 1}. ${a.name} assigned to: ${a.description.substring(0, 50)}...`)
   })
 

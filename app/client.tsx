@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo, useEffect } from "react"
-import type { TaskWithAssignees, Player, Line, Project } from "./types"
+import type { TaskWithAssignees, Player, Line } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
 import { createTask, deleteTask, updateTask as updateTaskAction, deletePlayer, updatePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount, getArchivedTasks } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Sparkles, LogOut, HelpCircle } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -34,7 +34,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import TaskSegment from "@/components/TaskSegment"
 import { BulkTaskInput } from "@/components/BulkTaskInput"
 import { toast } from "sonner"
 
@@ -195,7 +194,7 @@ export default function QuadrantTodoClient({
         setSelectedTask(updatedTask)
       }
     }
-  }, [tasks])
+  }, [tasks, selectedTask])
 
   const isMobile = false // For responsive layout adjustments
 
@@ -569,7 +568,7 @@ export default function QuadrantTodoClient({
           })
           toast.error("Failed to complete task")
         }
-      } catch (error) {
+      } catch {
         // If API call fails, revert the completion state
         setCompletedTaskIds(prev => {
           const next = new Set(prev)
@@ -914,11 +913,11 @@ export default function QuadrantTodoClient({
       const { organizedTasks } = responseData
 
       console.log('🔵 Organized tasks received:', organizedTasks.length)
-      console.log('🔵 Task positions after:', organizedTasks.map((t: any) => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
+      console.log('🔵 Task positions after:', organizedTasks.map((t: TaskWithAssignees) => `Task ${t.id}: (${t.urgency}, ${t.importance})`).join(', '))
 
       // Apply organized positions to tasks
       const updatedTasks = tasks.map(task => {
-        const organized = organizedTasks.find((o: any) => o.id === task.id)
+        const organized = organizedTasks.find((o: TaskWithAssignees) => o.id === task.id)
         if (organized) {
           return {
             ...task,
@@ -1059,41 +1058,6 @@ export default function QuadrantTodoClient({
     } catch (error) {
       console.error('Failed to release lock:', error)
     }
-  }
-
-  // Algorithm to organize tasks and spread out overlaps
-  function organizeTasks(tasks: TaskWithAssignees[]): TaskWithAssignees[] {
-    const organized = [...tasks]
-    const positionMap = new Map<string, TaskWithAssignees[]>()
-
-    // Group tasks by similar positions (within 5% tolerance)
-    organized.forEach(task => {
-      const key = `${Math.round(task.urgency / 5)}_${Math.round(task.importance / 5)}`
-      if (!positionMap.has(key)) {
-        positionMap.set(key, [])
-      }
-      positionMap.get(key)!.push(task)
-    })
-
-    // Spread out overlapping tasks
-    positionMap.forEach((groupTasks, key) => {
-      if (groupTasks.length > 1) {
-        // Calculate spread based on number of tasks
-        const spreadRadius = Math.min(15, 5 + groupTasks.length * 2)
-        const angleStep = (2 * Math.PI) / groupTasks.length
-
-        groupTasks.forEach((task, index) => {
-          const angle = angleStep * index
-          const offsetX = Math.cos(angle) * spreadRadius
-          const offsetY = Math.sin(angle) * spreadRadius
-
-          task.urgency = Math.max(0, Math.min(100, task.urgency + offsetX))
-          task.importance = Math.max(0, Math.min(100, task.importance + offsetY))
-        })
-      }
-    })
-
-    return organized
   }
 
   const handleDeletePlayer = async (playerId: number, playerName: string) => {
