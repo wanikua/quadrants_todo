@@ -98,7 +98,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b-3 border-black">
+      <header className="fixed top-10 left-0 right-0 bg-white z-50 border-b-3 border-black">
         <div className="w-full px-[4%] md:px-[10%]">
           <div className="h-24 flex items-center justify-between">
             <Link href="/" className="group relative flex items-center">

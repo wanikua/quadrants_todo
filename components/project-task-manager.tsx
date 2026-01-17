@@ -89,40 +89,17 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="p-2 sm:p-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center h-14">
-              <button
-                onClick={() => router.push("/projects")}
-                title="Back to My Projects"
-                className="group relative flex items-center gap-2 -ml-2 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
-                <span className="text-base font-semibold text-gray-700 group-hover:text-black transition-colors hidden sm:inline">
-                  Back to My Projects
-                </span>
-                <span className="text-base font-semibold text-gray-700 group-hover:text-black transition-colors sm:hidden">
-                  Back
-                </span>
-              </button>
-              <div className="flex items-center gap-2 -mr-2">
-                {project.type === "team" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShareDialogOpen(true)}
-                    className="flex items-center border-gray-200"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Share Project</span>
-                    <span className="sm:hidden">Share</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+      {/* Minimal Header - sticky below promo banner */}
+      <header className="sticky top-10 bg-white/80 backdrop-blur-sm border-b z-40">
+        <div className="px-2 py-1">
+          <button
+            onClick={() => router.push("/projects")}
+            title="Back to My Projects"
+            className="group flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors text-sm"
+          >
+            <ArrowLeft className="w-4 h-4 text-gray-500 group-hover:text-black transition-colors" />
+            <span className="text-gray-500 group-hover:text-black transition-colors">Back</span>
+          </button>
         </div>
       </header>
 

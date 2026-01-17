@@ -201,8 +201,8 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white border-b-3 border-black">
+      {/* Header - sticky below promo banner */}
+      <header className="sticky top-10 bg-white border-b-3 border-black z-40">
         <div className="w-full px-[4%] md:px-[10%] h-24 flex items-center justify-between">
           <Link href="/" className="group relative flex items-center">
             <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">

@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Sparkles, LogOut, HelpCircle } from "lucide-react"
+import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Sparkles, LogOut, HelpCircle, Share2 } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -100,6 +100,7 @@ export default function QuadrantTodoClient({
   const [editedProjectDescription, setEditedProjectDescription] = useState("")
   const [isArchiving, setIsArchiving] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [currentView, setCurrentView] = useState<'map' | 'list'>('map')
 
   // Calculate top 3 priority tasks for Focus mode
   const topPriorityTasks = useMemo(() => {
@@ -1086,14 +1087,14 @@ export default function QuadrantTodoClient({
   }
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Compact Project Header with Status */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
+    <div className={`min-h-screen bg-background ${isFullscreen ? '' : 'pb-20'}`}>
+      {/* Top Bar - Only show when not fullscreen */}
+      {!isFullscreen && (
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
-              <Edit className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <h1 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
+              <Edit className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             {isOfflineMode && (
               <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
@@ -1103,26 +1104,29 @@ export default function QuadrantTodoClient({
             {projectType === 'team' && !isOfflineMode && activeUserCount > 1 && (
               <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 text-xs animate-pulse">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
-                {activeUserCount} online
+                {activeUserCount}
               </Badge>
             )}
           </div>
+          {/* Fullscreen Button - Prominent */}
+          <button
+            onClick={() => handleFullscreenChange(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            Fullscreen
+          </button>
         </div>
+      )}
 
-        {/* Tabs for Map/List View */}
-        <Tabs defaultValue="map" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-12 sm:h-10">
-            <TabsTrigger value="map" className="flex items-center justify-center">
-              <MapIcon className="w-5 h-5" />
-            </TabsTrigger>
-            <TabsTrigger value="list" className="flex items-center justify-center">
-              <List className="w-5 h-5" />
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Map View Tab */}
-          <TabsContent value="map" className="mt-4 sm:mt-6">
-            {selectedPlayerFilter !== "all" && (
+      {/* Main Content Area */}
+      <div className={`${isFullscreen ? 'h-screen' : ''}`}>
+        {/* Map View */}
+        {currentView === 'map' && (
+          <>
+            {selectedPlayerFilter !== "all" && !isFullscreen && (
               <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1196,10 +1200,12 @@ export default function QuadrantTodoClient({
                 }, 1500)
               }}
             />
-          </TabsContent>
+          </>
+        )}
 
-          {/* List View Tab */}
-          <TabsContent value="list" className="mt-4 sm:mt-6">
+        {/* List View */}
+        {currentView === 'list' && (
+          <div className="p-2 sm:p-4">
             <Card>
               <CardHeader className="px-4 sm:px-6 flex flex-row items-center justify-between">
                 <CardTitle className="text-2xl sm:text-3xl font-bold">My Tasks</CardTitle>
@@ -1296,11 +1302,12 @@ export default function QuadrantTodoClient({
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
+      </div>
 
-        {/* Add Task Dialog */}
-        <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
+      {/* Add Task Dialog */}
+      <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Add New Task</DialogTitle>
@@ -1662,133 +1669,179 @@ export default function QuadrantTodoClient({
             </div>
           </DialogContent>
         </Dialog>
-      </div>
 
-      {/* Floating Toolbar - Hidden in fullscreen */}
-      {!isFullscreen && (
-        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2">
-          {/* Focus Button - Primary action */}
+      {/* Floating Bottom Toolbar - Always visible */}
+      <div className={`fixed ${isFullscreen ? 'bottom-4' : 'bottom-4'} left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200`}>
+        {/* Map/List Toggle */}
+        <div className="flex items-center bg-gray-100 rounded-full p-0.5">
           <button
-            onClick={() => {
-              setIsFocusMode(true)
-              setFocusIndex(0)
-            }}
-            className="w-12 h-12 rounded-full bg-yellow-400 hover:bg-yellow-500 border-3 border-black shadow-bold hover:shadow-bold-hover transition-all flex items-center justify-center group"
-            title="Focus Mode"
+            onClick={() => setCurrentView('map')}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${currentView === 'map' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+            title="Map View"
           >
-            <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+            <MapIcon className={`w-4 h-4 ${currentView === 'map' ? 'text-black' : 'text-gray-500'}`} />
           </button>
-
-          {/* Bulk Add Button */}
           <button
-            onClick={() => setIsBulkAddOpen(true)}
-            className="w-12 h-12 rounded-full bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 shadow-md hover:shadow-lg transition-all flex items-center justify-center"
-            title="Bulk Add Tasks"
+            onClick={() => setCurrentView('list')}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${currentView === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+            title="List View"
           >
-            <Sparkles className="w-5 h-5 text-purple-600" />
+            <List className={`w-4 h-4 ${currentView === 'list' ? 'text-black' : 'text-gray-500'}`} />
           </button>
+        </div>
 
-          {/* Add Task Button */}
-          <button
-            onClick={() => {
-              setNewTaskData({
-                description: "",
-                urgency: 50,
-                importance: 50,
-                assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
-              })
-              setIsAddTaskOpen(true)
-            }}
-            className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 border-2 border-gray-300 shadow-md hover:shadow-lg transition-all flex items-center justify-center"
-            title="Add Task"
-          >
-            <Plus className="w-5 h-5 text-gray-700" />
-          </button>
+        <div className="w-px h-6 bg-gray-200" />
 
-          {/* Settings Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 border-2 border-gray-300 shadow-md hover:shadow-lg transition-all flex items-center justify-center"
-                title="Settings"
-              >
-                <Settings className="w-5 h-5 text-gray-700" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="left" className="w-64">
-              <DropdownMenuLabel>Settings</DropdownMenuLabel>
+        {/* Focus Button - Primary action */}
+        <button
+          onClick={() => {
+            setIsFocusMode(true)
+            setFocusIndex(0)
+          }}
+          className="w-10 h-10 rounded-full bg-yellow-400 hover:bg-yellow-500 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center"
+          title="Focus Mode"
+        >
+          <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
 
-              {projectType === "team" && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
-                  <div className="px-2 py-2">
-                    <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="All Tasks" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Tasks</SelectItem>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {players.map((player) => (
-                          <SelectItem key={player.id} value={player.id.toString()}>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                              {player.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+        {/* Bulk Add Button */}
+        <button
+          onClick={() => setIsBulkAddOpen(true)}
+          className="w-10 h-10 rounded-full bg-purple-100 hover:bg-purple-200 border border-purple-300 transition-all flex items-center justify-center"
+          title="Bulk Add Tasks"
+        >
+          <Sparkles className="w-4 h-4 text-purple-600" />
+        </button>
 
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
-                    <Users className="h-4 w-4 mr-2" />
-                    {userRole === "owner" ? "Manage Players" : "View Players"}
-                  </DropdownMenuItem>
-                </>
-              )}
+        {/* Add Task Button */}
+        <button
+          onClick={() => {
+            setNewTaskData({
+              description: "",
+              urgency: 50,
+              importance: 50,
+              assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
+            })
+            setIsAddTaskOpen(true)
+          }}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
+          title="Add Task"
+        >
+          <Plus className="w-4 h-4 text-gray-700" />
+        </button>
 
-              <DropdownMenuSeparator />
+        {/* Settings Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4 text-gray-700" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" side="top" className="w-64 mb-2">
+            <DropdownMenuLabel>Settings</DropdownMenuLabel>
 
-              <DropdownMenuItem className="cursor-pointer" onClick={() => setShowHelpDialog(true)}>
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Help
-              </DropdownMenuItem>
+            {projectType === "team" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
+                <div className="px-2 py-2">
+                  <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All Tasks" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Tasks</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {players.map((player) => (
+                        <SelectItem key={player.id} value={player.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
+                            {player.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
+                  <Users className="h-4 w-4 mr-2" />
+                  {userRole === "owner" ? "Manage Players" : "View Players"}
+                </DropdownMenuItem>
+              </>
+            )}
 
-              {userRole === "owner" ? (
-                <>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
-                    <Check className="h-4 w-4 mr-2" />
-                    Archive Project
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Project
-                  </DropdownMenuItem>
-                </>
-              ) : (
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem className="cursor-pointer" onClick={() => setShowHelpDialog(true)}>
+              <HelpCircle className="h-4 w-4 mr-2" />
+              Help
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            {userRole === "owner" ? (
+              <>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
+                  <Check className="h-4 w-4 mr-2" />
+                  Archive Project
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                  onClick={handleLeaveProject}
+                  onClick={() => setDeleteDialogOpen(true)}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Leave Project
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Project
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
+              </>
+            ) : (
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                onClick={handleLeaveProject}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Leave Project
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Share Button - Team projects only */}
+        {projectType === "team" && (
+          <button
+            onClick={() => {
+              const inviteCode = projectId.substring(0, 8).toUpperCase()
+              navigator.clipboard.writeText(inviteCode)
+              toast.success("Invite code copied!")
+            }}
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
+            title="Copy Invite Code"
+          >
+            <Share2 className="w-4 h-4 text-gray-700" />
+          </button>
+        )}
+
+        {/* Exit Fullscreen - Only in fullscreen mode */}
+        {isFullscreen && (
+          <>
+            <div className="w-px h-6 bg-gray-200" />
+            <button
+              onClick={() => handleFullscreenChange(false)}
+              className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-900 transition-all flex items-center justify-center"
+              title="Exit Fullscreen"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Full-screen organizing overlay */}
       {isOrganizingLoading && (
