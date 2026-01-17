@@ -129,8 +129,8 @@ export default function RootLayout({
     >
       <html lang="en" suppressHydrationWarning>
         <body className={`${inter.variable} ${libreBaskerville.variable} antialiased`} suppressHydrationWarning>
-          <div className="fixed top-0 left-0 right-0 bg-black text-white text-center py-2 px-4 text-sm font-medium z-[60]">
-            For Limited Time: use code <span className="font-bold">WELCOME50</span> for discount on 12-month Pro subscription
+          <div className="fixed top-0 left-0 right-0 h-10 bg-black text-white text-center px-4 text-sm font-medium z-[60] flex items-center justify-center">
+            For Limited Time: use code <span className="font-bold ml-1">WELCOME50</span>&nbsp;for discount on 12-month Pro subscription
           </div>
           <div className="h-10"></div>
           {children}

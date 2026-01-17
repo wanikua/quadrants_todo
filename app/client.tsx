@@ -1088,171 +1088,24 @@ export default function QuadrantTodoClient({
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-          <div className="flex items-center gap-2 sm:gap-4">
+        {/* Compact Project Header with Status */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
+              <Edit className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             {isOfflineMode && (
-              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
-                Offline Mode
+              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
+                Offline
               </Badge>
             )}
-            {projectType === 'team' && !isOfflineMode && (
-              <Badge
-                variant="outline"
-                className={`${activeUserCount > 1
-                  ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 animate-pulse'
-                  : 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20'
-                  }`}
-              >
-                <div className="flex items-center gap-2">
-                  {activeUserCount > 1 ? (
-                    <>
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span>Live • {activeUserCount} users • Synced {getTimeAgo(lastSyncTime)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                      <span>You • {activeUserCount} user online</span>
-                    </>
-                  )}
-                </div>
+            {projectType === 'team' && !isOfflineMode && activeUserCount > 1 && (
+              <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 text-xs animate-pulse">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
+                {activeUserCount} online
               </Badge>
             )}
-          </div>
-        </div>
-
-
-        {/* Project Header with Settings */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
-            <Edit className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowHelpDialog(true)}>
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Help
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={() => setIsBulkAddOpen(true)}>
-              <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
-              Bulk Add
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsFocusMode(true)
-                setFocusIndex(0)
-              }}
-              className="border-3 border-black bg-yellow-400 hover:bg-yellow-500 text-black font-bold shadow-bold hover-lift"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Focus
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                  <ChevronDown className="w-4 h-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Settings</DropdownMenuLabel>
-                <div className="px-2 py-1 text-xs text-muted-foreground">{projectType === "team" ? "Manage your team and tasks" : "Manage your tasks"}</div>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Quick Actions</DropdownMenuLabel>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => {
-                  // Reset task data with default assignee before opening dialog
-                  setNewTaskData({
-                    description: "",
-                    urgency: 50,
-                    importance: 50,
-                    assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
-                  })
-                  setIsAddTaskOpen(true)
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Task
-                </DropdownMenuItem>
-
-
-                {projectType === "team" && (
-                  <>
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
-                    <div className="px-2 py-2">
-                      <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="All Tasks" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Tasks</SelectItem>
-                          <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {players.map((player) => (
-                            <SelectItem key={player.id} value={player.id.toString()}>
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                                {player.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Team Management</DropdownMenuLabel>
-
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
-                      <Users className="h-4 w-4 mr-2" />
-                      {userRole === "owner" ? "Manage Players" : "View Players"}
-                    </DropdownMenuItem>
-                  </>
-                )}
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Project Actions</DropdownMenuLabel>
-
-                {userRole === "owner" ? (
-                  <>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
-                      <Check className="h-4 w-4 mr-2" />
-                      Archive Project
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                      onClick={() => setDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Project
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <DropdownMenuItem
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                    onClick={handleLeaveProject}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Leave Project
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
@@ -1810,6 +1663,132 @@ export default function QuadrantTodoClient({
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Floating Toolbar - Hidden in fullscreen */}
+      {!isFullscreen && (
+        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2">
+          {/* Focus Button - Primary action */}
+          <button
+            onClick={() => {
+              setIsFocusMode(true)
+              setFocusIndex(0)
+            }}
+            className="w-12 h-12 rounded-full bg-yellow-400 hover:bg-yellow-500 border-3 border-black shadow-bold hover:shadow-bold-hover transition-all flex items-center justify-center group"
+            title="Focus Mode"
+          >
+            <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+
+          {/* Bulk Add Button */}
+          <button
+            onClick={() => setIsBulkAddOpen(true)}
+            className="w-12 h-12 rounded-full bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+            title="Bulk Add Tasks"
+          >
+            <Sparkles className="w-5 h-5 text-purple-600" />
+          </button>
+
+          {/* Add Task Button */}
+          <button
+            onClick={() => {
+              setNewTaskData({
+                description: "",
+                urgency: 50,
+                importance: 50,
+                assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
+              })
+              setIsAddTaskOpen(true)
+            }}
+            className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 border-2 border-gray-300 shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+            title="Add Task"
+          >
+            <Plus className="w-5 h-5 text-gray-700" />
+          </button>
+
+          {/* Settings Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 border-2 border-gray-300 shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+                title="Settings"
+              >
+                <Settings className="w-5 h-5 text-gray-700" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="left" className="w-64">
+              <DropdownMenuLabel>Settings</DropdownMenuLabel>
+
+              {projectType === "team" && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
+                  <div className="px-2 py-2">
+                    <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All Tasks" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Tasks</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {players.map((player) => (
+                          <SelectItem key={player.id} value={player.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
+                              {player.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
+                    <Users className="h-4 w-4 mr-2" />
+                    {userRole === "owner" ? "Manage Players" : "View Players"}
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setShowHelpDialog(true)}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Help
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              {userRole === "owner" ? (
+                <>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Archive Project
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Project
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                  onClick={handleLeaveProject}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Leave Project
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       {/* Full-screen organizing overlay */}
       {isOrganizingLoading && (
