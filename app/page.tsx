@@ -54,7 +54,7 @@ export default function HomePage() {
         href="/promo/welcome50"
         className="fixed top-0 left-0 right-0 h-10 bg-black text-white text-center px-4 text-sm font-medium z-[100] flex items-center justify-center hover:bg-gray-900 transition-colors cursor-pointer"
       >
-        For Limited Time: use code <span className="font-bold ml-1 underline">WELCOME50</span>&nbsp;for 50% off Pro subscription → Click to apply
+        For Limited Time: use code <span className="font-bold ml-1 underline">WELCOME50</span>&nbsp;for 50% off Pro subscription
       </a>
 
       <div className="min-h-screen bg-white relative overflow-hidden font-sans selection:bg-yellow-200 pt-10">

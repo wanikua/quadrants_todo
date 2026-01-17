@@ -1156,53 +1156,9 @@ export default function QuadrantTodoClient({
                 </Badge>
               )}
             </div>
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {/* Organize Button */}
-              <button
-                onClick={handleOrganizeTasks}
-                disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Wand2 className="w-4 h-4" />
-                Organize
-              </button>
-              {/* Fullscreen Button */}
-              <button
-                onClick={() => handleFullscreenChange(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-                Fullscreen
-              </button>
-            </div>
           </>
         ) : (
-          <>
-            <div />
-            {/* Fullscreen Action Buttons */}
-            <div className="flex items-center gap-2">
-              {/* Organize Button */}
-              <button
-                onClick={handleOrganizeTasks}
-                disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Wand2 className="w-4 h-4" />
-                Organize
-              </button>
-              {/* Exit Fullscreen Button */}
-              <button
-                onClick={() => handleFullscreenChange(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors"
-              >
-                <X className="w-4 h-4" />
-                Exit
-              </button>
-            </div>
-          </>
+          <div />
         )}
       </div>
 
@@ -1839,6 +1795,35 @@ export default function QuadrantTodoClient({
         >
           <Plus className="w-4 h-4 text-gray-700" />
         </button>
+
+        <div className="w-px h-6 bg-gray-200" />
+
+        {/* Organize Button */}
+        <button
+          onClick={handleOrganizeTasks}
+          disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
+          className="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          title="AI Organize"
+        >
+          <Wand2 className="w-4 h-4 text-white" />
+        </button>
+
+        {/* Fullscreen Toggle Button */}
+        <button
+          onClick={() => handleFullscreenChange(!isFullscreen)}
+          className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-900 transition-all flex items-center justify-center"
+          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+        >
+          {isFullscreen ? (
+            <X className="w-4 h-4 text-white" />
+          ) : (
+            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          )}
+        </button>
+
+        <div className="w-px h-6 bg-gray-200" />
 
         {/* Settings Dropdown */}
         <DropdownMenu>
