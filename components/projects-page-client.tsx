@@ -201,8 +201,8 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header - sticky below promo banner */}
-      <header className="sticky top-10 bg-white border-b-3 border-black z-40">
+      {/* Header - sticky top */}
+      <header className="sticky top-0 bg-white border-b-3 border-black z-40">
         <div className="w-full px-[4%] md:px-[10%] h-24 flex items-center justify-between">
           <Link href="/" className="group relative flex items-center">
             <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
@@ -254,52 +254,52 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                   New Project
                 </Button>
               </DialogTrigger>
-            <DialogContent className="border-3 border-black shadow-bold-lg rounded-2xl p-6 sm:p-8">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black">Create New Project</DialogTitle>
-                <DialogDescription className="text-base font-medium text-gray-600">Add a new project to organize your tasks</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateProject} className="space-y-6 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="font-bold text-base">Project Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="My Project"
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    required
-                    disabled={isCreating}
-                    className="border-3 border-black rounded-xl h-12 text-lg focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black focus-visible:shadow-bold-hover transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="font-bold text-base">Description (optional)</Label>
-                  <Input
-                    id="description"
-                    placeholder="Project description"
-                    value={newProjectDescription}
-                    onChange={(e) => setNewProjectDescription(e.target.value)}
-                    disabled={isCreating}
-                    className="border-3 border-black rounded-xl h-12 text-lg focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black focus-visible:shadow-bold-hover transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="type" className="font-bold text-base">Project Type</Label>
-                  <Select value={newProjectType} onValueChange={(value: "personal" | "team") => setNewProjectType(value)} disabled={isCreating}>
-                    <SelectTrigger id="type" className="border-3 border-black rounded-xl h-12 text-lg focus:ring-0 focus:ring-offset-0 shadow-bold-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="border-3 border-black rounded-xl shadow-bold">
-                      <SelectItem value="personal" className="font-bold cursor-pointer">Personal Project</SelectItem>
-                      <SelectItem value="team" className="font-bold cursor-pointer">Team Project</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="w-full bg-black hover:bg-gray-800 text-white transition-all font-bold h-12 rounded-xl border-3 border-black shadow-bold hover:shadow-bold-hover" disabled={isCreating}>
-                  {isCreating ? "Creating..." : "Create Project"}
-                </Button>
-              </form>
-            </DialogContent>
+              <DialogContent className="border-3 border-black shadow-bold-lg rounded-2xl p-6 sm:p-8">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black">Create New Project</DialogTitle>
+                  <DialogDescription className="text-base font-medium text-gray-600">Add a new project to organize your tasks</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateProject} className="space-y-6 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="font-bold text-base">Project Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="My Project"
+                      value={newProjectName}
+                      onChange={(e) => setNewProjectName(e.target.value)}
+                      required
+                      disabled={isCreating}
+                      className="border-3 border-black rounded-xl h-12 text-lg focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black focus-visible:shadow-bold-hover transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="font-bold text-base">Description (optional)</Label>
+                    <Input
+                      id="description"
+                      placeholder="Project description"
+                      value={newProjectDescription}
+                      onChange={(e) => setNewProjectDescription(e.target.value)}
+                      disabled={isCreating}
+                      className="border-3 border-black rounded-xl h-12 text-lg focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black focus-visible:shadow-bold-hover transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="type" className="font-bold text-base">Project Type</Label>
+                    <Select value={newProjectType} onValueChange={(value: "personal" | "team") => setNewProjectType(value)} disabled={isCreating}>
+                      <SelectTrigger id="type" className="border-3 border-black rounded-xl h-12 text-lg focus:ring-0 focus:ring-offset-0 shadow-bold-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="border-3 border-black rounded-xl shadow-bold">
+                        <SelectItem value="personal" className="font-bold cursor-pointer">Personal Project</SelectItem>
+                        <SelectItem value="team" className="font-bold cursor-pointer">Team Project</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="w-full bg-black hover:bg-gray-800 text-white transition-all font-bold h-12 rounded-xl border-3 border-black shadow-bold hover:shadow-bold-hover" disabled={isCreating}>
+                    {isCreating ? "Creating..." : "Create Project"}
+                  </Button>
+                </form>
+              </DialogContent>
             </Dialog>
 
             <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
@@ -309,37 +309,37 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
                   Join Project
                 </Button>
               </DialogTrigger>
-            <DialogContent className="border-3 border-black shadow-bold-lg rounded-2xl p-6 sm:p-8">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black">Join Existing Project</DialogTitle>
-                <DialogDescription className="text-base font-medium text-gray-600">Enter the invite code shared by the project owner</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleJoinProject} className="space-y-6 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="inviteCode" className="font-bold text-base">Invite Code</Label>
-                  <Input
-                    id="inviteCode"
-                    placeholder="ABC12345"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    required
+              <DialogContent className="border-3 border-black shadow-bold-lg rounded-2xl p-6 sm:p-8">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black">Join Existing Project</DialogTitle>
+                  <DialogDescription className="text-base font-medium text-gray-600">Enter the invite code shared by the project owner</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleJoinProject} className="space-y-6 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="inviteCode" className="font-bold text-base">Invite Code</Label>
+                    <Input
+                      id="inviteCode"
+                      placeholder="ABC12345"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                      required
+                      disabled={isJoining}
+                      maxLength={8}
+                      className="uppercase font-mono tracking-wider border-3 border-black rounded-xl h-12 text-lg focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black focus-visible:shadow-bold-hover transition-all"
+                    />
+                    <p className="text-xs text-gray-500 font-bold ml-1">
+                      Enter the 8-character code shared by the project owner
+                    </p>
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-black hover:bg-gray-800 text-white transition-all font-bold h-12 rounded-xl border-3 border-black shadow-bold hover:shadow-bold-hover"
                     disabled={isJoining}
-                    maxLength={8}
-                    className="uppercase font-mono tracking-wider border-3 border-black rounded-xl h-12 text-lg focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black focus-visible:shadow-bold-hover transition-all"
-                  />
-                  <p className="text-xs text-gray-500 font-bold ml-1">
-                    Enter the 8-character code shared by the project owner
-                  </p>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-black hover:bg-gray-800 text-white transition-all font-bold h-12 rounded-xl border-3 border-black shadow-bold hover:shadow-bold-hover"
-                  disabled={isJoining}
-                >
-                  {isJoining ? "Joining..." : "Join Project"}
-                </Button>
-              </form>
-            </DialogContent>
+                  >
+                    {isJoining ? "Joining..." : "Join Project"}
+                  </Button>
+                </form>
+              </DialogContent>
             </Dialog>
           </div>
 
