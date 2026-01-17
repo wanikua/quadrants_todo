@@ -83,7 +83,7 @@ export default function HomePage() {
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 shadow-sm">
+      <header className="fixed top-10 left-0 right-0 bg-white/90 backdrop-blur-md z-50 shadow-sm">
         <div className="w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="group relative flex items-center gap-3">
             <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
@@ -123,7 +123,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="pt-32 pb-20 px-6 relative z-10">
+      <main className="pt-40 pb-20 px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
 
           {/* Hero Section */}
