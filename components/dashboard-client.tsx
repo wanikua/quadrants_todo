@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut, Sparkles, Check, Home } from "lucide-react"
 import { useStripe } from "@/hooks/use-stripe"
@@ -33,6 +33,8 @@ interface DashboardClientProps {
 
 export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const promoCode = searchParams.get('promo') || undefined
   const { signOut } = useClerk()
   const [name, setName] = useState(initialUser.name)
   const [isLoading, setIsLoading] = useState(false)
@@ -330,19 +332,28 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
                       {stripeError}
                     </div>
                   )}
+                  {promoCode && (
+                    <div className="mb-4 p-3 bg-green-50 border-2 border-green-500 rounded-xl">
+                      <p className="text-green-800 font-bold text-center">
+                        🎉 Promo code <span className="font-black">{promoCode}</span> will be applied!
+                      </p>
+                    </div>
+                  )}
                   <Button
-                    onClick={() => createCheckoutSession(STRIPE_CONFIG.prices.pro_monthly)}
+                    onClick={() => createCheckoutSession(STRIPE_CONFIG.prices.pro_monthly, promoCode)}
                     disabled={stripeLoading}
                     className="w-full bg-black hover:bg-gray-800 text-white transition-all font-bold shadow-bold hover:shadow-bold-hover rounded-xl px-8 h-16 text-xl border-3 border-black"
                   >
                     <Crown className="w-6 h-6 mr-3 text-yellow-400 fill-current" />
                     {stripeLoading ? 'Loading...' : 'Upgrade to Pro - $9.90/month'}
                   </Button>
-                  <div className="mt-6 text-center">
-                    <p className="text-base text-gray-600 font-medium">
-                      Have a promo code? You can enter it on the payment page
-                    </p>
-                  </div>
+                  {!promoCode && (
+                    <div className="mt-6 text-center">
+                      <p className="text-base text-gray-600 font-medium">
+                        Have a promo code? You can enter it on the payment page
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-8 border-3 border-black rounded-[20px] bg-white">

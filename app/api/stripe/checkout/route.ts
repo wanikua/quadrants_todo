@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { priceId, plan } = body
+    const { priceId, plan, promotionCode } = body
 
     if (!priceId) {
       return NextResponse.json(
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       userEmail: user.email,
       successUrl: `${origin}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${origin}/dashboard?canceled=true`,
+      promotionCode,
     })
 
     return NextResponse.json({

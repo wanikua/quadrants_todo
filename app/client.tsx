@@ -1088,38 +1088,76 @@ export default function QuadrantTodoClient({
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? '' : 'pb-20'}`}>
-      {/* Top Bar - Only show when not fullscreen */}
-      {!isFullscreen && (
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
-              <h1 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
-              <Edit className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Top Bar */}
+      <div className={`flex items-center justify-between px-3 py-2 ${isFullscreen ? 'absolute top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm' : ''}`}>
+        {!isFullscreen ? (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
+                <h1 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
+                <Edit className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              {isOfflineMode && (
+                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
+                  Offline
+                </Badge>
+              )}
+              {projectType === 'team' && !isOfflineMode && activeUserCount > 1 && (
+                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 text-xs animate-pulse">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
+                  {activeUserCount}
+                </Badge>
+              )}
             </div>
-            {isOfflineMode && (
-              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
-                Offline
-              </Badge>
-            )}
-            {projectType === 'team' && !isOfflineMode && activeUserCount > 1 && (
-              <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 text-xs animate-pulse">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
-                {activeUserCount}
-              </Badge>
-            )}
-          </div>
-          {/* Fullscreen Button - Prominent */}
-          <button
-            onClick={() => handleFullscreenChange(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-            Fullscreen
-          </button>
-        </div>
-      )}
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {/* Organize Button */}
+              <button
+                onClick={handleOrganizeTasks}
+                disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sparkles className="w-4 h-4" />
+                Organize
+              </button>
+              {/* Fullscreen Button */}
+              <button
+                onClick={() => handleFullscreenChange(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                Fullscreen
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div />
+            {/* Fullscreen Action Buttons */}
+            <div className="flex items-center gap-2">
+              {/* Organize Button */}
+              <button
+                onClick={handleOrganizeTasks}
+                disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sparkles className="w-4 h-4" />
+                Organize
+              </button>
+              {/* Exit Fullscreen Button */}
+              <button
+                onClick={() => handleFullscreenChange(false)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Exit
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Main Content Area */}
       <div className={`${isFullscreen ? 'h-screen' : ''}`}>
@@ -1828,19 +1866,6 @@ export default function QuadrantTodoClient({
           </button>
         )}
 
-        {/* Exit Fullscreen - Only in fullscreen mode */}
-        {isFullscreen && (
-          <>
-            <div className="w-px h-6 bg-gray-200" />
-            <button
-              onClick={() => handleFullscreenChange(false)}
-              className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-900 transition-all flex items-center justify-center"
-              title="Exit Fullscreen"
-            >
-              <X className="w-4 h-4 text-white" />
-            </button>
-          </>
-        )}
       </div>
 
       {/* Full-screen organizing overlay */}

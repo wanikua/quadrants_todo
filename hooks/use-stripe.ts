@@ -11,7 +11,7 @@ export function useStripe() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const createCheckoutSession = async (priceId: string) => {
+  const createCheckoutSession = async (priceId: string, promotionCode?: string) => {
     try {
       setLoading(true)
       setError(null)
@@ -21,7 +21,7 @@ export function useStripe() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ priceId, promotionCode }),
       })
 
       if (!response.ok) {

@@ -19,13 +19,32 @@ export async function createCheckoutSession({
   userEmail,
   successUrl,
   cancelUrl,
+  promotionCode,
 }: {
   priceId: string
   userId: string
   userEmail: string
   successUrl: string
   cancelUrl: string
+  promotionCode?: string
 }) {
+  // If a promotion code is provided, look up its ID
+  let discounts: { promotion_code: string }[] | undefined
+  if (promotionCode) {
+    try {
+      const promoCodes = await stripe.promotionCodes.list({
+        code: promotionCode,
+        active: true,
+        limit: 1,
+      })
+      if (promoCodes.data.length > 0) {
+        discounts = [{ promotion_code: promoCodes.data[0].id }]
+      }
+    } catch (error) {
+      console.error('Error looking up promotion code:', error)
+    }
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -39,7 +58,7 @@ export async function createCheckoutSession({
     cancel_url: cancelUrl,
     customer_email: userEmail,
     client_reference_id: userId,
-    allow_promotion_codes: true, // Enable Stripe promo codes
+    ...(discounts ? { discounts } : { allow_promotion_codes: true }),
     metadata: {
       userId,
     },

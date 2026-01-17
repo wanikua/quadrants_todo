@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { priceId } = body
+    const { priceId, promotionCode } = body
 
     if (!priceId) {
       return NextResponse.json({ error: "Price ID is required" }, { status: 400 })
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       userEmail: user.email,
       successUrl: `${request.nextUrl.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${request.nextUrl.origin}/pricing`,
+      promotionCode,
     })
 
     const url = session.url
