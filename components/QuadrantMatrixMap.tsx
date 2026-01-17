@@ -453,7 +453,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     <Card
       ref={cardRef}
       className={`transition-all duration-300 ${isFullscreen
-        ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40 flex flex-col"
+        ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
         : "p-2 sm:p-6"
         }`}
     >
@@ -471,8 +471,8 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
 
 
 
-      {(!isFullscreen || isOrganizing) && (
-        <CardHeader className={`pb-2 sm:pb-4 px-2 sm:px-6 pt-2 ${isFullscreen ? 'shrink-0 shadow-sm border-b' : ''}`}>
+      {!isFullscreen && (
+        <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6 pt-2">
           {/* Organize Mode Banner */}
           {isOrganizing && onAcceptOrganize && onRevertOrganize && originalTaskPositions && (
             <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-950 border-2 border-purple-300 dark:border-purple-700 rounded-lg">
@@ -513,12 +513,12 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           )}
         </CardHeader>
       )}
-      <CardContent className={`${isFullscreen ? "flex-1 min-h-0 p-0 relative" : "px-2 sm:px-6"}`}>
+      <CardContent className={`${isFullscreen ? "h-screen p-0 relative" : "px-2 sm:px-6"}`}>
         <div
-          className={`relative w-full bg-white overflow-hidden cursor-crosshair ${isFullscreen ? "h-full w-full border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
+          className={`relative w-full bg-white overflow-hidden cursor-crosshair ${isFullscreen ? "h-screen border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
             }`}
           style={{
-            height: isFullscreen ? "100%" : (isMobile ? "400px" : "700px"),
+            height: isFullscreen ? "100vh" : (isMobile ? "400px" : "700px"),
             // Remove touchAction: "none" to allow proper event handling
             // We handle preventDefault() in event handlers instead
           }}
