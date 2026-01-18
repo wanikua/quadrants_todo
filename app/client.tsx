@@ -50,6 +50,7 @@ interface QuadrantTodoClientProps {
   userRole?: "owner" | "admin" | "member"
   userId?: string
   onFullscreenChange?: (isFullscreen: boolean) => void
+  onEditProject?: () => void
 }
 
 export default function QuadrantTodoClient({
@@ -64,6 +65,7 @@ export default function QuadrantTodoClient({
   userRole,
   userId,
   onFullscreenChange,
+  onEditProject,
 }: QuadrantTodoClientProps) {
   const router = useRouter()
 
@@ -131,11 +133,73 @@ export default function QuadrantTodoClient({
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Toolbar drag state
-  const [toolbarX, setToolbarX] = useState(0) // Offset from center
+  // Toolbar position: Y snaps to 'top' or 'bottom', X is free
+  type ToolbarYPosition = 'top' | 'bottom'
+  const [toolbarYPosition, setToolbarYPosition] = useState<ToolbarYPosition>('top')
+  const [toolbarX, setToolbarX] = useState(80) // Free X position, default left
   const [isDraggingToolbar, setIsDraggingToolbar] = useState(false)
-  const toolbarDragStartX = useRef(0)
-  const toolbarStartOffset = useRef(0)
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
+
+  // Get CSS position for toolbar
+  const getToolbarStyle = useCallback(() => {
+    if (isDraggingToolbar && dragPosition) {
+      return { left: `${dragPosition.x}px`, top: `${dragPosition.y}px` }
+    }
+    if (toolbarYPosition === 'top') {
+      return { left: `${toolbarX}px`, top: '80px' }
+    } else {
+      return { left: `${toolbarX}px`, bottom: '16px' }
+    }
+  }, [toolbarYPosition, toolbarX, isDraggingToolbar, dragPosition])
+
+  // Find nearest Y snap position based on current drag Y position
+  const findNearestYSnapPosition = useCallback((y: number): ToolbarYPosition => {
+    const h = window.innerHeight
+    return y < h / 2 ? 'top' : 'bottom'
+  }, [])
+
+  // Store drag offset relative to toolbar
+  const dragOffsetRef = useRef({ x: 0, y: 0 })
+
+  // Toolbar drag handlers
+  const handleToolbarDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    setIsDraggingToolbar(true)
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    // Calculate offset from click position to toolbar position
+    dragOffsetRef.current = { x: clientX - toolbarX, y: clientY }
+    // Start at current position
+    setDragPosition({ x: toolbarX, y: toolbarYPosition === 'top' ? 80 : window.innerHeight - 60 })
+  }, [toolbarX, toolbarYPosition])
+
+  const handleToolbarDrag = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isDraggingToolbar) return
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    // Use stored offset for smooth dragging
+    const toolbarWidth = 500 // Generous estimate
+    const toolbarHeight = 60
+    const margin = 16
+    // Ensure both left and right have margin
+    const x = Math.max(margin, Math.min(window.innerWidth - toolbarWidth - margin, clientX - dragOffsetRef.current.x))
+    const y = Math.max(margin, Math.min(window.innerHeight - toolbarHeight - margin, clientY - 20))
+    setDragPosition({ x, y })
+  }, [isDraggingToolbar])
+
+  const handleToolbarDragEnd = useCallback(() => {
+    if (dragPosition) {
+      const centerY = dragPosition.y + 20
+      const nearestYPosition = findNearestYSnapPosition(centerY)
+      setToolbarYPosition(nearestYPosition)
+      // Save X position with boundary check (same as drag)
+      const toolbarWidth = 500
+      const margin = 16
+      const safeX = Math.max(margin, Math.min(window.innerWidth - toolbarWidth - margin, dragPosition.x))
+      setToolbarX(safeX)
+    }
+    setIsDraggingToolbar(false)
+    setDragPosition(null)
+  }, [dragPosition, findNearestYSnapPosition])
 
   // Focus mode: Listen for ESC key globally
   useEffect(() => {
@@ -161,27 +225,6 @@ export default function QuadrantTodoClient({
     setIsFullscreen(value)
     onFullscreenChange?.(value)
   }, [onFullscreenChange])
-
-  // Toolbar drag handlers
-  const handleToolbarDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    setIsDraggingToolbar(true)
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    toolbarDragStartX.current = clientX
-    toolbarStartOffset.current = toolbarX
-  }, [toolbarX])
-
-  const handleToolbarDrag = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isDraggingToolbar) return
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const deltaX = clientX - toolbarDragStartX.current
-    const maxOffset = window.innerWidth / 2 - 150 // Keep toolbar visible
-    const newX = Math.max(-maxOffset, Math.min(maxOffset, toolbarStartOffset.current + deltaX))
-    setToolbarX(newX)
-  }, [isDraggingToolbar])
-
-  const handleToolbarDragEnd = useCallback(() => {
-    setIsDraggingToolbar(false)
-  }, [])
 
   // Toolbar drag event listeners
   useEffect(() => {
@@ -1172,16 +1215,12 @@ export default function QuadrantTodoClient({
   }
 
   return (
-    <div className={`min-h-screen bg-background ${isFullscreen ? '' : 'pb-20'}`}>
+    <div className={`bg-white flex flex-col ${currentView === 'map' ? 'h-full overflow-hidden' : 'min-h-full'} ${isFullscreen ? '' : ''}`}>
       {/* Top Bar */}
-      <div className={`flex items-center justify-between px-3 py-2 ${isFullscreen ? 'absolute top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm' : ''}`}>
+      <div className={`flex items-center justify-between px-4 py-1 ${isFullscreen ? 'absolute top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm' : ''}`}>
         {!isFullscreen ? (
           <>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingProject(true)}>
-                <h1 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{projectName}</h1>
-                <Edit className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
               {isOfflineMode && (
                 <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
                   Offline
@@ -1194,6 +1233,40 @@ export default function QuadrantTodoClient({
                 </Badge>
               )}
             </div>
+            {/* Organize Mode Preview - inline with title */}
+            {isOrganizing && originalTaskPositions && (
+              <div className="flex items-center gap-3 bg-white border-2 border-black rounded-xl px-3 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <Wand2 className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-sm font-bold text-black">
+                    {(() => {
+                      const movedCount = tasks.filter(task => {
+                        const original = originalTaskPositions.get(task.id)
+                        if (!original) return false
+                        return original.urgency !== task.urgency || original.importance !== task.importance
+                      }).length
+                      return movedCount > 0 ? `${movedCount} tasks moved` : 'Preview mode'
+                    })()}
+                  </span>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={handleRevertOrganize}
+                    className="px-3 py-1 text-xs font-bold text-black bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
+                  >
+                    ✕ Revert
+                  </button>
+                  <button
+                    onClick={handleAcceptOrganize}
+                    className="px-3 py-1 text-xs font-bold text-white bg-green-500 border-2 border-black rounded-lg hover:bg-green-600 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
+                  >
+                    ✓ Accept
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div />
@@ -1226,161 +1299,161 @@ export default function QuadrantTodoClient({
             </div>
           )}
           <QuadrantMatrixMap
-              tasks={selectedPlayerFilter !== "all" ? filteredAndSortedTasks : tasks}
-              players={players}
-              lines={lines}
-              projectId={projectId}
-              isMobile={isMobile}
+            tasks={selectedPlayerFilter !== "all" ? filteredAndSortedTasks : tasks}
+            players={players}
+            lines={lines}
+            projectId={projectId}
+            isMobile={isMobile}
 
-              onTaskDetailClick={handleTaskDetailClick}
-              onLongPress={handleLongPress}
-              userName={userName}
-              projectType={projectType}
-              highestPriorityTaskId={highestPriorityTaskId}
-              setTasks={setTasks}
-              onOrganizeTasks={handleOrganizeTasks}
-              isOrganizing={isOrganizing || isOrganizingInProgress}
-              originalTaskPositions={originalTaskPositions}
-              onAcceptOrganize={handleAcceptOrganize}
-              onRevertOrganize={handleRevertOrganize}
-              isFullscreen={isFullscreen}
-              onFullscreenChange={handleFullscreenChange}
-              isFocusMode={isFocusMode}
-              focusedTaskId={focusedTask?.id}
-              focusedTaskDescription={focusedTask?.description}
-              focusIndex={focusIndex}
-              totalFocusTasks={topPriorityTasks.length}
-              onFocusClick={() => {
-                if (focusIndex < topPriorityTasks.length - 1) {
-                  setFocusIndex(focusIndex + 1)
-                } else {
-                  setIsFocusMode(false)
-                  setFocusIndex(0)
-                }
-              }}
-              onDragStart={(taskId) => {
-                debug.log('[Drag] Starting drag for task:', taskId)
-                handleUserActivity() // Mark user as active
-                setPendingUpdateTaskIds(prev => new Set([...prev, taskId]))
-              }}
-              onDragEnd={(taskId) => {
-                debug.log('[Drag] Ending drag for task:', taskId)
-                handleUserActivity() // Mark user as active
-                // Remove from pending after longer delay (1500ms to ensure DB completes)
-                setTimeout(() => {
-                  setPendingUpdateTaskIds(prev => {
-                    const next = new Set(prev)
-                    next.delete(taskId)
-                    debug.log('[Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
-                    return next
-                  })
-                }, 1500)
-              }}
-            />
-          </>
-        )}
+            onTaskDetailClick={handleTaskDetailClick}
+            onLongPress={handleLongPress}
+            userName={userName}
+            projectType={projectType}
+            highestPriorityTaskId={highestPriorityTaskId}
+            setTasks={setTasks}
+            onOrganizeTasks={handleOrganizeTasks}
+            isOrganizing={isOrganizing || isOrganizingInProgress}
+            originalTaskPositions={originalTaskPositions}
+            onAcceptOrganize={handleAcceptOrganize}
+            onRevertOrganize={handleRevertOrganize}
+            isFullscreen={isFullscreen}
+            onFullscreenChange={handleFullscreenChange}
+            isFocusMode={isFocusMode}
+            focusedTaskId={focusedTask?.id}
+            focusedTaskDescription={focusedTask?.description}
+            focusIndex={focusIndex}
+            totalFocusTasks={topPriorityTasks.length}
+            onFocusClick={() => {
+              if (focusIndex < topPriorityTasks.length - 1) {
+                setFocusIndex(focusIndex + 1)
+              } else {
+                setIsFocusMode(false)
+                setFocusIndex(0)
+              }
+            }}
+            onDragStart={(taskId) => {
+              debug.log('[Drag] Starting drag for task:', taskId)
+              handleUserActivity() // Mark user as active
+              setPendingUpdateTaskIds(prev => new Set([...prev, taskId]))
+            }}
+            onDragEnd={(taskId) => {
+              debug.log('[Drag] Ending drag for task:', taskId)
+              handleUserActivity() // Mark user as active
+              // Remove from pending after longer delay (1500ms to ensure DB completes)
+              setTimeout(() => {
+                setPendingUpdateTaskIds(prev => {
+                  const next = new Set(prev)
+                  next.delete(taskId)
+                  debug.log('[Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
+                  return next
+                })
+              }, 1500)
+            }}
+          />
+        </>
+      )}
 
-        {/* List View */}
-        {currentView === 'list' && (
-          <div className="p-2 sm:p-4">
-            <Card>
-              <CardHeader className="px-4 sm:px-6 flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl sm:text-3xl font-bold">My Tasks</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`rounded-full px-4 py-2 font-semibold ${filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important' ? 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300' : ''
-                    }`}
-                  onClick={() => {
-                    if (filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important') {
-                      setFilterQuadrant('all')
-                    } else {
-                      setFilterQuadrant('urgent-important')
-                    }
-                  }}
-                >
-                  Urgent
-                </Button>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <div className="space-y-3">
-                  {filteredAndSortedTasks.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No tasks yet. Create your first task!
-                    </p>
-                  ) : (
-                    filteredAndSortedTasks.map((task) => {
-                      const isCompleted = completedTaskIds.has(task.id)
-                      return (
-                        <div
-                          key={task.id}
-                          className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-black rounded-2xl transition-all ${isCompleted
-                            ? 'bg-gray-100 opacity-70'
-                            : 'bg-white hover:shadow-md cursor-pointer'
+      {/* List View */}
+      {currentView === 'list' && (
+        <div className="p-2 sm:p-4">
+          <Card>
+            <CardHeader className="px-4 sm:px-6 flex flex-row items-center justify-between">
+              <CardTitle className="text-2xl sm:text-3xl font-bold">My Tasks</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`rounded-full px-4 py-2 font-semibold ${filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important' ? 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300' : ''
+                  }`}
+                onClick={() => {
+                  if (filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important') {
+                    setFilterQuadrant('all')
+                  } else {
+                    setFilterQuadrant('urgent-important')
+                  }
+                }}
+              >
+                Urgent
+              </Button>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              <div className="space-y-3">
+                {filteredAndSortedTasks.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No tasks yet. Create your first task!
+                  </p>
+                ) : (
+                  filteredAndSortedTasks.map((task) => {
+                    const isCompleted = completedTaskIds.has(task.id)
+                    return (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-black rounded-2xl transition-all ${isCompleted
+                          ? 'bg-gray-100 opacity-70'
+                          : 'bg-white hover:shadow-md cursor-pointer'
+                          }`}
+                      >
+                        {/* Checkbox Circle */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleTaskComplete(task.id)
+                          }}
+                          className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-black flex items-center justify-center transition-all ${isCompleted
+                            ? 'bg-black'
+                            : 'bg-white hover:bg-gray-100'
                             }`}
                         >
-                          {/* Checkbox Circle */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleToggleTaskComplete(task.id)
-                            }}
-                            className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-black flex items-center justify-center transition-all ${isCompleted
-                              ? 'bg-black'
-                              : 'bg-white hover:bg-gray-100'
+                          {isCompleted && (
+                            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-black" />
+                          )}
+                        </button>
+
+                        {/* Task Content */}
+                        <div
+                          className="flex-1 min-w-0"
+                          onClick={() => !isCompleted && handleTaskDetailClick(task)}
+                        >
+                          <p
+                            className={`font-medium text-base sm:text-lg ${isCompleted ? 'line-through text-gray-400' : 'text-black'
                               }`}
                           >
-                            {isCompleted && (
-                              <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-black" />
-                            )}
-                          </button>
-
-                          {/* Task Content */}
-                          <div
-                            className="flex-1 min-w-0"
-                            onClick={() => !isCompleted && handleTaskDetailClick(task)}
-                          >
-                            <p
-                              className={`font-medium text-base sm:text-lg ${isCompleted ? 'line-through text-gray-400' : 'text-black'
-                                }`}
-                            >
-                              {task.description}
-                            </p>
-                            {!isCompleted && (
-                              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs ${getQuadrantLabel(task.urgency, task.importance).includes('Urgent')
-                                    ? 'bg-yellow-200 border-yellow-400'
-                                    : ''
-                                    }`}
-                                >
-                                  {getQuadrantLabel(task.urgency, task.importance)}
-                                </Badge>
-                                {task.assignees && task.assignees.length > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    {task.assignees.map((player) => (
-                                      <div
-                                        key={player.id}
-                                        className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
-                                        style={{ backgroundColor: player.color }}
-                                        title={player.name}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                            {task.description}
+                          </p>
+                          {!isCompleted && (
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${getQuadrantLabel(task.urgency, task.importance).includes('Urgent')
+                                  ? 'bg-yellow-200 border-yellow-400'
+                                  : ''
+                                  }`}
+                              >
+                                {getQuadrantLabel(task.urgency, task.importance)}
+                              </Badge>
+                              {task.assignees && task.assignees.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  {task.assignees.map((player) => (
+                                    <div
+                                      key={player.id}
+                                      className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
+                                      style={{ backgroundColor: player.color }}
+                                      title={player.name}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )
-                    })
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Add Task Dialog */}
       <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
@@ -1746,13 +1819,10 @@ export default function QuadrantTodoClient({
         </DialogContent>
       </Dialog>
 
-      {/* Floating Bottom Toolbar - Draggable */}
+      {/* Floating Toolbar - Draggable */}
       <div
-        className={`fixed bottom-4 z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
-        style={{
-          left: `calc(50% + ${toolbarX}px)`,
-          transform: 'translateX(-50%)',
-        }}
+        className={`fixed z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
+        style={getToolbarStyle()}
       >
         {/* Drag Handle */}
         <div

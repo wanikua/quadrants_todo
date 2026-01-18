@@ -9,10 +9,13 @@ import QuadrantTodoClient from "@/app/client"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Project {
   id: string
   name: string
+  description?: string
   type: "personal" | "team"
   owner_id: string
   invite_code?: string
@@ -33,6 +36,11 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
   const [copied, setCopied] = useState(false)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isEditingProject, setIsEditingProject] = useState(false)
+  const [editedProjectName, setEditedProjectName] = useState(project.name)
+  const [editedProjectDescription, setEditedProjectDescription] = useState(project.description || "")
+  const [projectName, setProjectName] = useState(project.name)
+  const [isSaving, setIsSaving] = useState(false)
 
   const inviteCode = project.invite_code?.substring(0, 8).toUpperCase() || project.id.substring(0, 8).toUpperCase()
   const projectLink = typeof window !== 'undefined' ? `${window.location.origin}/projects/${project.id}` : ''
@@ -45,35 +53,83 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleSaveProjectEdit = async () => {
+    if (!editedProjectName.trim()) {
+      toast.error("Project name cannot be empty")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editedProjectName.trim(),
+          description: editedProjectDescription.trim() || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        toast.error(data.error || "Failed to update project")
+        return
+      }
+
+      toast.success("Project updated successfully")
+      setProjectName(editedProjectName.trim())
+      setIsEditingProject(false)
+      router.refresh()
+    } catch (error) {
+      toast.error("Failed to update project")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Minimal Header - scrolls with page */}
-      <header className="bg-white border-b">
-        <div className="px-2 py-1">
+    <div className="h-screen overflow-hidden bg-white flex flex-col">
+      {/* Breadcrumb Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100">
+        <div className="px-4 py-2 flex items-center gap-2">
           <button
             onClick={() => router.push("/projects")}
             title="Back to My Projects"
-            className="group flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors text-sm"
+            className="group flex items-center gap-1.5 text-sm text-gray-500 hover:text-black transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-500 group-hover:text-black transition-colors" />
-            <span className="text-gray-500 group-hover:text-black transition-colors">Back</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>All Projects</span>
           </button>
+          <span className="text-gray-300">/</span>
+          <span
+            className="text-sm font-medium text-black flex items-center gap-1.5 group cursor-pointer hover:text-primary transition-colors"
+            title="Click to edit project"
+            onClick={() => setIsEditingProject(true)}
+          >
+            {projectName}
+            <svg className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </span>
         </div>
       </header>
 
-      <QuadrantTodoClient
-        initialTasks={initialTasks}
-        initialPlayers={initialPlayers}
-        initialLines={initialLines}
-        isOfflineMode={false}
-        projectId={project.id}
-        projectType={project.type}
-        userName={user?.name}
-        projectName={project.name}
-        userRole={project.role}
-        userId={user?.id}
-        onFullscreenChange={setIsFullscreen}
-      />
+      <div className="flex-1 overflow-auto">
+        <QuadrantTodoClient
+          initialTasks={initialTasks}
+          initialPlayers={initialPlayers}
+          initialLines={initialLines}
+          isOfflineMode={false}
+          projectId={project.id}
+          projectType={project.type}
+          userName={user?.name}
+          projectName={project.name}
+          userRole={project.role}
+          userId={user?.id}
+          onFullscreenChange={setIsFullscreen}
+          onEditProject={() => setIsEditingProject(true)}
+        />
+      </div>
 
 
       {/* Share Project Dialog */}
@@ -151,6 +207,44 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
                 <span>Team members need to sign in to access the project. Use the invite link for easy one-click joining!</span>
               </p>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={isEditingProject} onOpenChange={setIsEditingProject}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Project Name</Label>
+              <Input
+                id="edit-name"
+                value={editedProjectName}
+                onChange={(e) => setEditedProjectName(e.target.value)}
+                placeholder="Project name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description (optional)</Label>
+              <Textarea
+                id="edit-description"
+                value={editedProjectDescription}
+                onChange={(e) => setEditedProjectDescription(e.target.value)}
+                placeholder="Project description"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsEditingProject(false)} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveProjectEdit} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

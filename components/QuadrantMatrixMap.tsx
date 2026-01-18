@@ -452,70 +452,28 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   return (
     <Card
       ref={cardRef}
-      className={`transition-all duration-300 ${isFullscreen
+      className={`transition-all duration-300 flex-1 flex flex-col ${isFullscreen
         ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
-        : "p-2 sm:p-6"
+        : "m-4 p-4 bg-yellow-50"
         }`}
     >
 
 
 
-      {!isFullscreen && (
-        <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6 pt-2">
-          {/* Organize Mode Banner */}
-          {isOrganizing && onAcceptOrganize && onRevertOrganize && originalTaskPositions && (
-            <div className="mb-4 p-3 bg-purple-100 border-2 border-black rounded-xl">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                    <Wand2 className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-black">
-                      {(() => {
-                        const movedCount = tasks.filter(task => {
-                          const original = originalTaskPositions.get(task.id)
-                          if (!original) return false
-                          return original.urgency !== task.urgency || original.importance !== task.importance
-                        }).length
-                        return movedCount > 0
-                          ? `${movedCount} task${movedCount > 1 ? 's' : ''} repositioned`
-                          : 'Review changes'
-                      })()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={onRevertOrganize}
-                    className="px-3 py-1.5 text-sm font-bold text-gray-700 bg-white border-2 border-black rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    Revert
-                  </button>
-                  <button
-                    onClick={onAcceptOrganize}
-                    className="px-3 py-1.5 text-sm font-bold text-white bg-black border-2 border-black rounded-lg hover:bg-gray-800 transition-colors"
-                  >
-                    Accept
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isMobile && (
-            <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
-              Long press (0.8s) on empty space to create a task
-            </div>
-          )}
+      {/* Mobile hint - only show when not in organize mode */}
+      {!isFullscreen && isMobile && !isOrganizing && (
+        <CardHeader className="pb-2 px-2 pt-0">
+          <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+            Long press (0.8s) on empty space to create a task
+          </div>
         </CardHeader>
       )}
-      <CardContent className={`${isFullscreen ? "h-screen p-0 relative" : "px-2 sm:px-6"}`}>
+      <CardContent className={`flex flex-col ${isFullscreen ? "h-screen p-0 relative" : "h-full p-0"}`}>
         <div
-          className={`relative w-full bg-white overflow-hidden cursor-crosshair ${isFullscreen ? "h-screen border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
+          className={`relative w-full bg-white overflow-hidden cursor-crosshair flex-1 ${isFullscreen ? "border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
             }`}
           style={{
-            height: isFullscreen ? "100vh" : (isMobile ? "400px" : "700px"),
+            minHeight: isFullscreen ? "100vh" : "400px",
             // Remove touchAction: "none" to allow proper event handling
             // We handle preventDefault() in event handlers instead
           }}
