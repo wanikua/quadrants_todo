@@ -454,14 +454,14 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       ref={cardRef}
       className={`transition-all duration-300 ${isFullscreen
         ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
-        : "p-2 sm:p-6"
+        : "p-3"
         }`}
     >
 
 
 
       {!isFullscreen && (
-        <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6 pt-2">
+        <CardHeader className="pb-2 px-3 pt-2">
           {/* Organize Mode Banner */}
           {isOrganizing && onAcceptOrganize && onRevertOrganize && originalTaskPositions && (
             <div className="mb-4 p-3 bg-purple-100 border-2 border-black rounded-xl">
@@ -510,12 +510,12 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           )}
         </CardHeader>
       )}
-      <CardContent className={`${isFullscreen ? "h-screen p-0 relative" : "px-2 sm:px-6"}`}>
+      <CardContent className={`${isFullscreen ? "h-screen p-0 relative" : "p-3"}`}>
         <div
           className={`relative w-full bg-white overflow-hidden cursor-crosshair ${isFullscreen ? "h-screen border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
             }`}
           style={{
-            height: isFullscreen ? "100vh" : (isMobile ? "400px" : "700px"),
+            height: isFullscreen ? "100vh" : "calc(100vh - 100px)",
             // Remove touchAction: "none" to allow proper event handling
             // We handle preventDefault() in event handlers instead
           }}

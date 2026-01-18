@@ -1226,161 +1226,161 @@ export default function QuadrantTodoClient({
             </div>
           )}
           <QuadrantMatrixMap
-              tasks={selectedPlayerFilter !== "all" ? filteredAndSortedTasks : tasks}
-              players={players}
-              lines={lines}
-              projectId={projectId}
-              isMobile={isMobile}
+            tasks={selectedPlayerFilter !== "all" ? filteredAndSortedTasks : tasks}
+            players={players}
+            lines={lines}
+            projectId={projectId}
+            isMobile={isMobile}
 
-              onTaskDetailClick={handleTaskDetailClick}
-              onLongPress={handleLongPress}
-              userName={userName}
-              projectType={projectType}
-              highestPriorityTaskId={highestPriorityTaskId}
-              setTasks={setTasks}
-              onOrganizeTasks={handleOrganizeTasks}
-              isOrganizing={isOrganizing || isOrganizingInProgress}
-              originalTaskPositions={originalTaskPositions}
-              onAcceptOrganize={handleAcceptOrganize}
-              onRevertOrganize={handleRevertOrganize}
-              isFullscreen={isFullscreen}
-              onFullscreenChange={handleFullscreenChange}
-              isFocusMode={isFocusMode}
-              focusedTaskId={focusedTask?.id}
-              focusedTaskDescription={focusedTask?.description}
-              focusIndex={focusIndex}
-              totalFocusTasks={topPriorityTasks.length}
-              onFocusClick={() => {
-                if (focusIndex < topPriorityTasks.length - 1) {
-                  setFocusIndex(focusIndex + 1)
-                } else {
-                  setIsFocusMode(false)
-                  setFocusIndex(0)
-                }
-              }}
-              onDragStart={(taskId) => {
-                debug.log('[Drag] Starting drag for task:', taskId)
-                handleUserActivity() // Mark user as active
-                setPendingUpdateTaskIds(prev => new Set([...prev, taskId]))
-              }}
-              onDragEnd={(taskId) => {
-                debug.log('[Drag] Ending drag for task:', taskId)
-                handleUserActivity() // Mark user as active
-                // Remove from pending after longer delay (1500ms to ensure DB completes)
-                setTimeout(() => {
-                  setPendingUpdateTaskIds(prev => {
-                    const next = new Set(prev)
-                    next.delete(taskId)
-                    debug.log('[Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
-                    return next
-                  })
-                }, 1500)
-              }}
-            />
-          </>
-        )}
+            onTaskDetailClick={handleTaskDetailClick}
+            onLongPress={handleLongPress}
+            userName={userName}
+            projectType={projectType}
+            highestPriorityTaskId={highestPriorityTaskId}
+            setTasks={setTasks}
+            onOrganizeTasks={handleOrganizeTasks}
+            isOrganizing={isOrganizing || isOrganizingInProgress}
+            originalTaskPositions={originalTaskPositions}
+            onAcceptOrganize={handleAcceptOrganize}
+            onRevertOrganize={handleRevertOrganize}
+            isFullscreen={isFullscreen}
+            onFullscreenChange={handleFullscreenChange}
+            isFocusMode={isFocusMode}
+            focusedTaskId={focusedTask?.id}
+            focusedTaskDescription={focusedTask?.description}
+            focusIndex={focusIndex}
+            totalFocusTasks={topPriorityTasks.length}
+            onFocusClick={() => {
+              if (focusIndex < topPriorityTasks.length - 1) {
+                setFocusIndex(focusIndex + 1)
+              } else {
+                setIsFocusMode(false)
+                setFocusIndex(0)
+              }
+            }}
+            onDragStart={(taskId) => {
+              debug.log('[Drag] Starting drag for task:', taskId)
+              handleUserActivity() // Mark user as active
+              setPendingUpdateTaskIds(prev => new Set([...prev, taskId]))
+            }}
+            onDragEnd={(taskId) => {
+              debug.log('[Drag] Ending drag for task:', taskId)
+              handleUserActivity() // Mark user as active
+              // Remove from pending after longer delay (1500ms to ensure DB completes)
+              setTimeout(() => {
+                setPendingUpdateTaskIds(prev => {
+                  const next = new Set(prev)
+                  next.delete(taskId)
+                  debug.log('[Drag] Cleared pending for task:', taskId, 'Remaining:', next.size)
+                  return next
+                })
+              }, 1500)
+            }}
+          />
+        </>
+      )}
 
-        {/* List View */}
-        {currentView === 'list' && (
-          <div className="p-2 sm:p-4">
-            <Card>
-              <CardHeader className="px-4 sm:px-6 flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl sm:text-3xl font-bold">My Tasks</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`rounded-full px-4 py-2 font-semibold ${filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important' ? 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300' : ''
-                    }`}
-                  onClick={() => {
-                    if (filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important') {
-                      setFilterQuadrant('all')
-                    } else {
-                      setFilterQuadrant('urgent-important')
-                    }
-                  }}
-                >
-                  Urgent
-                </Button>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <div className="space-y-3">
-                  {filteredAndSortedTasks.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No tasks yet. Create your first task!
-                    </p>
-                  ) : (
-                    filteredAndSortedTasks.map((task) => {
-                      const isCompleted = completedTaskIds.has(task.id)
-                      return (
-                        <div
-                          key={task.id}
-                          className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-black rounded-2xl transition-all ${isCompleted
-                            ? 'bg-gray-100 opacity-70'
-                            : 'bg-white hover:shadow-md cursor-pointer'
+      {/* List View */}
+      {currentView === 'list' && (
+        <div className="p-2 sm:p-4">
+          <Card>
+            <CardHeader className="px-4 sm:px-6 flex flex-row items-center justify-between">
+              <CardTitle className="text-2xl sm:text-3xl font-bold">My Tasks</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`rounded-full px-4 py-2 font-semibold ${filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important' ? 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300' : ''
+                  }`}
+                onClick={() => {
+                  if (filterQuadrant === 'urgent-important' || filterQuadrant === 'urgent-not-important') {
+                    setFilterQuadrant('all')
+                  } else {
+                    setFilterQuadrant('urgent-important')
+                  }
+                }}
+              >
+                Urgent
+              </Button>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              <div className="space-y-3">
+                {filteredAndSortedTasks.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No tasks yet. Create your first task!
+                  </p>
+                ) : (
+                  filteredAndSortedTasks.map((task) => {
+                    const isCompleted = completedTaskIds.has(task.id)
+                    return (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-black rounded-2xl transition-all ${isCompleted
+                          ? 'bg-gray-100 opacity-70'
+                          : 'bg-white hover:shadow-md cursor-pointer'
+                          }`}
+                      >
+                        {/* Checkbox Circle */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleTaskComplete(task.id)
+                          }}
+                          className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-black flex items-center justify-center transition-all ${isCompleted
+                            ? 'bg-black'
+                            : 'bg-white hover:bg-gray-100'
                             }`}
                         >
-                          {/* Checkbox Circle */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleToggleTaskComplete(task.id)
-                            }}
-                            className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-black flex items-center justify-center transition-all ${isCompleted
-                              ? 'bg-black'
-                              : 'bg-white hover:bg-gray-100'
+                          {isCompleted && (
+                            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-black" />
+                          )}
+                        </button>
+
+                        {/* Task Content */}
+                        <div
+                          className="flex-1 min-w-0"
+                          onClick={() => !isCompleted && handleTaskDetailClick(task)}
+                        >
+                          <p
+                            className={`font-medium text-base sm:text-lg ${isCompleted ? 'line-through text-gray-400' : 'text-black'
                               }`}
                           >
-                            {isCompleted && (
-                              <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-black" />
-                            )}
-                          </button>
-
-                          {/* Task Content */}
-                          <div
-                            className="flex-1 min-w-0"
-                            onClick={() => !isCompleted && handleTaskDetailClick(task)}
-                          >
-                            <p
-                              className={`font-medium text-base sm:text-lg ${isCompleted ? 'line-through text-gray-400' : 'text-black'
-                                }`}
-                            >
-                              {task.description}
-                            </p>
-                            {!isCompleted && (
-                              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs ${getQuadrantLabel(task.urgency, task.importance).includes('Urgent')
-                                    ? 'bg-yellow-200 border-yellow-400'
-                                    : ''
-                                    }`}
-                                >
-                                  {getQuadrantLabel(task.urgency, task.importance)}
-                                </Badge>
-                                {task.assignees && task.assignees.length > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    {task.assignees.map((player) => (
-                                      <div
-                                        key={player.id}
-                                        className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
-                                        style={{ backgroundColor: player.color }}
-                                        title={player.name}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                            {task.description}
+                          </p>
+                          {!isCompleted && (
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${getQuadrantLabel(task.urgency, task.importance).includes('Urgent')
+                                  ? 'bg-yellow-200 border-yellow-400'
+                                  : ''
+                                  }`}
+                              >
+                                {getQuadrantLabel(task.urgency, task.importance)}
+                              </Badge>
+                              {task.assignees && task.assignees.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  {task.assignees.map((player) => (
+                                    <div
+                                      key={player.id}
+                                      className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
+                                      style={{ backgroundColor: player.color }}
+                                      title={player.name}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )
-                    })
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Add Task Dialog */}
       <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
@@ -1746,9 +1746,9 @@ export default function QuadrantTodoClient({
         </DialogContent>
       </Dialog>
 
-      {/* Floating Bottom Toolbar - Draggable */}
+      {/* Floating Top Toolbar - Draggable */}
       <div
-        className={`fixed bottom-4 z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
+        className={`fixed top-16 z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
         style={{
           left: `calc(50% + ${toolbarX}px)`,
           transform: 'translateX(-50%)',
