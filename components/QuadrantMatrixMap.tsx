@@ -464,32 +464,40 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
         <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6 pt-2">
           {/* Organize Mode Banner */}
           {isOrganizing && onAcceptOrganize && onRevertOrganize && originalTaskPositions && (
-            <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-950 border-2 border-purple-300 dark:border-purple-700 rounded-lg">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-purple-900 dark:text-purple-100">Preview Mode</h3>
-                  <p className="text-sm text-purple-700 dark:text-purple-300">
-                    {(() => {
-                      const movedCount = tasks.filter(task => {
-                        const original = originalTaskPositions.get(task.id)
-                        if (!original) return false
-                        return original.urgency !== task.urgency || original.importance !== task.importance
-                      }).length
-                      return movedCount > 0
-                        ? `${movedCount} task${movedCount > 1 ? 's' : ''} repositioned. Accept to save or Revert to cancel.`
-                        : 'Review the organized layout. Accept to save or Revert to cancel.'
-                    })()}
-                  </p>
+            <div className="mb-4 p-3 bg-purple-100 border-2 border-black rounded-xl">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                    <Wand2 className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-black">
+                      {(() => {
+                        const movedCount = tasks.filter(task => {
+                          const original = originalTaskPositions.get(task.id)
+                          if (!original) return false
+                          return original.urgency !== task.urgency || original.importance !== task.importance
+                        }).length
+                        return movedCount > 0
+                          ? `${movedCount} task${movedCount > 1 ? 's' : ''} repositioned`
+                          : 'Review changes'
+                      })()}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={onRevertOrganize} variant="outline" size="sm">
-                    <X className="w-4 h-4 mr-2" />
+                  <button
+                    onClick={onRevertOrganize}
+                    className="px-3 py-1.5 text-sm font-bold text-gray-700 bg-white border-2 border-black rounded-lg hover:bg-gray-100 transition-colors"
+                  >
                     Revert
-                  </Button>
-                  <Button onClick={onAcceptOrganize} size="sm">
-                    <Check className="w-4 h-4 mr-2" />
+                  </button>
+                  <button
+                    onClick={onAcceptOrganize}
+                    className="px-3 py-1.5 text-sm font-bold text-white bg-black border-2 border-black rounded-lg hover:bg-gray-800 transition-colors"
+                  >
                     Accept
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
