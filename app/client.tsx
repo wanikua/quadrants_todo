@@ -165,15 +165,16 @@ export default function QuadrantTodoClient({
 
   // Get CSS position for toolbar
   const getToolbarStyle = useCallback(() => {
-    // When fullscreen, always show at top center
-    if (isFullscreen) {
-      return { left: '50%', top: '16px', transform: 'translateX(-50%)' }
-    }
+    // Dragging always takes priority
     if (isDraggingToolbar && dragPosition) {
       return { left: `${dragPosition.x}px`, top: `${dragPosition.y}px` }
     }
+    // When fullscreen, show at top center
+    if (isFullscreen) {
+      return { left: '50%', top: '0px', transform: 'translateX(-50%)' }
+    }
     if (toolbarYPosition === 'top') {
-      return { left: `${toolbarX}px`, top: '80px' }
+      return { left: `${toolbarX}px`, top: '50px' }
     } else {
       return { left: `${toolbarX}px`, bottom: '16px' }
     }
@@ -193,11 +194,25 @@ export default function QuadrantTodoClient({
     setIsDraggingToolbar(true)
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+
+    // Get actual toolbar position - in fullscreen it's centered
+    let startX: number
+    let startY: number
+    if (isFullscreen) {
+      // Fullscreen: toolbar is centered, calculate actual left position
+      const toolbarWidth = 500 // Estimate
+      startX = (window.innerWidth - toolbarWidth) / 2
+      startY = 0
+    } else {
+      startX = toolbarX
+      startY = toolbarYPosition === 'top' ? 50 : window.innerHeight - 60
+    }
+
     // Calculate offset from click position to toolbar position
-    dragOffsetRef.current = { x: clientX - toolbarX, y: clientY }
+    dragOffsetRef.current = { x: clientX - startX, y: clientY - startY }
     // Start at current position
-    setDragPosition({ x: toolbarX, y: toolbarYPosition === 'top' ? 80 : window.innerHeight - 60 })
-  }, [toolbarX, toolbarYPosition])
+    setDragPosition({ x: startX, y: startY })
+  }, [toolbarX, toolbarYPosition, isFullscreen])
 
   const handleToolbarDrag = useCallback((e: MouseEvent | TouchEvent) => {
     if (!isDraggingToolbar) return
@@ -206,7 +221,7 @@ export default function QuadrantTodoClient({
     // Use stored offset for smooth dragging
     const toolbarWidth = 500 // Generous estimate
     const toolbarHeight = 60
-    const margin = 16
+    const margin = 0
     // Ensure both left and right have margin
     const x = Math.max(margin, Math.min(window.innerWidth - toolbarWidth - margin, clientX - dragOffsetRef.current.x))
     const y = Math.max(margin, Math.min(window.innerHeight - toolbarHeight - margin, clientY - 20))
@@ -220,7 +235,7 @@ export default function QuadrantTodoClient({
       setToolbarYPosition(nearestYPosition)
       // Save X position with boundary check (same as drag)
       const toolbarWidth = 500
-      const margin = 16
+      const margin = 0
       const safeX = Math.max(margin, Math.min(window.innerWidth - toolbarWidth - margin, dragPosition.x))
       setToolbarX(safeX)
     }
@@ -1242,63 +1257,65 @@ export default function QuadrantTodoClient({
   }
 
   return (
-    <div className={`bg-white flex flex-col ${currentView === 'map' ? 'h-full overflow-hidden' : 'min-h-full'} ${isFullscreen ? '' : ''}`}>
-      {/* Top Bar */}
-      <div className={`flex items-center justify-between px-4 py-1 ${isFullscreen ? 'absolute top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm' : ''}`}>
-        {!isFullscreen ? (
-          <>
-            <div className="flex items-center gap-2">
-              {isOfflineMode && (
-                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
-                  Offline
-                </Badge>
-              )}
-              {projectType === 'team' && !isOfflineMode && activeUserCount > 1 && (
-                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 text-xs animate-pulse">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
-                  {activeUserCount}
-                </Badge>
-              )}
-            </div>
-            {/* Organize Mode Preview - inline with title */}
-            {isOrganizing && originalTaskPositions && (
-              <div className="flex items-center gap-3 bg-white border-2 border-black rounded-xl px-3 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
-                    <Wand2 className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <span className="text-sm font-bold text-black">
-                    {(() => {
-                      const movedCount = tasks.filter(task => {
-                        const original = originalTaskPositions.get(task.id)
-                        if (!original) return false
-                        return original.urgency !== task.urgency || original.importance !== task.importance
-                      }).length
-                      return movedCount > 0 ? `${movedCount} tasks moved` : 'Preview mode'
-                    })()}
-                  </span>
-                </div>
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={handleRevertOrganize}
-                    className="px-3 py-1 text-xs font-bold text-black bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
-                  >
-                    ✕ Revert
-                  </button>
-                  <button
-                    onClick={handleAcceptOrganize}
-                    className="px-3 py-1 text-xs font-bold text-white bg-green-500 border-2 border-black rounded-lg hover:bg-green-600 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
-                  >
-                    ✓ Accept
-                  </button>
-                </div>
+    <div className={`bg-white flex flex-col ${currentView === 'map' ? 'h-full overflow-hidden' : 'min-h-full'}`}>
+      {/* Top Bar - hidden in fullscreen */}
+      {!isFullscreen && (
+        <div className="flex items-center justify-between px-4 py-1">
+          {!isFullscreen ? (
+            <>
+              <div className="flex items-center gap-2">
+                {isOfflineMode && (
+                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
+                    Offline
+                  </Badge>
+                )}
+                {projectType === 'team' && !isOfflineMode && activeUserCount > 1 && (
+                  <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 text-xs animate-pulse">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
+                    {activeUserCount}
+                  </Badge>
+                )}
               </div>
-            )}
-          </>
-        ) : (
-          <div />
-        )}
-      </div>
+              {/* Organize Mode Preview - inline with title */}
+              {isOrganizing && originalTaskPositions && (
+                <div className="flex items-center gap-3 bg-white border-2 border-black rounded-xl px-3 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <Wand2 className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <span className="text-sm font-bold text-black">
+                      {(() => {
+                        const movedCount = tasks.filter(task => {
+                          const original = originalTaskPositions.get(task.id)
+                          if (!original) return false
+                          return original.urgency !== task.urgency || original.importance !== task.importance
+                        }).length
+                        return movedCount > 0 ? `${movedCount} tasks moved` : 'Preview mode'
+                      })()}
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={handleRevertOrganize}
+                      className="px-3 py-1 text-xs font-bold text-black bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
+                    >
+                      ✕ Revert
+                    </button>
+                    <button
+                      onClick={handleAcceptOrganize}
+                      className="px-3 py-1 text-xs font-bold text-white bg-green-500 border-2 border-black rounded-lg hover:bg-green-600 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
+                    >
+                      ✓ Accept
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div />
+          )}
+        </div>
+      )}
 
       {/* Map View */}
       {currentView === 'map' && (
@@ -1848,7 +1865,7 @@ export default function QuadrantTodoClient({
 
       {/* Floating Toolbar - Draggable, auto-collapses with smooth animation */}
       <div
-        className={`fixed z-40 flex items-center bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
+        className={`fixed z-50 flex items-center bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
         style={getToolbarStyle()}
         onMouseEnter={resetToolbarTimeout}
         onMouseLeave={() => {
@@ -1913,7 +1930,7 @@ export default function QuadrantTodoClient({
 
         {/* Expandable section with smooth animation */}
         <div
-          className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-in-out ${isToolbarExpanded ? 'max-w-[700px] opacity-100 ml-1.5' : 'max-w-0 opacity-0'}`}
+          className={`flex items-center gap-1.5 overflow-hidden p-1 transition-all duration-300 ease-in-out ${isToolbarExpanded ? 'max-w-[700px] opacity-100 ml-1.5' : 'max-w-0 opacity-0'}`}
         >
           <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
 

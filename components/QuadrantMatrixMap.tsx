@@ -454,7 +454,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       ref={cardRef}
       className={`transition-all duration-300 flex-1 flex flex-col ${isFullscreen
         ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
-        : "m-4 p-4 bg-yellow-50"
+        : "m-2 p-2 bg-yellow-300"
         }`}
     >
 
