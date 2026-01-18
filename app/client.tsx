@@ -102,6 +102,7 @@ export default function QuadrantTodoClient({
   const [editedProjectDescription, setEditedProjectDescription] = useState("")
   const [isArchiving, setIsArchiving] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [currentView, setCurrentView] = useState<'map' | 'list'>('map')
 
   // Archived tasks state
@@ -140,8 +141,34 @@ export default function QuadrantTodoClient({
   const [isDraggingToolbar, setIsDraggingToolbar] = useState(false)
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
 
+  // Toolbar auto-collapse: collapses after 3 seconds of inactivity
+  const [isToolbarExpanded, setIsToolbarExpanded] = useState(true)
+  const toolbarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const resetToolbarTimeout = useCallback(() => {
+    if (toolbarTimeoutRef.current) {
+      clearTimeout(toolbarTimeoutRef.current)
+      toolbarTimeoutRef.current = null
+    }
+    setIsToolbarExpanded(true)
+  }, [])
+
+  // Reset timeout on mount and cleanup
+  useEffect(() => {
+    resetToolbarTimeout()
+    return () => {
+      if (toolbarTimeoutRef.current) {
+        clearTimeout(toolbarTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Get CSS position for toolbar
   const getToolbarStyle = useCallback(() => {
+    // When fullscreen, always show at top center
+    if (isFullscreen) {
+      return { left: '50%', top: '16px', transform: 'translateX(-50%)' }
+    }
     if (isDraggingToolbar && dragPosition) {
       return { left: `${dragPosition.x}px`, top: `${dragPosition.y}px` }
     }
@@ -150,7 +177,7 @@ export default function QuadrantTodoClient({
     } else {
       return { left: `${toolbarX}px`, bottom: '16px' }
     }
-  }, [toolbarYPosition, toolbarX, isDraggingToolbar, dragPosition])
+  }, [toolbarYPosition, toolbarX, isDraggingToolbar, dragPosition, isFullscreen])
 
   // Find nearest Y snap position based on current drag Y position
   const findNearestYSnapPosition = useCallback((y: number): ToolbarYPosition => {
@@ -1819,14 +1846,20 @@ export default function QuadrantTodoClient({
         </DialogContent>
       </Dialog>
 
-      {/* Floating Toolbar - Draggable */}
+      {/* Floating Toolbar - Draggable, auto-collapses with smooth animation */}
       <div
-        className={`fixed z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
+        className={`fixed z-40 flex items-center bg-white/95 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg border border-gray-200 ${isDraggingToolbar ? 'cursor-grabbing' : ''}`}
         style={getToolbarStyle()}
+        onMouseEnter={resetToolbarTimeout}
+        onMouseLeave={() => {
+          toolbarTimeoutRef.current = setTimeout(() => {
+            setIsToolbarExpanded(false)
+          }, 10000)
+        }}
       >
-        {/* Drag Handle */}
+        {/* Drag Handle - always visible */}
         <div
-          className="w-6 h-6 rounded-full flex items-center justify-center cursor-grab hover:bg-gray-100 transition-colors"
+          className="w-6 h-6 rounded-full flex items-center justify-center cursor-grab hover:bg-gray-100 transition-colors flex-shrink-0"
           onMouseDown={handleToolbarDragStart}
           onTouchStart={handleToolbarDragStart}
           title="Drag to move"
@@ -1839,18 +1872,38 @@ export default function QuadrantTodoClient({
           </svg>
         </div>
 
-        <div className="w-px h-6 bg-gray-200" />
-        {/* Map/List Toggle */}
-        <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+        {/* Expand/Collapse Button - chevron */}
+        <button
+          onClick={() => {
+            setIsToolbarExpanded(!isToolbarExpanded)
+            if (!isToolbarExpanded) {
+              resetToolbarTimeout()
+            }
+          }}
+          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all flex-shrink-0 ml-1"
+          title={isToolbarExpanded ? "Collapse" : "Expand"}
+        >
+          <svg
+            className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isToolbarExpanded ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <div className="w-px h-6 bg-gray-200 mx-1 flex-shrink-0" />
+
+        {/* Map/List Toggle - always visible */}
+        <div className="flex items-center bg-gray-100 rounded-full p-0.5 flex-shrink-0">
           <button
-            onClick={() => setCurrentView('map')}
+            onClick={() => { setCurrentView('map'); resetToolbarTimeout(); }}
             className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${currentView === 'map' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
             title="Map View"
           >
             <MapIcon className={`w-4 h-4 ${currentView === 'map' ? 'text-black' : 'text-gray-500'}`} />
           </button>
           <button
-            onClick={() => setCurrentView('list')}
+            onClick={() => { setCurrentView('list'); resetToolbarTimeout(); }}
             className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${currentView === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
             title="List View"
           >
@@ -1858,183 +1911,273 @@ export default function QuadrantTodoClient({
           </button>
         </div>
 
-        <div className="w-px h-6 bg-gray-200" />
-
-        {/* Focus Button - Primary action */}
-        <button
-          onClick={() => {
-            setIsFocusMode(true)
-            setFocusIndex(0)
-          }}
-          className="w-10 h-10 rounded-full bg-yellow-400 hover:bg-yellow-500 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center"
-          title="Focus Mode"
+        {/* Expandable section with smooth animation */}
+        <div
+          className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-in-out ${isToolbarExpanded ? 'max-w-[700px] opacity-100 ml-1.5' : 'max-w-0 opacity-0'}`}
         >
-          <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        </button>
+          <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
 
-        {/* Bulk Add Button */}
-        <button
-          onClick={() => setIsBulkAddOpen(true)}
-          className="w-10 h-10 rounded-full bg-purple-100 hover:bg-purple-200 border border-purple-300 transition-all flex items-center justify-center"
-          title="Bulk Add Tasks"
-        >
-          <Sparkles className="w-4 h-4 text-purple-600" />
-        </button>
-
-        {/* Add Task Button */}
-        <button
-          onClick={() => {
-            setNewTaskData({
-              description: "",
-              urgency: 50,
-              importance: 50,
-              assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
-            })
-            setIsAddTaskOpen(true)
-          }}
-          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
-          title="Add Task"
-        >
-          <Plus className="w-4 h-4 text-gray-700" />
-        </button>
-
-        <div className="w-px h-6 bg-gray-200" />
-
-        {/* Organize Button */}
-        <button
-          onClick={handleOrganizeTasks}
-          disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
-          className="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-          title="AI Organize"
-        >
-          <Wand2 className="w-4 h-4 text-white" />
-        </button>
-
-        {/* Archive Button */}
-        <button
-          onClick={handleOpenArchives}
-          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
-          title="Archived Tasks"
-        >
-          <Archive className="w-4 h-4 text-gray-700" />
-        </button>
-
-        {/* Fullscreen Toggle Button */}
-        <button
-          onClick={() => handleFullscreenChange(!isFullscreen)}
-          className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-900 transition-all flex items-center justify-center"
-          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-        >
-          {isFullscreen ? (
-            <X className="w-4 h-4 text-white" />
-          ) : (
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          )}
-        </button>
-
-        <div className="w-px h-6 bg-gray-200" />
-
-        {/* Settings Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4 text-gray-700" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" side="top" className="w-64 mb-2">
-            <DropdownMenuLabel>Settings</DropdownMenuLabel>
-
-            {projectType === "team" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
-                <div className="px-2 py-2">
-                  <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All Tasks" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Tasks</SelectItem>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {players.map((player) => (
-                        <SelectItem key={player.id} value={player.id.toString()}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
-                            {player.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
-                  <Users className="h-4 w-4 mr-2" />
-                  {userRole === "owner" ? "Manage Players" : "View Players"}
-                </DropdownMenuItem>
-              </>
-            )}
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem className="cursor-pointer" onClick={() => setShowHelpDialog(true)}>
-              <HelpCircle className="h-4 w-4 mr-2" />
-              Help
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            {userRole === "owner" ? (
-              <>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Archive Project
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Project
-                </DropdownMenuItem>
-              </>
-            ) : (
-              <DropdownMenuItem
-                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                onClick={handleLeaveProject}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Leave Project
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Share Button - Team projects only */}
-        {projectType === "team" && (
+          {/* Focus Button - Primary action */}
           <button
             onClick={() => {
-              const inviteCode = projectId.substring(0, 8).toUpperCase()
-              navigator.clipboard.writeText(inviteCode)
-              toast.success("Invite code copied!")
+              setIsFocusMode(true)
+              setFocusIndex(0)
+              resetToolbarTimeout()
             }}
-            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
-            title="Copy Invite Code"
+            className="w-10 h-10 rounded-full bg-yellow-400 hover:bg-yellow-500 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center flex-shrink-0"
+            title="Focus Mode"
           >
-            <Share2 className="w-4 h-4 text-gray-700" />
+            <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
           </button>
-        )}
 
+          {/* Bulk Add Button */}
+          <button
+            onClick={() => { setIsBulkAddOpen(true); resetToolbarTimeout(); }}
+            className="w-10 h-10 rounded-full bg-purple-100 hover:bg-purple-200 border border-purple-300 transition-all flex items-center justify-center flex-shrink-0"
+            title="Bulk Add Tasks"
+          >
+            <Sparkles className="w-4 h-4 text-purple-600" />
+          </button>
+
+          {/* Add Task Button */}
+          <button
+            onClick={() => {
+              setNewTaskData({
+                description: "",
+                urgency: 50,
+                importance: 50,
+                assigneeIds: (projectType === "team" && currentUserPlayer) ? [currentUserPlayer.id] : [],
+              })
+              setIsAddTaskOpen(true)
+              resetToolbarTimeout()
+            }}
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center flex-shrink-0"
+            title="Add Task"
+          >
+            <Plus className="w-4 h-4 text-gray-700" />
+          </button>
+
+          <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
+
+          {/* Organize Button */}
+          <button
+            onClick={() => { handleOrganizeTasks(); resetToolbarTimeout(); }}
+            disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
+            className="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+            title="AI Organize"
+          >
+            <Wand2 className="w-4 h-4 text-white" />
+          </button>
+
+          {/* Archive Button */}
+          <button
+            onClick={() => { handleOpenArchives(); resetToolbarTimeout(); }}
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center flex-shrink-0"
+            title="Archived Tasks"
+          >
+            <Archive className="w-4 h-4 text-gray-700" />
+          </button>
+
+          {/* Fullscreen Toggle Button */}
+          <button
+            onClick={() => { handleFullscreenChange(!isFullscreen); resetToolbarTimeout(); }}
+            className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-900 transition-all flex items-center justify-center flex-shrink-0"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? (
+              <X className="w-4 h-4 text-white" />
+            ) : (
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            )}
+          </button>
+
+          <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
+
+          {/* Settings Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center flex-shrink-0"
+                title="Settings"
+              >
+                <Settings className="w-4 h-4 text-gray-700" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" side="top" className="w-64 mb-2">
+              <DropdownMenuLabel>Settings</DropdownMenuLabel>
+
+              {projectType === "team" && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Filter by Player</DropdownMenuLabel>
+                  <div className="px-2 py-2">
+                    <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All Tasks" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Tasks</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {players.map((player) => (
+                          <SelectItem key={player.id} value={player.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
+                              {player.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setIsManagePlayersOpen(true)}>
+                    <Users className="h-4 w-4 mr-2" />
+                    {userRole === "owner" ? "Manage Players" : "View Players"}
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setShowHelpDialog(true)}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Help
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              {userRole === "owner" ? (
+                <>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setShowArchiveDialog(true)}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Archive Project
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Project
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                  onClick={handleLeaveProject}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Leave Project
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Share Button - Team projects only */}
+          {projectType === "team" && (
+            <button
+              onClick={() => setShareDialogOpen(true)}
+              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center flex-shrink-0"
+              title="Share Project"
+            >
+              <Share2 className="w-4 h-4 text-gray-700" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Share Project Dialog */}
+      {projectType === "team" && (
+        <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Project</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Share this project with your team members
+              </p>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Invite Code Option */}
+              <div className="bg-white border-3 border-black rounded-2xl p-6 shadow-bold hover-lift-shadow transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-purple-100 border-2 border-black rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-black">Copy Invite Code</h3>
+                    <p className="text-xs text-muted-foreground">8-digit code</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={projectId.substring(0, 8).toUpperCase()}
+                    readOnly
+                    className="flex-1 font-mono text-sm text-lg font-bold tracking-wider uppercase text-center"
+                  />
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(projectId.substring(0, 8).toUpperCase())
+                      toast.success("✓ Invite code copied!")
+                    }}
+                    className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover-lift-shadow"
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              {/* Invite Accept Link */}
+              <div className="bg-white border-3 border-black rounded-2xl p-6 shadow-bold hover-lift-shadow transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-green-100 border-2 border-black rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-black">Copy Invite Link</h3>
+                    <p className="text-xs text-muted-foreground">One-click to join</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={typeof window !== 'undefined' ? `${window.location.origin}/projects/join?code=${projectId.substring(0, 8).toUpperCase()}` : ''}
+                    readOnly
+                    className="flex-1 font-mono text-sm"
+                  />
+                  <Button
+                    onClick={() => {
+                      const inviteLink = `${window.location.origin}/projects/join?code=${projectId.substring(0, 8).toUpperCase()}`
+                      navigator.clipboard.writeText(inviteLink)
+                      toast.success("✓ Invite link copied!")
+                    }}
+                    className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover-lift-shadow"
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              {/* Info Note */}
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
+                <p className="text-sm text-yellow-800 flex items-start gap-2">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Team members need to sign in to access the project. Use the invite link for easy one-click joining!</span>
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Archived Tasks Dialog */}
       <Dialog open={archivedTasksDialogOpen} onOpenChange={setArchivedTasksDialogOpen}>
@@ -2105,22 +2248,24 @@ export default function QuadrantTodoClient({
       </Dialog>
 
       {/* Full-screen organizing overlay */}
-      {isOrganizingLoading && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-6">
-            <div className="relative">
-              {/* Animated spinner */}
-              <div className="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-              {/* Inner pulse */}
-              <div className="absolute inset-0 w-20 h-20 border-4 border-white/40 rounded-full animate-ping"></div>
-            </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-white mb-2">Organizing...</h3>
-              <p className="text-white/80 text-lg">AI is reorganizing your tasks</p>
+      {
+        isOrganizingLoading && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md">
+            <div className="flex flex-col items-center gap-6">
+              <div className="relative">
+                {/* Animated spinner */}
+                <div className="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                {/* Inner pulse */}
+                <div className="absolute inset-0 w-20 h-20 border-4 border-white/40 rounded-full animate-ping"></div>
+              </div>
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-white mb-2">Organizing...</h3>
+                <p className="text-white/80 text-lg">AI is reorganizing your tasks</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   )
 }
