@@ -18,7 +18,7 @@ import TaskSegment from "@/components/TaskSegment"
 import type { TaskWithAssignees, Player, Line } from "@/app/types"
 import { updateTask, deleteTask, completeTask } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
-import { Trash2, Maximize2, Minimize2, CheckCircle2, Check, X, Sparkles, Wand2 } from "lucide-react"
+import { Trash2, Maximize2, CheckCircle2, Check, X, Sparkles, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface QuadrantMatrixMapProps {
@@ -457,17 +457,6 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
         : "p-2 sm:p-6"
         }`}
     >
-      {/* Exit Fullscreen Button - Higher z-index than Card but lower than Dialog */}
-      {isFullscreen && (
-        <button
-          onClick={toggleFullscreen}
-          className="fixed top-4 right-4 z-[60] flex items-center justify-center w-12 h-12 bg-background/95 hover:bg-muted border-2 border-border rounded-lg shadow-lg transition-all duration-200 hover:scale-110"
-          title="Exit fullscreen (ESC)"
-          style={{ pointerEvents: 'auto' }}
-        >
-          <Minimize2 className="w-6 h-6" />
-        </button>
-      )}
 
 
 

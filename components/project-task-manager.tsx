@@ -3,15 +3,12 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, Archive, ArrowLeft, Share2 } from "lucide-react"
+import { Copy, Check, ArrowLeft, Share2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 import { toast } from "sonner"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { getArchivedTasks, restoreTask } from "@/app/db/actions"
 
 interface Project {
   id: string
@@ -35,9 +32,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
-  const [archivedTasks, setArchivedTasks] = useState<any[]>([])
-  const [isLoadingArchived, setIsLoadingArchived] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const inviteCode = project.invite_code?.substring(0, 8).toUpperCase() || project.id.substring(0, 8).toUpperCase()
@@ -49,42 +43,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
     toast.success(`✓ ${label} copied!`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
-
-
-  const handleOpenArchives = async () => {
-    setArchiveDialogOpen(true)
-    setIsLoadingArchived(true)
-
-    try {
-      const result = await getArchivedTasks(project.id)
-      if (result.success && result.tasks) {
-        setArchivedTasks(result.tasks)
-      } else {
-        toast.error(result.error || "Failed to load archived tasks")
-      }
-    } catch (error) {
-      toast.error("Failed to load archived tasks")
-      console.error(error)
-    } finally {
-      setIsLoadingArchived(false)
-    }
-  }
-
-  const handleRestoreTask = async (taskId: number) => {
-    try {
-      const result = await restoreTask(taskId)
-      if (result.success) {
-        toast.success("Task restored successfully")
-        setArchiveDialogOpen(false)
-        window.location.href = `/projects/${project.id}`
-      } else {
-        toast.error(result.error || "Failed to restore task")
-      }
-    } catch (error) {
-      toast.error("Failed to restore task")
-      console.error(error)
-    }
   }
 
   return (
@@ -117,16 +75,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         onFullscreenChange={setIsFullscreen}
       />
 
-      {/* Floating Archives Button - Hidden in fullscreen */}
-      {!isFullscreen && (
-        <Button
-          onClick={handleOpenArchives}
-          className="fixed bottom-8 right-8 rounded-full w-14 h-14 shadow-lg bg-gray-800 hover:bg-gray-900 text-white z-50"
-          title="View Archived Tasks"
-        >
-          <Archive className="w-6 h-6" />
-        </Button>
-      )}
 
       {/* Share Project Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
@@ -207,79 +155,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
         </DialogContent>
       </Dialog>
 
-      {/* Archived Tasks Dialog */}
-      <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              <Archive className="w-6 h-6" />
-              Archived Tasks
-            </DialogTitle>
-            <DialogDescription>
-              Tasks that have been archived. You can restore them anytime.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="mt-4">
-            {isLoadingArchived ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="text-gray-500">Loading archived tasks...</div>
-              </div>
-            ) : archivedTasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Archive className="h-16 w-16 text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">No archived tasks</h3>
-                <p className="text-gray-500">Archived tasks will appear here</p>
-              </div>
-            ) : (
-              <div className="grid gap-4 max-h-[50vh] overflow-y-auto">
-                {archivedTasks.map((task) => (
-                  <Card key={task.id} className="border-2 border-gray-200">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">{task.description}</h3>
-                          <div className="flex gap-4 text-sm text-gray-600 mb-2">
-                            <div>
-                              <span className="font-semibold">Urgency:</span> {task.urgency}
-                            </div>
-                            <div>
-                              <span className="font-semibold">Importance:</span> {task.importance}
-                            </div>
-                          </div>
-                          {task.assignees && task.assignees.length > 0 && (
-                            <div className="flex gap-2 flex-wrap">
-                              {task.assignees.map((assignee: any) => (
-                                <Badge
-                                  key={assignee.id}
-                                  className="text-white"
-                                  style={{ backgroundColor: assignee.color }}
-                                >
-                                  {assignee.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          <p className="text-sm text-gray-500 mt-2">
-                            Created {new Date(task.created_at).toLocaleDateString('en-GB')}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => handleRestoreTask(task.id)}
-                          variant="outline"
-                          className="shrink-0"
-                        >
-                          Restore
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

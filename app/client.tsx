@@ -4,14 +4,14 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import type { TaskWithAssignees, Player, Line } from "./types"
 import QuadrantMatrixMap from "@/components/QuadrantMatrixMap"
 import { logger, debug } from "@/lib/debug"
-import { createTask, deleteTask, updateTask as updateTaskAction, deletePlayer, updatePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount, getArchivedTasks } from "@/app/db/actions"
+import { createTask, deleteTask, updateTask as updateTaskAction, deletePlayer, updatePlayer, addComment, deleteComment as deleteCommentAction, updateUserActivity, getActiveUserCount, getArchivedTasks, restoreTask } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Wand2, Sparkles, LogOut, HelpCircle, Share2 } from "lucide-react"
+import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Wand2, Sparkles, LogOut, HelpCircle, Share2, Archive } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -101,6 +101,11 @@ export default function QuadrantTodoClient({
   const [isArchiving, setIsArchiving] = useState(false)
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
   const [currentView, setCurrentView] = useState<'map' | 'list'>('map')
+
+  // Archived tasks state
+  const [archivedTasksDialogOpen, setArchivedTasksDialogOpen] = useState(false)
+  const [archivedTasks, setArchivedTasks] = useState<any[]>([])
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false)
 
   // Calculate top 3 priority tasks for Focus mode
   const topPriorityTasks = useMemo(() => {
@@ -871,6 +876,39 @@ export default function QuadrantTodoClient({
     }
   }
 
+  // Archived tasks handlers
+  const handleOpenArchives = async () => {
+    setArchivedTasksDialogOpen(true)
+    setIsLoadingArchived(true)
+    try {
+      const result = await getArchivedTasks(projectId)
+      if (result.success && result.tasks) {
+        setArchivedTasks(result.tasks)
+      } else {
+        toast.error(result.error || "Failed to load archived tasks")
+      }
+    } catch (error) {
+      toast.error("Failed to load archived tasks")
+    } finally {
+      setIsLoadingArchived(false)
+    }
+  }
+
+  const handleRestoreTask = async (taskId: number) => {
+    try {
+      const result = await restoreTask(taskId)
+      if (result.success) {
+        setArchivedTasks(prev => prev.filter(t => t.id !== taskId))
+        toast.success("Task restored")
+        router.refresh()
+      } else {
+        toast.error(result.error || "Failed to restore task")
+      }
+    } catch (error) {
+      toast.error("Failed to restore task")
+    }
+  }
+
   // One-click organize: intelligently redistribute tasks using AI
   const handleOrganizeTasks = async () => {
     logger.component('QuadrantTodo', 'handleOrganizeTasks called, tasks:', tasks.length, 'isOrganizing:', isOrganizing, 'isOrganizingInProgress:', isOrganizingInProgress)
@@ -1162,34 +1200,32 @@ export default function QuadrantTodoClient({
         )}
       </div>
 
-      {/* Main Content Area */}
-      <div className={`${isFullscreen ? 'h-screen' : ''}`}>
-        {/* Map View */}
-        {currentView === 'map' && (
-          <>
-            {selectedPlayerFilter !== "all" && !isFullscreen && (
-              <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-primary" />
-                    <span className="text-sm">
-                      Filtered: {filteredAndSortedTasks.length} of {tasks.length} tasks shown
-                      {selectedPlayerFilter === "unassigned"
-                        ? " (unassigned)"
-                        : ` (${players.find(p => p.id.toString() === selectedPlayerFilter)?.name})`}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedPlayerFilter("all")}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+      {/* Map View */}
+      {currentView === 'map' && (
+        <>
+          {selectedPlayerFilter !== "all" && !isFullscreen && (
+            <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-primary" />
+                  <span className="text-sm">
+                    Filtered: {filteredAndSortedTasks.length} of {tasks.length} tasks shown
+                    {selectedPlayerFilter === "unassigned"
+                      ? " (unassigned)"
+                      : ` (${players.find(p => p.id.toString() === selectedPlayerFilter)?.name})`}
+                  </span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedPlayerFilter("all")}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-            )}
-            <QuadrantMatrixMap
+            </div>
+          )}
+          <QuadrantMatrixMap
               tasks={selectedPlayerFilter !== "all" ? filteredAndSortedTasks : tasks}
               players={players}
               lines={lines}
@@ -1345,7 +1381,6 @@ export default function QuadrantTodoClient({
             </Card>
           </div>
         )}
-      </div>
 
       {/* Add Task Dialog */}
       <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
@@ -1808,6 +1843,15 @@ export default function QuadrantTodoClient({
           <Wand2 className="w-4 h-4 text-white" />
         </button>
 
+        {/* Archive Button */}
+        <button
+          onClick={handleOpenArchives}
+          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center"
+          title="Archived Tasks"
+        >
+          <Archive className="w-4 h-4 text-gray-700" />
+        </button>
+
         {/* Fullscreen Toggle Button */}
         <button
           onClick={() => handleFullscreenChange(!isFullscreen)}
@@ -1921,6 +1965,74 @@ export default function QuadrantTodoClient({
         )}
 
       </div>
+
+      {/* Archived Tasks Dialog */}
+      <Dialog open={archivedTasksDialogOpen} onOpenChange={setArchivedTasksDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Archive className="w-6 h-6" />
+              Archived Tasks
+            </DialogTitle>
+            <DialogDescription>
+              Tasks that have been completed. You can restore them anytime.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {isLoadingArchived ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-gray-500">Loading archived tasks...</div>
+              </div>
+            ) : archivedTasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Archive className="h-16 w-16 text-gray-300 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No archived tasks</h3>
+                <p className="text-gray-500">Completed tasks will appear here</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 max-h-[50vh] overflow-y-auto">
+                {archivedTasks.map((task) => (
+                  <Card key={task.id} className="border-2 border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-gray-900 mb-1">{task.description}</h3>
+                          <div className="flex gap-4 text-sm text-gray-600">
+                            <span>Urgency: {task.urgency}</span>
+                            <span>Importance: {task.importance}</span>
+                          </div>
+                          {task.assignees && task.assignees.length > 0 && (
+                            <div className="flex gap-2 flex-wrap mt-2">
+                              {task.assignees.map((assignee: any) => (
+                                <Badge
+                                  key={assignee.id}
+                                  className="text-white text-xs"
+                                  style={{ backgroundColor: assignee.color }}
+                                >
+                                  {assignee.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          onClick={() => handleRestoreTask(task.id)}
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0"
+                        >
+                          Restore
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Full-screen organizing overlay */}
       {isOrganizingLoading && (
