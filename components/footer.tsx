@@ -35,6 +35,14 @@ export function Footer() {
             <Link href="/contact" className="text-sm text-gray-600 hover:text-black transition-colors">
               Contact
             </Link>
+            <a
+              href="https://quadrants.firstpromoter.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-gray-600 hover:text-black transition-colors"
+            >
+              Become an Affiliate
+            </a>
           </div>
 
           {/* Right: Legal Links */}
