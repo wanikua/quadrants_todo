@@ -1,7 +1,13 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Review the terms and conditions for using the Quadrants AI task management service.",
+}
 
 export default function TermsPage() {
   return (

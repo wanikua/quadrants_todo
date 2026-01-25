@@ -1,7 +1,13 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
+
+export const metadata: Metadata = {
+  title: "About Us",
+  description: "Learn about the mission behind Quadrants and how we're simplifying task management with AI.",
+}
 
 export default function AboutPage() {
   return (

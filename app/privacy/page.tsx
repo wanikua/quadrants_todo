@@ -1,7 +1,13 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Read about how Quadrants collects, uses, and protects your personal information.",
+}
 
 export default function PrivacyPage() {
   return (

@@ -1,8 +1,14 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
 import { Footer } from "@/components/footer"
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description: "Flexible plans for individuals and teams. Start managing your tasks with AI for free today.",
+}
 
 export default function PricingPage() {
   return (

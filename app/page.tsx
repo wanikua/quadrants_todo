@@ -98,7 +98,7 @@ export default function HomePage() {
               <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
                 <Image
                   src="/logo.png"
-                  alt="Logo"
+                  alt="Quadrants Logo"
                   width={40}
                   height={40}
                   className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
@@ -315,7 +315,7 @@ export default function HomePage() {
                     <div className="relative bg-white border-3 border-black rounded-3xl p-8 shadow-bold hover:rotate-1 transition-transform duration-500 overflow-hidden">
                       <Image
                         src="/assets/feature_smart.png"
-                        alt="AI Intelligence"
+                        alt="Quadrants AI Smart Task Organization"
                         width={400}
                         height={300}
                         className="w-full h-auto object-contain relative z-10"

@@ -1,8 +1,14 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Mail } from "lucide-react"
 import { Footer } from "@/components/footer"
+
+export const metadata: Metadata = {
+  title: "Contact Us",
+  description: "Get in touch with the Quadrants team for support, feedback, or business inquiries.",
+}
 
 export default function ContactPage() {
   return (

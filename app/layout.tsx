@@ -22,14 +22,36 @@ const libreBaskerville = Libre_Baskerville({
 })
 
 export const metadata: Metadata = {
-  title: "Quadrants: AI Task Manager",
-  description: "AI-powered task management. Minimal effort, maximum productivity.",
-  keywords: ["task manager", "AI task management", "Eisenhower Matrix", "productivity", "task organization", "priority matrix", "team collaboration", "quadrants"],
-  authors: [{ name: "Quadrants" }],
+  metadataBase: new URL("https://quadrants.ch"),
+  title: {
+    default: "Quadrants | AI Task Manager",
+    template: "%s | Quadrants"
+  },
+  description: "AI-powered task management using the Eisenhower Matrix. Minimal effort, maximum productivity with smart AI organization.",
+  keywords: [
+    "task manager",
+    "AI task management",
+    "Eisenhower Matrix",
+    "productivity tool",
+    "task organization",
+    "priority matrix",
+    "team collaboration",
+    "quadrants",
+    "todo list AI",
+    "smart task scheduling"
+  ],
+  authors: [{ name: "Quadrants Team", url: "https://quadrants.ch" }],
   creator: "Quadrants",
   publisher: "Quadrants",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
-    icon: "/logo.png",
+    icon: [
+      { url: "/logo.png" },
+      { url: "/logo.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo.png", sizes: "16x16", type: "image/png" },
+    ],
     shortcut: "/logo.png",
     apple: "/logo.png",
   },
@@ -37,15 +59,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://quadrants.ch",
-    title: "Quadrants: AI Task Manager",
-    description: "AI-powered task management. Minimal effort, maximum productivity.",
+    title: "Quadrants: AI-Powered Task Management",
+    description: "The simplest way to manage tasks with AI. Organize your life using the Eisenhower Matrix automatically.",
     siteName: "Quadrants",
     images: [
       {
         url: "/logo.png",
         width: 1200,
-        height: 1200,
-        alt: "Quadrants Logo",
+        height: 630,
+        alt: "Quadrants AI Task Manager",
       },
     ],
   },
@@ -54,6 +76,7 @@ export const metadata: Metadata = {
     title: "Quadrants: AI Task Manager",
     description: "AI-powered task management. Minimal effort, maximum productivity.",
     images: ["/logo.png"],
+    creator: "@quadrants",
   },
   robots: {
     index: true,
@@ -66,7 +89,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  generator: 'v0.app',
+  generator: 'Next.js',
 }
 
 import { Analytics } from "@vercel/analytics/next"
