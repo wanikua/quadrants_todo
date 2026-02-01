@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Copy, Check, ArrowLeft, Share2 } from "lucide-react"
@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { SyncStatusIndicator, OfflineBanner } from "@/components/SyncStatusIndicator"
+import { getSyncService } from "@/app/lib/offline"
 
 interface Project {
   id: string
@@ -41,6 +43,25 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
   const [editedProjectDescription, setEditedProjectDescription] = useState(project.description || "")
   const [projectName, setProjectName] = useState(project.name)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Cache project data for offline access
+  useEffect(() => {
+    const syncService = getSyncService()
+    syncService.cacheProjectData(
+      project.id,
+      {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        type: project.type,
+        owner_id: project.owner_id,
+        archived: false,
+      },
+      initialTasks,
+      initialPlayers,
+      initialLines
+    )
+  }, [project, initialTasks, initialPlayers, initialLines])
 
   const inviteCode = project.invite_code?.substring(0, 8).toUpperCase() || project.id.substring(0, 8).toUpperCase()
   const projectLink = typeof window !== 'undefined' ? `${window.location.origin}/projects/${project.id}` : ''
@@ -89,6 +110,9 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
 
   return (
     <div className="h-screen overflow-hidden bg-white flex flex-col">
+      {/* Offline Banner */}
+      <OfflineBanner />
+
       {/* Breadcrumb Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100">
         <div className="px-4 py-2 flex items-center gap-2">
@@ -111,6 +135,9 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
           </span>
+          <div className="ml-auto">
+            <SyncStatusIndicator />
+          </div>
         </div>
       </header>
 

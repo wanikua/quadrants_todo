@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Tauri build output
+src-tauri/target/
+
+# Generated icons (except source)
+src-tauri/icons/*.png
+src-tauri/icons/*.icns
+src-tauri/icons/*.ico
+!src-tauri/icons/icon.png
+!src-tauri/icons/icon.svg
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
