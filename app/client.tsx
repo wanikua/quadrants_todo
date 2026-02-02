@@ -134,10 +134,10 @@ export default function QuadrantTodoClient({
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Toolbar position: Y snaps to 'top' or 'bottom', X is free
-  type ToolbarYPosition = 'top' | 'bottom'
-  const [toolbarYPosition, setToolbarYPosition] = useState<ToolbarYPosition>('top')
-  const [toolbarX, setToolbarX] = useState(80) // Free X position, default left
+  // Toolbar position: snaps to any edge (top, bottom, left, right)
+  type ToolbarEdge = 'top' | 'bottom' | 'left' | 'right'
+  const [toolbarEdge, setToolbarEdge] = useState<ToolbarEdge>('bottom')
+  const [toolbarOffset, setToolbarOffset] = useState(0) // Offset along the edge
   const [isDraggingToolbar, setIsDraggingToolbar] = useState(false)
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
 
@@ -163,27 +163,66 @@ export default function QuadrantTodoClient({
     }
   }, [])
 
-  // Get CSS position for toolbar
-  const getToolbarStyle = useCallback(() => {
+  // Get CSS position for toolbar based on edge
+  const getToolbarStyle = useCallback((): React.CSSProperties => {
+    const margin = 16
+    const toolbarHeight = 48
+
     // Dragging always takes priority
     if (isDraggingToolbar && dragPosition) {
-      return { left: `${dragPosition.x}px`, top: `${dragPosition.y}px` }
+      return { left: `${dragPosition.x}px`, top: `${dragPosition.y}px`, transform: 'none' }
     }
-    // When fullscreen, show at top center
-    if (isFullscreen) {
-      return { left: '50%', top: '0px', transform: 'translateX(-50%)' }
-    }
-    if (toolbarYPosition === 'top') {
-      return { left: `${toolbarX}px`, top: '50px' }
-    } else {
-      return { left: `${toolbarX}px`, bottom: '16px' }
-    }
-  }, [toolbarYPosition, toolbarX, isDraggingToolbar, dragPosition, isFullscreen])
 
-  // Find nearest Y snap position based on current drag Y position
-  const findNearestYSnapPosition = useCallback((y: number): ToolbarYPosition => {
+    // Position based on edge
+    switch (toolbarEdge) {
+      case 'top':
+        return {
+          left: '50%',
+          top: `${margin}px`,
+          transform: `translateX(calc(-50% + ${toolbarOffset}px))`
+        }
+      case 'bottom':
+        return {
+          left: '50%',
+          bottom: `${margin}px`,
+          transform: `translateX(calc(-50% + ${toolbarOffset}px))`
+        }
+      case 'left':
+        return {
+          left: `${margin}px`,
+          top: '50%',
+          transform: `translateY(calc(-50% + ${toolbarOffset}px))`
+        }
+      case 'right':
+        return {
+          right: `${margin}px`,
+          top: '50%',
+          transform: `translateY(calc(-50% + ${toolbarOffset}px))`
+        }
+    }
+  }, [toolbarEdge, toolbarOffset, isDraggingToolbar, dragPosition])
+
+  // Find nearest edge based on position
+  const findNearestEdge = useCallback((x: number, y: number): { edge: ToolbarEdge; offset: number } => {
+    const w = window.innerWidth
     const h = window.innerHeight
-    return y < h / 2 ? 'top' : 'bottom'
+
+    const distToTop = y
+    const distToBottom = h - y
+    const distToLeft = x
+    const distToRight = w - x
+
+    const minDist = Math.min(distToTop, distToBottom, distToLeft, distToRight)
+
+    if (minDist === distToTop) {
+      return { edge: 'top', offset: x - w / 2 }
+    } else if (minDist === distToBottom) {
+      return { edge: 'bottom', offset: x - w / 2 }
+    } else if (minDist === distToLeft) {
+      return { edge: 'left', offset: y - h / 2 }
+    } else {
+      return { edge: 'right', offset: y - h / 2 }
+    }
   }, [])
 
   // Store drag offset relative to toolbar
@@ -191,57 +230,45 @@ export default function QuadrantTodoClient({
 
   // Toolbar drag handlers
   const handleToolbarDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
     setIsDraggingToolbar(true)
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
 
-    // Get actual toolbar position - in fullscreen it's centered
-    let startX: number
-    let startY: number
-    if (isFullscreen) {
-      // Fullscreen: toolbar is centered, calculate actual left position
-      const toolbarWidth = 500 // Estimate
-      startX = (window.innerWidth - toolbarWidth) / 2
-      startY = 0
-    } else {
-      startX = toolbarX
-      startY = toolbarYPosition === 'top' ? 50 : window.innerHeight - 60
-    }
-
-    // Calculate offset from click position to toolbar position
-    dragOffsetRef.current = { x: clientX - startX, y: clientY - startY }
-    // Start at current position
-    setDragPosition({ x: startX, y: startY })
-  }, [toolbarX, toolbarYPosition, isFullscreen])
+    // Store initial click offset
+    dragOffsetRef.current = { x: 0, y: 0 }
+    setDragPosition({ x: clientX, y: clientY })
+  }, [])
 
   const handleToolbarDrag = useCallback((e: MouseEvent | TouchEvent) => {
     if (!isDraggingToolbar) return
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-    // Use stored offset for smooth dragging
-    const toolbarWidth = 500 // Generous estimate
-    const toolbarHeight = 60
-    const margin = 0
-    // Ensure both left and right have margin
-    const x = Math.max(margin, Math.min(window.innerWidth - toolbarWidth - margin, clientX - dragOffsetRef.current.x))
-    const y = Math.max(margin, Math.min(window.innerHeight - toolbarHeight - margin, clientY - 20))
+
+    // Keep position within screen bounds
+    const margin = 50
+    const x = Math.max(margin, Math.min(window.innerWidth - margin, clientX))
+    const y = Math.max(margin, Math.min(window.innerHeight - margin, clientY))
     setDragPosition({ x, y })
   }, [isDraggingToolbar])
 
   const handleToolbarDragEnd = useCallback(() => {
     if (dragPosition) {
-      const centerY = dragPosition.y + 20
-      const nearestYPosition = findNearestYSnapPosition(centerY)
-      setToolbarYPosition(nearestYPosition)
-      // Save X position with boundary check (same as drag)
-      const toolbarWidth = 500
-      const margin = 0
-      const safeX = Math.max(margin, Math.min(window.innerWidth - toolbarWidth - margin, dragPosition.x))
-      setToolbarX(safeX)
+      // Find nearest edge and calculate offset
+      const { edge, offset } = findNearestEdge(dragPosition.x, dragPosition.y)
+
+      // Clamp offset to reasonable bounds
+      const maxOffset = edge === 'top' || edge === 'bottom'
+        ? window.innerWidth / 2 - 100
+        : window.innerHeight / 2 - 100
+      const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, offset))
+
+      setToolbarEdge(edge)
+      setToolbarOffset(clampedOffset)
     }
     setIsDraggingToolbar(false)
     setDragPosition(null)
-  }, [dragPosition, findNearestYSnapPosition])
+  }, [dragPosition, findNearestEdge])
 
   // Focus mode: Listen for ESC key globally
   useEffect(() => {

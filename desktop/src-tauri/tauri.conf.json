@@ -5,7 +5,7 @@
   "identifier": "com.quadrants.todo",
   "build": {
     "beforeDevCommand": "",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://localhost:3000/local",
     "beforeBuildCommand": "",
     "frontendDist": "https://quadrantsapp.vercel.app"
   },
@@ -13,7 +13,6 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "url": "https://quadrantsapp.vercel.app",
         "title": "Quadrants",
         "width": 1200,
         "height": 800,

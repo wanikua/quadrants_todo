@@ -489,6 +489,18 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
           onDrop={handleMatrixDrop}
         >
 
+          {/* Quadrant Background Colors - matching Swift version */}
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 pointer-events-none" style={{ zIndex: 0 }}>
+            {/* Top-left: Not Urgent & Important (Schedule) - Blue */}
+            <div className="bg-[#EFF6FF]/50" />
+            {/* Top-right: Urgent & Important (Do First) - Red */}
+            <div className="bg-[#FEF2F2]/50" />
+            {/* Bottom-left: Not Urgent & Not Important (Eliminate) - Gray */}
+            <div className="bg-[#F3F4F6]/50" />
+            {/* Bottom-right: Urgent & Not Important (Delegate) - Orange */}
+            <div className="bg-[#FFF7ED]/50" />
+          </div>
+
           {/* Grid Lines and Axes */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ zIndex: 1 }}>
             {/* Subtle grid lines at quadrant boundaries */}
