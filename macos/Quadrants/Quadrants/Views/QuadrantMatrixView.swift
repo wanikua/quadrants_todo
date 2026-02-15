@@ -1,319 +1,439 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
+// MARK: - Cute Bold Style Constants
+enum CuteBoldStyle {
+    static let borderWidth: CGFloat = 3
+    static let shadowOffset: CGFloat = 4
+    static let cornerRadius: CGFloat = 16
+    static let smallCornerRadius: CGFloat = 10
+
+    // Quadrant background colors (pastel)
+    static func bgColor(for quadrant: Quadrant) -> Color {
+        switch quadrant {
+        case .urgentImportant: return Color(hex: "FEF2F2")
+        case .notUrgentImportant: return Color(hex: "EFF6FF")
+        case .urgentNotImportant: return Color(hex: "FFFBEB")
+        case .notUrgentNotImportant: return Color(hex: "F9FAFB")
+        }
+    }
+
+    // Quadrant accent colors
+    static func accentColor(for quadrant: Quadrant) -> Color {
+        switch quadrant {
+        case .urgentImportant: return Color(hex: "EF4444")
+        case .notUrgentImportant: return Color(hex: "3B82F6")
+        case .urgentNotImportant: return Color(hex: "F59E0B")
+        case .notUrgentNotImportant: return Color(hex: "6B7280")
+        }
+    }
+
+    // Quadrant dark text colors
+    static func textColor(for quadrant: Quadrant) -> Color {
+        switch quadrant {
+        case .urgentImportant: return Color(hex: "991B1B")
+        case .notUrgentImportant: return Color(hex: "1E3A8A")
+        case .urgentNotImportant: return Color(hex: "92400E")
+        case .notUrgentNotImportant: return Color(hex: "374151")
+        }
+    }
+
+    // Quadrant icons
+    static func icon(for quadrant: Quadrant) -> String {
+        switch quadrant {
+        case .urgentImportant: return "flame.fill"
+        case .notUrgentImportant: return "calendar"
+        case .urgentNotImportant: return "person.2"
+        case .notUrgentNotImportant: return "xmark.circle"
+        }
+    }
+
+    // Quadrant subtitles
+    static func subtitle(for quadrant: Quadrant) -> String {
+        switch quadrant {
+        case .urgentImportant: return "Urgent & Important"
+        case .notUrgentImportant: return "Important, not urgent"
+        case .urgentNotImportant: return "Urgent, not important"
+        case .notUrgentNotImportant: return "Neither urgent nor important"
+        }
+    }
+}
+
+// MARK: - Quadrant default position values
+extension Quadrant {
+    var defaultValues: (urgency: Double, importance: Double) {
+        switch self {
+        case .urgentImportant: return (75, 75)
+        case .notUrgentImportant: return (25, 75)
+        case .urgentNotImportant: return (75, 25)
+        case .notUrgentNotImportant: return (25, 25)
+        }
+    }
+}
+
+// MARK: - Quadrant Card Grid
 struct QuadrantMatrixView: View {
     let tasks: [TodoTask]
     let onTaskTap: (TodoTask) -> Void
     let onTaskMove: (TodoTask, Double, Double) -> Void
     let onTaskComplete: (TodoTask) -> Void
 
-    @State private var matrixSize: CGSize = .zero
+    private func tasksFor(_ quadrant: Quadrant) -> [TodoTask] {
+        tasks.filter { $0.quadrant == quadrant }
+            .sorted { $0.priorityScore > $1.priorityScore }
+    }
 
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Grid Background
-                QuadrantGrid()
-
-                // Quadrant Labels
-                QuadrantLabels()
-
-                // Tasks
-                ForEach(tasks) { task in
-                    TaskDot(
-                        task: task,
-                        matrixSize: geometry.size,
-                        onTap: { onTaskTap(task) },
-                        onMove: { newUrgency, newImportance in
-                            onTaskMove(task, newUrgency, newImportance)
-                        },
-                        onComplete: { onTaskComplete(task) }
-                    )
-                }
-            }
-            .padding(40)
-            .onAppear {
-                matrixSize = geometry.size
-            }
+    private func handleDrop(taskIdString: String, to quadrant: Quadrant) {
+        guard let uuid = UUID(uuidString: taskIdString),
+              let task = tasks.first(where: { $0.id == uuid }) else { return }
+        guard task.quadrant != quadrant else { return }
+        let (urgency, importance) = quadrant.defaultValues
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            onTaskMove(task, urgency, importance)
         }
     }
-}
 
-// MARK: - Quadrant Grid
-struct QuadrantGrid: View {
     var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
-            let centerX = width / 2
-            let centerY = height / 2
-
-            ZStack {
-                // Background quadrants
-                HStack(spacing: 0) {
-                    VStack(spacing: 0) {
-                        // Not Urgent & Important (top-left)
-                        Rectangle()
-                            .fill(Color(hex: "EFF6FF").opacity(0.5))
-                        // Not Urgent & Not Important (bottom-left)
-                        Rectangle()
-                            .fill(Color(hex: "F3F4F6").opacity(0.5))
-                    }
-                    VStack(spacing: 0) {
-                        // Urgent & Important (top-right)
-                        Rectangle()
-                            .fill(Color(hex: "FEF2F2").opacity(0.5))
-                        // Urgent & Not Important (bottom-right)
-                        Rectangle()
-                            .fill(Color(hex: "FFF7ED").opacity(0.5))
-                    }
-                }
-
-                // Grid lines
-                Path { path in
-                    // Vertical center line
-                    path.move(to: CGPoint(x: centerX, y: 0))
-                    path.addLine(to: CGPoint(x: centerX, y: height))
-
-                    // Horizontal center line
-                    path.move(to: CGPoint(x: 0, y: centerY))
-                    path.addLine(to: CGPoint(x: width, y: centerY))
-                }
-                .stroke(Color.gray.opacity(0.3), style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
-
-                // Axis labels
-                VStack {
-                    Text("IMPORTANT")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.gray.opacity(0.6))
-                        .tracking(2)
-                    Spacer()
-                    Text("NOT IMPORTANT")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.gray.opacity(0.6))
-                        .tracking(2)
-                }
-                .padding(.vertical, 8)
-
-                HStack {
-                    Text("NOT URGENT")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.gray.opacity(0.6))
-                        .tracking(2)
-                        .rotationEffect(.degrees(-90))
-                        .fixedSize()
-                    Spacer()
-                    Text("URGENT")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.gray.opacity(0.6))
-                        .tracking(2)
-                        .rotationEffect(.degrees(90))
-                        .fixedSize()
-                }
-                .padding(.horizontal, 8)
+        VStack(spacing: 0) {
+            // Axis label: IMPORTANT
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 8, weight: .bold))
+                Text("IMPORTANT")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.5)
             }
-        }
-    }
-}
+            .foregroundColor(Color(hex: "9CA3AF"))
+            .padding(.bottom, 4)
 
-// MARK: - Quadrant Labels
-struct QuadrantLabels: View {
-    var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
+            HStack(spacing: 0) {
+                // Left axis label: NOT URGENT
+                Text("NOT URGENT")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.5)
+                    .foregroundColor(Color(hex: "9CA3AF"))
+                    .rotationEffect(.degrees(-90))
+                    .fixedSize()
+                    .frame(width: 16)
+                    .padding(.trailing, 2)
 
-            ZStack {
-                // Top-left: Not Urgent & Important (Schedule)
-                VStack {
-                    HStack {
-                        QuadrantLabel(
-                            title: "Schedule",
-                            subtitle: "Important but not urgent",
-                            color: Color(hex: "3B82F6")
+                // Main 2x2 grid
+                VStack(spacing: 10) {
+                    HStack(spacing: 10) {
+                        QuadrantCard(
+                            quadrant: .urgentImportant,
+                            tasks: tasksFor(.urgentImportant),
+                            onTaskTap: onTaskTap,
+                            onTaskComplete: onTaskComplete,
+                            onTaskDrop: { handleDrop(taskIdString: $0, to: .urgentImportant) }
                         )
-                        Spacer()
-                    }
-                    Spacer()
-                }
-                .padding(20)
-
-                // Top-right: Urgent & Important (Do First)
-                VStack {
-                    HStack {
-                        Spacer()
-                        QuadrantLabel(
-                            title: "Do First",
-                            subtitle: "Urgent & important",
-                            color: Color(hex: "EF4444")
+                        QuadrantCard(
+                            quadrant: .notUrgentImportant,
+                            tasks: tasksFor(.notUrgentImportant),
+                            onTaskTap: onTaskTap,
+                            onTaskComplete: onTaskComplete,
+                            onTaskDrop: { handleDrop(taskIdString: $0, to: .notUrgentImportant) }
                         )
                     }
-                    Spacer()
-                }
-                .padding(20)
-
-                // Bottom-left: Not Urgent & Not Important (Eliminate)
-                VStack {
-                    Spacer()
-                    HStack {
-                        QuadrantLabel(
-                            title: "Eliminate",
-                            subtitle: "Neither urgent nor important",
-                            color: Color(hex: "6B7280")
+                    HStack(spacing: 10) {
+                        QuadrantCard(
+                            quadrant: .urgentNotImportant,
+                            tasks: tasksFor(.urgentNotImportant),
+                            onTaskTap: onTaskTap,
+                            onTaskComplete: onTaskComplete,
+                            onTaskDrop: { handleDrop(taskIdString: $0, to: .urgentNotImportant) }
                         )
-                        Spacer()
-                    }
-                }
-                .padding(20)
-
-                // Bottom-right: Urgent & Not Important (Delegate)
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        QuadrantLabel(
-                            title: "Delegate",
-                            subtitle: "Urgent but not important",
-                            color: Color(hex: "F97316")
+                        QuadrantCard(
+                            quadrant: .notUrgentNotImportant,
+                            tasks: tasksFor(.notUrgentNotImportant),
+                            onTaskTap: onTaskTap,
+                            onTaskComplete: onTaskComplete,
+                            onTaskDrop: { handleDrop(taskIdString: $0, to: .notUrgentNotImportant) }
                         )
                     }
                 }
-                .padding(20)
+
+                // Right axis label: URGENT
+                Text("URGENT")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.5)
+                    .foregroundColor(Color(hex: "9CA3AF"))
+                    .rotationEffect(.degrees(90))
+                    .fixedSize()
+                    .frame(width: 16)
+                    .padding(.leading, 2)
             }
+
+            // Bottom axis label
+            HStack(spacing: 4) {
+                Text("NOT IMPORTANT")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.5)
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .foregroundColor(Color(hex: "9CA3AF"))
+            .padding(.top, 4)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color(hex: "F9FAFB"))
     }
 }
 
-struct QuadrantLabel: View {
-    let title: String
-    let subtitle: String
-    let color: Color
+// MARK: - Single Quadrant Card
+struct QuadrantCard: View {
+    let quadrant: Quadrant
+    let tasks: [TodoTask]
+    let onTaskTap: (TodoTask) -> Void
+    let onTaskComplete: (TodoTask) -> Void
+    let onTaskDrop: (String) -> Void
+
+    @State private var isDropTargeted = false
+    @State private var isHovered = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(color)
-            Text(subtitle)
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-        }
-        .padding(8)
-        .background(Color.white.opacity(0.8))
-        .cornerRadius(8)
-    }
-}
-
-// MARK: - Task Dot
-struct TaskDot: View {
-    let task: TodoTask
-    let matrixSize: CGSize
-    let onTap: () -> Void
-    let onMove: (Double, Double) -> Void
-    let onComplete: () -> Void
-
-    @State private var isDragging = false
-    @State private var dragOffset: CGSize = .zero
-
-    private var position: CGPoint {
-        // Convert urgency (0-100) to x position (0 = left, 100 = right)
-        // Convert importance (0-100) to y position (100 = top, 0 = bottom)
-        let x = (task.urgency / 100) * (matrixSize.width - 80) + 40
-        let y = ((100 - task.importance) / 100) * (matrixSize.height - 80) + 40
-        return CGPoint(x: x, y: y)
-    }
-
-    private var taskColor: Color {
-        switch task.quadrant {
-        case .urgentImportant:
-            return Color(hex: "EF4444")
-        case .notUrgentImportant:
-            return Color(hex: "3B82F6")
-        case .urgentNotImportant:
-            return Color(hex: "F97316")
-        case .notUrgentNotImportant:
-            return Color(hex: "6B7280")
-        }
-    }
-
-    var body: some View {
-        ZStack {
-            // Glow effect when dragging
-            if isDragging {
-                Circle()
-                    .fill(taskColor.opacity(0.3))
-                    .frame(width: 60, height: 60)
-                    .blur(radius: 10)
-            }
-
-            // Task circle
-            Circle()
-                .fill(taskColor)
-                .frame(width: isDragging ? 44 : 36, height: isDragging ? 44 : 36)
-                .shadow(color: taskColor.opacity(0.4), radius: isDragging ? 8 : 4, x: 0, y: 2)
+        VStack(alignment: .leading, spacing: 0) {
+            // Card Header
+            HStack(spacing: 8) {
+                // Badge
+                HStack(spacing: 5) {
+                    Image(systemName: CuteBoldStyle.icon(for: quadrant))
+                        .font(.system(size: 11, weight: .bold))
+                    Text(quadrant.label)
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundColor(CuteBoldStyle.textColor(for: quadrant))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule()
+                        .fill(CuteBoldStyle.accentColor(for: quadrant).opacity(0.15))
+                )
                 .overlay(
-                    Circle()
-                        .stroke(Color.white, lineWidth: 2)
+                    Capsule()
+                        .stroke(CuteBoldStyle.accentColor(for: quadrant).opacity(0.4), lineWidth: 1.5)
                 )
 
-            // Task preview on hover
-            if isDragging {
-                Text(task.taskDescription)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.white)
-                    .cornerRadius(6)
-                    .shadow(radius: 4)
-                    .offset(y: -50)
-                    .lineLimit(2)
-                    .frame(maxWidth: 150)
-            }
-        }
-        .position(
-            x: position.x + dragOffset.width,
-            y: position.y + dragOffset.height
-        )
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    isDragging = true
-                    dragOffset = value.translation
+                Spacer()
+
+                // Count badge
+                if !tasks.isEmpty {
+                    Text("\(tasks.count)")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundColor(.white)
+                        .frame(width: 22, height: 22)
+                        .background(
+                            Circle()
+                                .fill(CuteBoldStyle.accentColor(for: quadrant))
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(.black, lineWidth: 1.5)
+                        )
                 }
-                .onEnded { value in
-                    isDragging = false
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 4)
 
-                    // Calculate new position
-                    let newX = position.x + value.translation.width
-                    let newY = position.y + value.translation.height
+            // Subtitle
+            Text(CuteBoldStyle.subtitle(for: quadrant))
+                .font(.system(size: 10))
+                .foregroundColor(CuteBoldStyle.textColor(for: quadrant).opacity(0.45))
+                .padding(.horizontal, 14)
+                .padding(.bottom, 8)
 
-                    // Convert back to urgency/importance
-                    var newUrgency = ((newX - 40) / (matrixSize.width - 80)) * 100
-                    var newImportance = 100 - ((newY - 40) / (matrixSize.height - 80)) * 100
+            // Divider with accent color
+            Rectangle()
+                .fill(CuteBoldStyle.accentColor(for: quadrant).opacity(0.2))
+                .frame(height: 1.5)
 
-                    // Clamp values
-                    newUrgency = max(0, min(100, newUrgency))
-                    newImportance = max(0, min(100, newImportance))
-
-                    withAnimation(.spring(response: 0.3)) {
-                        dragOffset = .zero
+            // Task List
+            ScrollView {
+                if tasks.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 20))
+                            .foregroundColor(CuteBoldStyle.accentColor(for: quadrant).opacity(0.25))
+                        Text("No tasks")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.gray.opacity(0.45))
+                        Text("Drag here or add new")
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray.opacity(0.3))
                     }
-
-                    onMove(newUrgency, newImportance)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                } else {
+                    LazyVStack(spacing: 5) {
+                        ForEach(Array(tasks.enumerated()), id: \.element.id) { index, task in
+                            TaskRow(
+                                task: task,
+                                quadrant: quadrant,
+                                onTap: { onTaskTap(task) },
+                                onComplete: { onTaskComplete(task) }
+                            )
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .top)),
+                                removal: .opacity.combined(with: .scale(scale: 0.9))
+                            ))
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
                 }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: CuteBoldStyle.cornerRadius)
+                .fill(CuteBoldStyle.bgColor(for: quadrant))
         )
-        .onTapGesture {
-            onTap()
-        }
-        .contextMenu {
-            Button("Complete") {
-                onComplete()
+        .clipShape(RoundedRectangle(cornerRadius: CuteBoldStyle.cornerRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: CuteBoldStyle.cornerRadius)
+                .stroke(
+                    isDropTargeted ? CuteBoldStyle.accentColor(for: quadrant) : .black,
+                    lineWidth: isDropTargeted ? 3.5 : CuteBoldStyle.borderWidth
+                )
+                .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
+        )
+        .shadow(
+            color: .black.opacity(isHovered ? 0.9 : 1),
+            radius: 0,
+            x: isHovered ? CuteBoldStyle.shadowOffset + 1 : CuteBoldStyle.shadowOffset,
+            y: isHovered ? CuteBoldStyle.shadowOffset + 1 : CuteBoldStyle.shadowOffset
+        )
+        .scaleEffect(isDropTargeted ? 1.02 : 1.0)
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isDropTargeted)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
             }
-            Button("View Details") {
-                onTap()
-            }
         }
-        .animation(.spring(response: 0.3), value: isDragging)
+        .onDrop(of: [.text], isTargeted: $isDropTargeted) { providers in
+            guard let provider = providers.first else { return false }
+            _ = provider.loadObject(ofClass: String.self) { idString, _ in
+                if let idString = idString {
+                    DispatchQueue.main.async {
+                        onTaskDrop(idString)
+                    }
+                }
+            }
+            return true
+        }
     }
 }
 
+// MARK: - Task Row
+struct TaskRow: View {
+    let task: TodoTask
+    let quadrant: Quadrant
+    let onTap: () -> Void
+    let onComplete: () -> Void
+
+    @State private var isHovered = false
+    @State private var checkHovered = false
+    @State private var justCompleted = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Checkbox with animation
+            Button(action: {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
+                    justCompleted = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    onComplete()
+                }
+            }) {
+                ZStack {
+                    Circle()
+                        .stroke(
+                            checkHovered ? CuteBoldStyle.accentColor(for: quadrant) : CuteBoldStyle.accentColor(for: quadrant).opacity(0.5),
+                            lineWidth: checkHovered ? 2.5 : 2
+                        )
+                        .frame(width: 20, height: 20)
+
+                    if justCompleted {
+                        Circle()
+                            .fill(CuteBoldStyle.accentColor(for: quadrant))
+                            .frame(width: 20, height: 20)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .black))
+                            .foregroundColor(.white)
+                    } else if checkHovered {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(CuteBoldStyle.accentColor(for: quadrant).opacity(0.6))
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .onHover { h in
+                withAnimation(.easeInOut(duration: 0.1)) { checkHovered = h }
+            }
+
+            // Task description
+            Text(task.taskDescription)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(justCompleted ? .gray : .black)
+                .strikethrough(justCompleted, color: .gray)
+                .lineLimit(2)
+
+            Spacer(minLength: 4)
+
+            // Hover action: expand/detail button
+            if isHovered && !justCompleted {
+                Button(action: onTap) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.gray)
+                        .frame(width: 20, height: 20)
+                        .background(Color.black.opacity(0.05))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isHovered ? Color.white : Color.white.opacity(0.5))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(
+                    isHovered ? Color.black.opacity(0.2) : Color.black.opacity(0.06),
+                    lineWidth: isHovered ? 1.5 : 1
+                )
+        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.12)) {
+                isHovered = hovering
+            }
+        }
+        .onTapGesture(perform: onTap)
+        .onDrag {
+            NSItemProvider(object: task.id.uuidString as NSString)
+        }
+        .contextMenu {
+            Button {
+                onComplete()
+            } label: {
+                Label("Complete", systemImage: "checkmark.circle")
+            }
+            Button {
+                onTap()
+            } label: {
+                Label("View Details", systemImage: "info.circle")
+            }
+        }
+        .opacity(justCompleted ? 0.5 : 1)
+        .animation(.easeInOut(duration: 0.12), value: isHovered)
+    }
+}

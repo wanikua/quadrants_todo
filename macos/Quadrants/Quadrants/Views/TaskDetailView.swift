@@ -9,144 +9,252 @@ struct TaskDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
 
+    private var currentQuadrant: Quadrant {
+        task.quadrant
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // Header with quadrant color accent
             HStack {
-                Text("Task Details")
-                    .font(.system(size: 18, weight: .semibold))
-                Spacer()
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.secondary)
+                HStack(spacing: 8) {
+                    // Quadrant dot
+                    Circle()
+                        .fill(CuteBoldStyle.accentColor(for: currentQuadrant))
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().stroke(.black, lineWidth: 1.5))
+                    Text("Task Details")
+                        .font(.system(size: 18, weight: .bold))
                 }
-                .buttonStyle(.plain)
+
+                Spacer()
+
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 26, height: 26)
+                        .background(Color(hex: "F3F4F6"))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(.black, lineWidth: 2)
+                        )
+                }
+                .buttonStyle(CuteBoldButtonStyle())
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.vertical, 14)
 
-            Divider()
+            // Colored accent bar matching quadrant
+            Rectangle()
+                .fill(CuteBoldStyle.accentColor(for: currentQuadrant))
+                .frame(height: 3)
 
             // Content
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 18) {
                     // Description
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Description")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.secondary)
 
                         TextField("Task description", text: $task.taskDescription, axis: .vertical)
                             .textFieldStyle(.plain)
                             .font(.system(size: 15))
                             .padding(12)
-                            .background(Color(hex: "F3F4F6"))
-                            .cornerRadius(10)
-                            .lineLimit(3...6)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(.black, lineWidth: 2)
+                            )
+                            .lineLimit(2...5)
                     }
 
-                    // Urgency Slider
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Urgency")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Text("\(Int(task.urgency))%")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(urgencyColor)
+                    // Sliders side by side
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Urgency")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.black)
+                                Spacer()
+                                Text("\(Int(task.urgency))")
+                                    .font(.system(size: 12, weight: .black, design: .monospaced))
+                                    .foregroundColor(.white)
+                                    .frame(width: 32, height: 22)
+                                    .background(urgencyColor)
+                                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 5)
+                                            .stroke(.black, lineWidth: 1.5)
+                                    )
+                            }
+
+                            Slider(value: $task.urgency, in: 0...100, step: 1)
+                                .tint(urgencyColor)
                         }
 
-                        Slider(value: $task.urgency, in: 0...100, step: 1)
-                            .tint(urgencyColor)
-                    }
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Importance")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.black)
+                                Spacer()
+                                Text("\(Int(task.importance))")
+                                    .font(.system(size: 12, weight: .black, design: .monospaced))
+                                    .foregroundColor(.white)
+                                    .frame(width: 32, height: 22)
+                                    .background(importanceColor)
+                                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 5)
+                                            .stroke(.black, lineWidth: 1.5)
+                                    )
+                            }
 
-                    // Importance Slider
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Importance")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Text("\(Int(task.importance))%")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(importanceColor)
+                            Slider(value: $task.importance, in: 0...100, step: 1)
+                                .tint(importanceColor)
                         }
-
-                        Slider(value: $task.importance, in: 0...100, step: 1)
-                            .tint(importanceColor)
                     }
 
-                    // Quadrant Info
-                    HStack {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(quadrantColor)
-                            .frame(width: 12, height: 12)
+                    // Quadrant Info with mini indicator
+                    HStack(spacing: 12) {
+                        MiniQuadrantIndicator(quadrant: currentQuadrant)
 
-                        Text(task.quadrant.description)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 5) {
+                                Image(systemName: CuteBoldStyle.icon(for: currentQuadrant))
+                                    .font(.system(size: 11, weight: .bold))
+                                Text(currentQuadrant.label)
+                                    .font(.system(size: 13, weight: .bold))
+                            }
+                            .foregroundColor(CuteBoldStyle.textColor(for: currentQuadrant))
+
+                            Text(CuteBoldStyle.subtitle(for: currentQuadrant))
+                                .font(.system(size: 11))
+                                .foregroundColor(CuteBoldStyle.textColor(for: currentQuadrant).opacity(0.6))
+                        }
 
                         Spacer()
                     }
                     .padding(12)
-                    .background(quadrantColor.opacity(0.1))
-                    .cornerRadius(8)
+                    .background(CuteBoldStyle.bgColor(for: currentQuadrant))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(.black, lineWidth: 2)
+                    )
+                    .animation(.easeInOut(duration: 0.2), value: currentQuadrant)
 
-                    // Created/Updated info
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Created: \(task.createdAt.formatted())")
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                        Text("Updated: \(task.updatedAt.formatted())")
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
+                    // Metadata
+                    HStack(spacing: 16) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 10))
+                            Text("Created \(task.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(.secondary)
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 10))
+                            Text("Updated \(task.updatedAt.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(.secondary)
+
+                        Spacer()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(20)
             }
 
-            Divider()
+            Rectangle()
+                .frame(height: CuteBoldStyle.borderWidth)
+                .foregroundColor(.black)
 
             // Actions
             HStack(spacing: 12) {
                 Button(action: { showDeleteConfirm = true }) {
-                    HStack {
+                    HStack(spacing: 4) {
                         Image(systemName: "trash")
+                            .font(.system(size: 12, weight: .bold))
                         Text("Delete")
+                            .font(.system(size: 13, weight: .bold))
                     }
-                    .foregroundColor(Color(hex: "EF4444"))
+                    .foregroundColor(Color(hex: "991B1B"))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(Color(hex: "FEE2E2"))
-                    .cornerRadius(8)
+                    .background(Color(hex: "FEF2F2"))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(hex: "EF4444"), lineWidth: 2)
+                    )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(CuteBoldButtonStyle())
 
                 Spacer()
+
+                Button(action: {
+                    onUpdate()
+                    dismiss()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.square")
+                            .font(.system(size: 12, weight: .bold))
+                        Text("Save")
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: "F3F4F6"))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.black, lineWidth: 2)
+                    )
+                }
+                .buttonStyle(CuteBoldButtonStyle())
+                .keyboardShortcut(.return, modifiers: .command)
 
                 Button(action: {
                     onComplete()
                     dismiss()
                 }) {
-                    HStack {
+                    HStack(spacing: 4) {
                         Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
                         Text("Complete")
+                            .font(.system(size: 13, weight: .bold))
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(Color(hex: "22C55E"))
-                    .cornerRadius(8)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.black, lineWidth: 2)
+                    )
+                    .shadow(color: .black, radius: 0, x: 3, y: 3)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(CuteBoldButtonStyle())
             }
             .padding(20)
         }
-        .frame(width: 400, height: 520)
-        .background(Color.white)
+        .frame(width: 460, height: 520)
+        .background(Color(hex: "F9FAFB"))
+        .clipShape(RoundedRectangle(cornerRadius: CuteBoldStyle.cornerRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: CuteBoldStyle.cornerRadius)
+                .stroke(.black, lineWidth: CuteBoldStyle.borderWidth)
+        )
         .alert("Delete Task", isPresented: $showDeleteConfirm) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -154,13 +262,13 @@ struct TaskDetailView: View {
                 dismiss()
             }
         } message: {
-            Text("Are you sure you want to delete this task?")
+            Text("Are you sure you want to delete this task? This cannot be undone.")
         }
     }
 
     private var urgencyColor: Color {
         if task.urgency >= 70 { return Color(hex: "EF4444") }
-        if task.urgency >= 40 { return Color(hex: "F97316") }
+        if task.urgency >= 40 { return Color(hex: "F59E0B") }
         return Color(hex: "22C55E")
     }
 
@@ -168,14 +276,5 @@ struct TaskDetailView: View {
         if task.importance >= 70 { return Color(hex: "3B82F6") }
         if task.importance >= 40 { return Color(hex: "8B5CF6") }
         return Color(hex: "6B7280")
-    }
-
-    private var quadrantColor: Color {
-        switch task.quadrant {
-        case .urgentImportant: return Color(hex: "EF4444")
-        case .urgentNotImportant: return Color(hex: "F97316")
-        case .notUrgentImportant: return Color(hex: "3B82F6")
-        case .notUrgentNotImportant: return Color(hex: "6B7280")
-        }
     }
 }
