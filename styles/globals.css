@@ -88,3 +88,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Tauri Desktop - Overlay title bar support */
+.tauri-drag-region {
+  -webkit-app-region: drag;
+}
+
+.tauri-drag-region button,
+.tauri-drag-region a,
+.tauri-drag-region input,
+.tauri-drag-region [role="button"],
+.tauri-drag-region select {
+  -webkit-app-region: no-drag;
+}
