@@ -3,9 +3,10 @@
 
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
-    Manager, Emitter,
+    Manager,
 };
-use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_store::StoreExt;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -39,7 +40,7 @@ fn save_window_state(app: &tauri::AppHandle) {
             };
 
             if let Ok(store) = app.store("window-state.json") {
-                let _ = store.set("window", serde_json::to_value(&state).unwrap_or_default());
+                store.set("window", serde_json::to_value(&state).unwrap_or_default());
                 let _ = store.save();
             }
         }
@@ -50,7 +51,7 @@ fn save_window_state(app: &tauri::AppHandle) {
 fn restore_window_state(app: &tauri::AppHandle) {
     if let Ok(store) = app.store("window-state.json") {
         if let Some(value) = store.get("window") {
-            if let Ok(state) = serde_json::from_value::<WindowState>(value) {
+            if let Ok(state) = serde_json::from_value::<WindowState>(value.clone()) {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.set_position(tauri::Position::Physical(
                         tauri::PhysicalPosition::new(state.x as i32, state.y as i32),
@@ -113,21 +114,14 @@ fn main() {
             inject_tauri_flag(app.handle());
 
             // Register global shortcuts
-            let cmd_n = Shortcut::new(Some(Modifiers::SUPER), Code::KeyN);
-            let cmd_shift_f = Shortcut::new(
-                Some(Modifiers::SUPER | Modifiers::SHIFT),
-                Code::KeyF,
-            );
-            let cmd_shift_o = Shortcut::new(
-                Some(Modifiers::SUPER | Modifiers::SHIFT),
-                Code::KeyO,
-            );
-
-            if let Some(global_shortcut) = app.try_state::<tauri_plugin_global_shortcut::GlobalShortcut<tauri::Wry>>() {
-                let _ = global_shortcut.register(cmd_n);
-                let _ = global_shortcut.register(cmd_shift_f);
-                let _ = global_shortcut.register(cmd_shift_o);
-            }
+            let global_shortcut = app.global_shortcut();
+            let _ = global_shortcut.register(Shortcut::new(Some(Modifiers::SUPER), Code::KeyN));
+            let _ = global_shortcut.register(Shortcut::new(
+                Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyF,
+            ));
+            let _ = global_shortcut.register(Shortcut::new(
+                Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyO,
+            ));
 
             // Listen for window move/resize to save state
             let app_handle = app.handle().clone();
@@ -143,12 +137,6 @@ fn main() {
                         }
                         _ => {}
                     }
-                });
-
-                // Re-inject flag on navigation (page loads)
-                let handle_for_nav = app_handle.clone();
-                window.listen("tauri://webview-created", move |_| {
-                    inject_tauri_flag(&handle_for_nav);
                 });
             }
 
