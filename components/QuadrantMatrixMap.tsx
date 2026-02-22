@@ -20,6 +20,7 @@ import { updateTask, deleteTask, completeTask } from "@/app/db/actions"
 import { useRouter } from "next/navigation"
 import { Trash2, Maximize2, CheckCircle2, Check, X, Sparkles, Wand2 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "@/lib/i18n"
 
 interface QuadrantMatrixMapProps {
   tasks: TaskWithAssignees[]
@@ -81,6 +82,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   onFocusClick,
 }: QuadrantMatrixMapProps) {
   const router = useRouter()
+  const { t } = useTranslation()
   const cardRef = useRef<HTMLDivElement>(null)
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | number | null>(null)
   const [isLongPress, setIsLongPress] = useState(false)
@@ -417,7 +419,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
         setTasks(prev => [...prev, completedTask])
       }
     } else {
-      toast.success("✓ Task completed!")
+      toast.success(t('taskCompleted'))
     }
     // Rely on sync polling to update after complete
   }
@@ -464,7 +466,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       {!isFullscreen && isMobile && !isOrganizing && (
         <CardHeader className="pb-2 px-2 pt-0">
           <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
-            Long press (0.8s) on empty space to create a task
+            {t('longPressHint')}
           </div>
         </CardHeader>
       )}
@@ -713,7 +715,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
               >
                 <CheckCircle2 className={`w-6 h-6 sm:w-8 sm:h-8 transition-all ${isOverComplete ? "text-white animate-bounce" : "text-green-500"}`} />
                 <span className={`text-xs font-bold ${isOverComplete ? "text-white" : "text-green-500"}`}>
-                  Done
+                  {t('done')}
                 </span>
               </div>
 
@@ -730,7 +732,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
               >
                 <Trash2 className={`w-6 h-6 sm:w-8 sm:h-8 transition-all ${isOverTrash ? "text-white animate-bounce" : "text-red-500"}`} />
                 <span className={`text-xs font-bold ${isOverTrash ? "text-white" : "text-red-500"}`}>
-                  Delete
+                  {t('delete')}
                 </span>
               </div>
             </>
@@ -743,7 +745,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
             style={{ zIndex: 4 }}
           >
             <div className="bg-background/95 backdrop-blur-sm px-4 py-1.5 rounded-full border border-border shadow-sm">
-              <span className="text-xs sm:text-sm font-semibold text-foreground tracking-wide">IMPORTANCE</span>
+              <span className="text-xs sm:text-sm font-semibold text-foreground tracking-wide">{t('importance')}</span>
             </div>
           </div>
 
@@ -753,7 +755,7 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
             style={{ zIndex: 4 }}
           >
             <div className="bg-background/95 backdrop-blur-sm px-4 py-1.5 rounded-full border border-border shadow-sm">
-              <span className="text-xs sm:text-sm font-semibold text-foreground tracking-wide whitespace-nowrap">URGENCY</span>
+              <span className="text-xs sm:text-sm font-semibold text-foreground tracking-wide whitespace-nowrap">{t('urgency')}</span>
             </div>
           </div>
         </div>
@@ -763,19 +765,19 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delete Task?</AlertDialogTitle>
+            <AlertDialogTitle>{t('confirmDelete')}</AlertDialogTitle>
             <AlertDialogDescription>
               {taskToDelete && (
                 <>
-                  Are you sure you want to delete task <strong>&quot;{taskToDelete.description}&quot;</strong>? This action cannot be undone.
+                  {t('confirmDeleteDescription')} <strong>&quot;{taskToDelete.description}&quot;</strong>？{t('cannotBeUndone')}
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
