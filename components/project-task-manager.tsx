@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SyncStatusIndicator, OfflineBanner } from "@/components/SyncStatusIndicator"
 import { getSyncService } from "@/app/lib/offline"
+import { useDesktop } from "@/hooks/use-desktop"
 
 interface Project {
   id: string
@@ -37,6 +38,7 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const { isDesktop } = useDesktop()
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isEditingProject, setIsEditingProject] = useState(false)
   const [editedProjectName, setEditedProjectName] = useState(project.name)
@@ -114,7 +116,8 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
       <OfflineBanner />
 
       {/* Breadcrumb Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100">
+      <header className={`bg-white/80 backdrop-blur-sm border-b border-gray-100 ${isDesktop ? 'tauri-drag-region' : ''}`}
+        style={isDesktop ? { paddingTop: '28px' } : undefined}>
         <div className="px-4 py-2 flex items-center gap-2">
           <button
             onClick={() => router.push("/projects")}

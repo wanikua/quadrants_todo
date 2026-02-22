@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { joinProject } from "@/app/db/actions"
 import QuickLookTodos from "@/components/quick-look-todos"
+import { useDesktop } from "@/hooks/use-desktop"
 
 interface Project {
   id: string
@@ -37,6 +38,7 @@ interface Project {
 
 export default function ProjectsPageClient({ initialProjects, user }: { initialProjects: Project[]; user: any }) {
   const router = useRouter()
+  const { isDesktop } = useDesktop()
   const [projects, setProjects] = useState<Project[]>(initialProjects)
 
   // Check if user is Pro
@@ -202,7 +204,8 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
   return (
     <div className="min-h-screen bg-white">
       {/* Header - sticky top */}
-      <header className="sticky top-0 bg-white border-b-3 border-black z-40">
+      <header className={`sticky top-0 bg-white border-b-3 border-black z-40 ${isDesktop ? 'tauri-drag-region' : ''}`}
+        style={isDesktop ? { paddingTop: '28px' } : undefined}>
         <div className="w-full px-[4%] md:px-[10%] h-24 flex items-center justify-between">
           <Link href="/" className="group relative flex items-center">
             <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
