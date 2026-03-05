@@ -26,11 +26,6 @@ export default function HomePage() {
       { "@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free plan" },
       { "@type": "Offer", "price": "9.99", "priceCurrency": "USD", "description": "Pro plan" }
     ],
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "127"
-    },
     "featureList": [
       "Eisenhower Matrix visualization",
       "AI task prioritization",
@@ -139,17 +134,10 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              {/* Social Proof */}
-              <div className="flex items-center gap-4 pt-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-                <div className="flex -space-x-2">
-                  {["Felix", "Aneka", "Luna", "Oscar"].map((name, i) => (
-                    <div key={i} className="w-8 h-8 rounded-full border-2 border-white shadow-sm overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100">
-                      <Image src={`https://api.dicebear.com/9.x/avataaars/png?seed=${name}`} alt="" width={32} height={32} className="w-full h-full object-cover" unoptimized />
-                    </div>
-                  ))}
-                </div>
-                <p className="text-sm text-gray-500"><span className="font-bold text-black">500+</span> users managing tasks smarter</p>
-              </div>
+              {/* Tagline */}
+              <p className="text-sm text-gray-400 pt-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                Free forever for personal use • No credit card required
+              </p>
 
               {/* Hero Mockups */}
               <div className="mt-12 relative w-full max-w-4xl mx-auto hidden md:block animate-scale-in" style={{ animationDelay: '0.3s' }}>
@@ -395,7 +383,6 @@ export default function HomePage() {
                           <Image src={`https://api.dicebear.com/9.x/avataaars/png?seed=${name}`} alt="" width={48} height={48} className="w-full h-full object-cover" unoptimized />
                         </div>
                       ))}
-                      <div className="w-12 h-12 rounded-full border-3 border-white bg-black text-white flex items-center justify-center font-bold shadow-md z-10 text-sm">26+</div>
                     </div>
                   </div>
                 </div>
