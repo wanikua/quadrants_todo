@@ -33,19 +33,19 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
     </>
   )
 
-  // Personal project - always show empty circle without initials
+  // Personal project - small solid dot
   if (projectType === "personal") {
     return (
       <div className={containerClass} style={{ width: size, height: size }}>
         {glowEffect}
         {isHighestPriority && (
           <div
-            className="absolute rounded-full border-4 border-yellow-400 animate-pulse"
+            className="absolute rounded-full border-2 border-yellow-400 animate-pulse"
             style={{
-              width: size + 8,
-              height: size + 8,
-              top: -4,
-              left: -4,
+              width: size + 6,
+              height: size + 6,
+              top: -3,
+              left: -3,
             }}
           />
         )}
@@ -54,19 +54,17 @@ const TaskSegment = React.memo(function TaskSegment({ task, size = 40, userName,
             className="absolute -top-1 -right-1 bg-purple-600 rounded-full p-0.5 shadow-lg animate-pulse"
             title="Task repositioned"
           >
-            <Sparkles className="w-3 h-3 text-white" />
+            <Sparkles className="w-2 h-2 text-white" />
           </div>
         )}
         <div
-          className="rounded-full flex items-center justify-center text-muted-foreground text-xs font-bold cursor-pointer hover:scale-110 transition-all duration-200 shadow-lg border-2 border-primary bg-primary/10 relative"
+          className="rounded-full cursor-pointer hover:scale-125 transition-all duration-200 shadow-md border border-gray-700 bg-gray-800 relative"
           style={{
             width: size,
             height: size,
           }}
           title={`${task.description} - Personal Task${isHighestPriority ? ' (Highest Priority)' : ''}${hasMoved ? ' (Repositioned)' : ''}`}
-        >
-          {/* Empty circle for personal project tasks */}
-        </div>
+        />
       </div>
     )
   }
