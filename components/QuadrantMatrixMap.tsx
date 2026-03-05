@@ -598,7 +598,9 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
             {tasks.map((task) => {
               const x = task.urgency
               const y = 100 - task.importance
-              const taskSize = isMobile ? 40 : 60
+              const taskSize = projectType === 'personal' 
+                ? (isMobile ? 16 : 20) 
+                : (isMobile ? 40 : 60)
               const offset = taskSize / 2
               // Add larger margin to prevent clipping and ensure draggability in corners
               const marginX = offset + (isMobile ? 25 : 40)
