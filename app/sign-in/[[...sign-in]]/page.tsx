@@ -1,12 +1,23 @@
+'use client'
+
 import { SignIn } from '@clerk/nextjs'
+import { WeChatLoginButton } from '@/components/wechat-login-button'
+import { LanguageToggle } from '@/components/language-toggle'
 
 export default function SignInPage() {
+  const hasWeChat = !!process.env.NEXT_PUBLIC_WECHAT_APP_ID
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden px-[4%]">
       {/* Soft Gradient Background - Daisy AI Style */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute -top-1/2 -left-1/4 w-[800px] h-[800px] bg-gradient-to-br from-purple-200/40 via-pink-200/40 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute top-1/4 -right-1/4 w-[600px] h-[600px] bg-gradient-to-bl from-blue-200/40 via-purple-200/40 to-transparent rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Language Toggle - Top Right */}
+      <div className="fixed top-4 right-4 z-20">
+        <LanguageToggle />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -35,6 +46,21 @@ export default function SignInPage() {
             },
           }}
         />
+
+        {/* WeChat Login - Below Clerk */}
+        {hasWeChat && (
+          <div className="mt-4">
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t-2 border-black/10"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-4 text-gray-500 font-medium">OR</span>
+              </div>
+            </div>
+            <WeChatLoginButton />
+          </div>
+        )}
       </div>
     </div>
   )
