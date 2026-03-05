@@ -66,31 +66,31 @@ export default function HomePage() {
         </div>
 
         {/* Header */}
-        <header className="relative bg-white/90 backdrop-blur-md z-50 border-b-2 border-black">
-          <div className="w-full max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <Link href="/" className="group relative flex items-center gap-2.5">
-              <div className="bg-white p-1 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all group-hover:shadow-none group-hover:translate-x-[2px] group-hover:translate-y-[2px]">
-                <Image src="/logo.png" alt="Quadrants Logo" width={32} height={32}
-                  className="w-8 h-8 object-contain rounded" />
+        <header className="relative bg-white/90 backdrop-blur-md z-50 shadow-sm">
+          <div className="w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <Link href="/" className="group relative flex items-center gap-3">
+              <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
+                <Image src="/logo.png" alt="Quadrants Logo" width={40} height={40}
+                  className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
               </div>
-              <span className="text-xl font-black text-black tracking-tight">Quadrants</span>
+              <span className="text-2xl font-black text-black tracking-tight">Quadrants</span>
             </Link>
-            <nav className="flex items-center gap-3">
+            <nav className="flex items-center gap-4">
               {isLoaded && isSignedIn ? (
                 <Link href="/projects">
-                  <Button className="bg-black text-white hover:bg-black/90 border-2 border-black rounded-xl px-5 py-1.5 h-auto text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
+                  <Button className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-bold-sm hover-lift-shadow font-bold rounded-xl px-6 py-2 h-auto text-base transition-all">
                     Dashboard
                   </Button>
                 </Link>
               ) : (
                 <>
                   <Link href="/sign-in">
-                    <Button variant="ghost" className="text-black hover:bg-gray-100 font-bold text-sm px-4 h-auto rounded-xl">
+                    <Button variant="ghost" className="text-black hover:bg-gray-100 font-bold text-base px-4 h-auto rounded-xl">
                       Sign In
                     </Button>
                   </Link>
                   <Link href="/sign-up">
-                    <Button className="bg-black text-white hover:bg-black/90 border-2 border-black rounded-xl px-5 py-1.5 h-auto text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
+                    <Button className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-bold-sm hover-lift-shadow font-bold rounded-xl px-6 py-2 h-auto text-base transition-all">
                       Get Started
                     </Button>
                   </Link>
@@ -105,14 +105,14 @@ export default function HomePage() {
 
             {/* Hero */}
             <div className="flex flex-col items-center text-center space-y-8 mb-4 lg:mb-8">
-              <div className="inline-flex items-center gap-2 bg-purple-100 border-2 border-black rounded-full px-4 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] animate-slide-up">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-full px-5 py-2 animate-slide-up">
                 <Sparkles className="w-4 h-4 text-purple-500" />
-                <span className="text-sm font-bold text-black">Now with AI Chatbot Integration</span>
+                <span className="text-sm font-bold text-purple-700">Now with AI Chatbot Integration</span>
               </div>
 
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-black leading-[1.1] tracking-tight animate-slide-up max-w-5xl">
                 Minimal Effort, <br className="hidden md:block" />
-                <span className="bg-yellow-200 px-3 inline-block mt-2 border-2 border-black rounded-xl -rotate-1">Maximum Productivity</span>
+                <span className="text-highlight-yellow inline-block mt-2 transform -rotate-1">Maximum Productivity</span>
               </h1>
 
               <p className="text-xl md:text-2xl text-gray-600 max-w-2xl leading-relaxed font-medium animate-slide-up" style={{ animationDelay: '0.1s' }}>
@@ -122,20 +122,20 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto animate-slide-up" style={{ animationDelay: '0.2s' }}>
                 <Link href="/sign-up" className="w-full sm:w-auto">
-                  <Button className="w-full sm:w-auto h-14 px-10 text-lg bg-black text-white border-2 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all font-bold flex items-center justify-center gap-2 group">
+                  <Button className="w-full sm:w-auto h-16 px-10 text-xl bg-black text-white border-3 border-black rounded-2xl shadow-bold hover-lift-shadow transition-all font-bold flex items-center justify-center gap-2 group">
                     Get Started Free
                     <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
                 <Link href="/sign-in" className="w-full sm:w-auto">
-                  <Button variant="outline" className="w-full sm:w-auto h-14 px-10 text-lg bg-white text-black border-2 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all font-bold">
+                  <Button variant="outline" className="w-full sm:w-auto h-16 px-10 text-xl bg-white text-black border-3 border-black rounded-2xl shadow-bold hover-lift-shadow transition-all font-bold">
                     Sign In
                   </Button>
                 </Link>
               </div>
 
               {/* Tagline */}
-              <p className="text-sm text-gray-400 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+              <p className="text-sm text-gray-400 pt-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
                 Free for personal use
               </p>
 
@@ -144,7 +144,7 @@ export default function HomePage() {
                 <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-white to-transparent z-20" />
                 <div className="relative z-10 flex items-center justify-center gap-6 p-8">
                   {/* Left Card - Bulk Input */}
-                  <div className="bg-white border-2 border-black rounded-2xl p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rotate-[-2deg] hover:rotate-0 transition-transform duration-500 w-[320px]">
+                  <div className="bg-white border-3 border-black rounded-3xl p-8 shadow-bold rotate-[-2deg] hover:rotate-0 transition-transform duration-500 w-[320px]">
                     <div className="flex items-center gap-4 mb-5 border-b-2 border-dashed border-gray-100 pb-4">
                       <div className="w-4 h-4 rounded-full bg-red-400 border border-black" />
                       <div className="w-4 h-4 rounded-full bg-yellow-400 border border-black" />
@@ -165,10 +165,10 @@ export default function HomePage() {
                     </div>
                   </div>
                   {/* Right Card - Matrix Preview */}
-                  <div className="bg-white border-2 border-black rounded-2xl p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rotate-[2deg] hover:rotate-0 transition-transform duration-500 mt-12 w-[300px]">
+                  <div className="bg-white border-3 border-black rounded-3xl p-8 shadow-bold rotate-[2deg] hover:rotate-0 transition-transform duration-500 mt-12 w-[300px]">
                     <div className="flex items-center justify-between gap-4 mb-6">
                       <h3 className="font-bold text-xl">My Tasks</h3>
-                      <span className="bg-yellow-200 text-black px-3 py-1.5 rounded-lg text-sm border-2 border-black font-bold flex-shrink-0">Q1</span>
+                      <span className="bg-yellow-100 text-black px-3 py-1.5 rounded-md text-sm border-2 border-black font-bold flex-shrink-0">Q1</span>
                     </div>
                     <div className="space-y-3">
                       <div className="p-4 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 transform hover:-translate-y-1 transition-transform">
@@ -194,7 +194,7 @@ export default function HomePage() {
             {/* Features Grid - 8 features */}
             <section className="pt-8 pb-24 relative">
               <div className="text-center mb-16 max-w-3xl mx-auto space-y-4">
-                <span className="bg-purple-100 text-black px-4 py-1.5 rounded-full font-bold text-sm border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] inline-block mb-2">
+                <span className="bg-purple-100 text-purple-900 px-4 py-1.5 rounded-full font-bold text-sm border-2 border-purple-200 inline-block mb-2">
                   Powerful Features
                 </span>
                 <h2 className="text-4xl md:text-5xl font-bold text-black">
@@ -216,8 +216,8 @@ export default function HomePage() {
                   { icon: BarChart3, title: "Analytics", description: "Track completion rates, time distribution, and productivity trends.", color: "bg-teal-100", iconColor: "text-teal-600" },
                   { icon: Sparkles, title: "Learns From You", description: "AI remembers your preferences and gets better at predicting priorities.", color: "bg-violet-100", iconColor: "text-violet-600" },
                 ].map((feature, i) => (
-                  <div key={i} className="group bg-white border-2 border-black rounded-2xl p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all duration-300">
-                    <div className={`w-14 h-14 ${feature.color} border-2 border-black rounded-2xl flex items-center justify-center mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:rotate-6 transition-transform`}>
+                  <div key={i} className="group bg-white border-3 border-black rounded-3xl p-8 hover:shadow-bold transition-all duration-300 hover:-translate-y-2">
+                    <div className={`w-14 h-14 ${feature.color} border-3 border-black rounded-2xl flex items-center justify-center mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:rotate-6 transition-transform`}>
                       <feature.icon className={`w-7 h-7 ${feature.iconColor}`} strokeWidth={2.5} />
                     </div>
                     <h3 className="text-xl font-bold text-black mb-3">{feature.title}</h3>
@@ -232,12 +232,12 @@ export default function HomePage() {
 
               {/* Interactive Demo */}
               <ScrollReveal animation="fade-in-up">
-                <div className="bg-white border-2 border-black rounded-2xl p-8 md:p-16 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
+                <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 md:p-16 shadow-bold-lg relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-100/50 rounded-full blur-3xl -mr-32 -mt-32" />
                   <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
                     <div className="space-y-6">
                       <h2 className="text-4xl md:text-5xl font-bold text-black leading-tight">
-                        Stop wasting time <span className="bg-yellow-200 px-1 border-b-2 border-black">deciding</span> what to do next
+                        Stop wasting time <span className="text-highlight-yellow">deciding</span> what to do next
                       </h2>
                       <p className="text-xl text-gray-700 leading-relaxed font-medium">
                         Every task lands exactly where it should. Drag to reprioritize. AI learns from your adjustments.
@@ -253,16 +253,17 @@ export default function HomePage() {
                         ))}
                       </ul>
                     </div>
-                    <div className="relative h-[300px] md:h-[400px] bg-gray-50 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-2 rotate-1 group-hover:rotate-0 transition-transform duration-500">
+                    <div className="relative h-[300px] md:h-[400px] bg-gray-50 rounded-3xl p-2 shadow-bold-sm rotate-1 group-hover:rotate-0 transition-transform duration-500">
                       <QuadrantPlayground />
                     </div>
                   </div>
                 </div>
               </ScrollReveal>
 
-              {/* AI Chatbot Section */}
+              {/* AI Chatbot Section (NEW) */}
               <ScrollReveal animation="fade-in-up">
-                <div className="bg-black border-2 border-black rounded-2xl p-8 md:p-16 text-white relative overflow-hidden">
+                <div className="bg-gradient-to-br from-indigo-950 to-black rounded-[2.5rem] p-8 md:p-16 text-white shadow-2xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-10 mix-blend-overlay" />
                   <div className="absolute top-10 right-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl" />
                   <div className="absolute bottom-10 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl" />
                   <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
@@ -290,7 +291,7 @@ export default function HomePage() {
                       </div>
                     </div>
                     <div className="hidden md:flex justify-center">
-                      <div className="w-72 bg-zinc-900 border-2 border-zinc-600 rounded-2xl shadow-2xl overflow-hidden">
+                      <div className="w-72 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
                         <div className="flex items-center gap-2 px-4 py-3 bg-zinc-800 border-b border-zinc-700">
                           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                           <span className="text-sm font-medium text-zinc-200">Quadrants AI</span>
@@ -310,11 +311,11 @@ export default function HomePage() {
               <ScrollReveal animation="fade-in-up">
                 <div className="grid md:grid-cols-2 gap-8 items-center">
                   <div className="order-2 md:order-1 relative">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-purple-200 to-blue-200 rounded-2xl blur-2xl opacity-50 transform rotate-3" />
-                    <div className="relative bg-white border-2 border-black rounded-2xl p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:rotate-1 transition-transform duration-500 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-purple-200 to-blue-200 rounded-3xl blur-2xl opacity-50 transform rotate-3" />
+                    <div className="relative bg-white border-3 border-black rounded-3xl p-8 shadow-bold hover:rotate-1 transition-transform duration-500 overflow-hidden">
                       <div className="space-y-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-purple-100 border-2 border-black rounded-xl flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                          <div className="w-10 h-10 bg-purple-100 border-2 border-purple-300 rounded-xl flex items-center justify-center">
                             <Sparkles className="w-5 h-5 text-purple-600" />
                           </div>
                           <span className="font-bold text-lg">AI Priority Engine</span>
@@ -350,11 +351,11 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="order-1 md:order-2 space-y-6 pl-0 md:pl-8">
-                    <span className="bg-purple-100 text-black px-4 py-1 rounded-full font-bold text-sm border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] inline-block">
+                    <div className="inline-block bg-purple-100 text-purple-700 px-4 py-1 rounded-full font-bold text-sm border-2 border-purple-200">
                       Smart AI
-                    </span>
+                    </div>
                     <h2 className="text-4xl md:text-5xl font-bold text-black leading-tight">
-                      Intelligence that <span className="bg-purple-200 px-1 border-b-2 border-black">adapts to you</span>
+                      Intelligence that <span className="text-highlight-purple">adapts to you</span>
                     </h2>
                     <p className="text-xl text-gray-700 leading-relaxed font-medium">
                       AI learns from every drag-and-drop. Move a task? AI remembers your preference and adjusts future predictions.
@@ -368,17 +369,17 @@ export default function HomePage() {
 
               {/* Teams Section */}
               <ScrollReveal animation="fade-in-up">
-                <div className="text-center max-w-4xl mx-auto space-y-8 bg-gray-50 border-2 border-black rounded-2xl p-12 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <div className="text-center max-w-4xl mx-auto space-y-8 bg-gray-50 border-3 border-black rounded-[2.5rem] p-12">
                   <h2 className="text-4xl md:text-6xl font-black text-black leading-[1.1]">
-                    Built for <span className="bg-green-200 px-2 border-b-2 border-black">teams</span>, perfect for solo
+                    Built for <span className="text-highlight-green">teams</span>, perfect for solo
                   </h2>
                   <p className="text-xl md:text-2xl text-gray-700 leading-relaxed font-medium">
-                    Assign tasks with colors. Track who&apos;s doing what. <span className="bg-yellow-200 px-1 border-b-2 border-black">Share projects</span> with one link.
+                    Assign tasks with colors. Track who&apos;s doing what. <span className="text-highlight-yellow">Share projects</span> with one link.
                   </p>
                   <div className="flex flex-col items-center gap-3 pt-4">
                     <div className="flex -space-x-3">
                       {["Felix", "Aneka", "Luna", "Oscar"].map((name, i) => (
-                        <div key={i} className="w-12 h-12 rounded-full border-2 border-white shadow-md overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 transition-transform hover:scale-110 hover:z-10">
+                        <div key={i} className="w-12 h-12 rounded-full border-3 border-white shadow-md overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 transition-transform hover:scale-110 hover:z-10">
                           <Image src={`https://api.dicebear.com/9.x/avataaars/png?seed=${name}`} alt="" width={48} height={48} className="w-full h-full object-cover" unoptimized />
                         </div>
                       ))}
@@ -387,23 +388,23 @@ export default function HomePage() {
                 </div>
               </ScrollReveal>
 
-              {/* Desktop App Section */}
+              {/* Desktop App Section (NEW) */}
               <ScrollReveal animation="fade-in-up">
-                <div className="bg-white border-2 border-black rounded-2xl p-8 md:p-16 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden">
+                <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 md:p-16 shadow-bold-lg relative overflow-hidden">
                   <div className="relative z-10 text-center max-w-3xl mx-auto space-y-6">
-                    <div className="inline-flex items-center gap-2 bg-green-100 border-2 border-black rounded-full px-4 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                      <span className="text-sm font-bold text-black">🖥️ Desktop App</span>
+                    <div className="inline-flex items-center gap-2 bg-green-50 border-2 border-green-200 rounded-full px-4 py-2">
+                      <span className="text-sm font-bold text-green-700">🖥️ Desktop App</span>
                     </div>
                     <h2 className="text-4xl md:text-5xl font-bold text-black leading-tight">
-                      Native on <span className="bg-blue-200 px-2 border-b-2 border-black">macOS & Windows</span>
+                      Native on <span className="text-highlight-blue">macOS & Windows</span>
                     </h2>
                     <p className="text-xl text-gray-600">
                       Global shortcuts (Cmd+N), native menus, window state persistence. Built with Tauri — fast, lightweight, no Electron bloat.
                     </p>
-                    <div className="flex flex-wrap justify-center gap-4 pt-4">
+                    <div className="flex justify-center gap-6 pt-4">
                       {['Cmd+N New Task', 'Cmd+Shift+F Focus', 'Cmd+Shift+O Organize'].map((shortcut) => (
-                        <div key={shortcut} className="bg-gray-100 border-2 border-black rounded-xl px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                          <code className="text-sm font-mono font-bold text-black">{shortcut}</code>
+                        <div key={shortcut} className="bg-gray-100 border-2 border-gray-300 rounded-xl px-4 py-2">
+                          <code className="text-sm font-mono font-bold text-gray-700">{shortcut}</code>
                         </div>
                       ))}
                     </div>
@@ -413,19 +414,20 @@ export default function HomePage() {
 
               {/* Final CTA */}
               <ScrollReveal animation="slide-up">
-                <div className="relative bg-black border-2 border-black rounded-2xl p-16 md:p-24 text-center overflow-hidden">
+                <div className="relative bg-black rounded-[2.5rem] p-16 md:p-24 text-center overflow-hidden shadow-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black z-0" />
                   <div className="absolute top-0 left-0 w-32 h-32 border-4 border-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
                   <div className="absolute bottom-0 right-0 w-64 h-64 border-4 border-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
                   <div className="relative z-10 max-w-4xl mx-auto space-y-10">
                     <h2 className="text-4xl md:text-6xl font-bold text-white leading-[1.1]">
-                      No tutorials needed. <span className="bg-yellow-200 text-black px-3 rounded-xl border-2 border-black">Start in seconds.</span>
+                      No tutorials needed. <span className="text-highlight-yellow">Start in seconds.</span>
                     </h2>
                     <p className="text-xl md:text-2xl text-white/90 leading-relaxed font-light">
                       Long-press to create. Drag to prioritize. AI handles the rest.
                     </p>
                     <div className="pt-8 flex flex-col sm:flex-row justify-center gap-6">
                       <Link href="/sign-up">
-                        <Button size="lg" className="bg-white text-black hover:bg-gray-100 px-12 py-8 text-xl rounded-2xl font-bold border-2 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all">
+                        <Button size="lg" className="bg-white text-black hover:bg-gray-100 hover:scale-105 px-12 py-8 text-xl rounded-2xl font-bold transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)] border-4 border-white">
                           Try it now <ArrowRight className="ml-3 h-6 w-6" />
                         </Button>
                       </Link>
