@@ -93,6 +93,7 @@ export const metadata: Metadata = {
 }
 
 import { Analytics } from "@vercel/analytics/next"
+import { ClawdbotChatWidget } from "@/components/clawdbot-chat-widget"
 
 export default function RootLayout({
   children,
@@ -156,6 +157,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <Analytics />
+          <ClawdbotChatWidget />
         </body>
       </html>
     </ClerkProvider>
