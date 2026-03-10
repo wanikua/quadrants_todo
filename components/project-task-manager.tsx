@@ -115,21 +115,21 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
       {/* Offline Banner */}
       <OfflineBanner />
 
-      {/* Breadcrumb Header */}
-      <header className={`bg-white/80 backdrop-blur-sm border-b border-gray-100 ${isDesktop ? 'tauri-drag-region' : ''}`}
+      {/* Breadcrumb Header — matches projects page style */}
+      <header className={`bg-white border-b-3 border-black ${isDesktop ? 'tauri-drag-region' : ''}`}
         style={isDesktop ? { paddingTop: '28px' } : undefined}>
-        <div className="px-4 py-2 flex items-center gap-2">
+        <div className="px-4 py-2.5 flex items-center gap-2">
           <button
             onClick={() => router.push("/projects")}
             title="Back to My Projects"
-            className="group flex items-center gap-1.5 text-sm text-gray-500 hover:text-black transition-colors"
+            className="group flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-black transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>All Projects</span>
           </button>
-          <span className="text-gray-300">/</span>
+          <span className="text-gray-300 font-bold">/</span>
           <span
-            className="text-sm font-medium text-black flex items-center gap-1.5 group cursor-pointer hover:text-primary transition-colors"
+            className="text-sm font-bold text-black flex items-center gap-1.5 group cursor-pointer hover:text-primary transition-colors"
             title="Click to edit project"
             onClick={() => setIsEditingProject(true)}
           >
