@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { neon } from '@neondatabase/serverless'
 
-const sql = neon(process.env.DATABASE_URL!)
+function getDb() {
+  return neon(process.env.DATABASE_URL!)
+}
 
 /**
  * AI Chat endpoint for the embedded Quadrants chat widget
@@ -22,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's projects for context
-    const projects = await sql`
+    const projects = await getDb()`
       SELECT DISTINCT p.id, p.name, p.type
       FROM projects p
       LEFT JOIN project_members pm ON p.id = pm.project_id
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
     `
 
     // Get priority tasks for context
-    const topTasks = await sql`
+    const topTasks = await getDb()`
       SELECT t.id, t.description, t.urgency, t.importance, p.name as project_name
       FROM tasks t
       INNER JOIN projects p ON t.project_id = p.id
@@ -139,21 +141,21 @@ Rules:
         const action = JSON.parse(actionMatch[1])
         
         if (action.action === 'create' && action.projectId && action.description) {
-          const [task] = await sql`
+          const [task] = await getDb()`
             INSERT INTO tasks (project_id, description, urgency, importance, created_at)
             VALUES (${action.projectId}, ${action.description}, ${action.urgency || 50}, ${action.importance || 50}, NOW())
             RETURNING id, description, urgency, importance
           `
           actionResult = { type: 'created', task }
         } else if (action.action === 'complete' && action.taskId) {
-          await sql`UPDATE tasks SET archived = true WHERE id = ${action.taskId}`
+          await getDb()`UPDATE tasks SET archived = true WHERE id = ${action.taskId}`
           actionResult = { type: 'completed', taskId: action.taskId }
         } else if (action.action === 'delete' && action.taskId) {
-          await sql`DELETE FROM task_assignments WHERE task_id = ${action.taskId}`
-          await sql`DELETE FROM tasks WHERE id = ${action.taskId}`
+          await getDb()`DELETE FROM task_assignments WHERE task_id = ${action.taskId}`
+          await getDb()`DELETE FROM tasks WHERE id = ${action.taskId}`
           actionResult = { type: 'deleted', taskId: action.taskId }
         } else if (action.action === 'update' && action.taskId && action.updates) {
-          await sql`
+          await getDb()`
             UPDATE tasks SET
               description = COALESCE(${action.updates.description ?? null}, description),
               urgency = COALESCE(${action.updates.urgency ?? null}, urgency),

@@ -30,9 +30,6 @@ export function ClawdbotChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Only show for signed-in users
-  if (!isSignedIn) return null
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -41,6 +38,9 @@ export function ClawdbotChatWidget() {
   useEffect(() => {
     if (isOpen) { inputRef.current?.focus(); setHasUnread(false) }
   }, [isOpen])
+
+  // Only show for signed-in users (after all hooks)
+  if (!isSignedIn) return null
 
   // Extract projectId from URL if on a project page
   const getProjectId = () => {
