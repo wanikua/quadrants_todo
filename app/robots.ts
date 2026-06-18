@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/dashboard/', '/projects/', '/api/', '/setup/', '/test/', '/diagnostics/', '/dev-test/', '/logo-preview/'],
         },
-        sitemap: 'https://quadrants.ch/sitemap.xml',
+        sitemap: `${process.env.NEXT_PUBLIC_APP_URL || 'https://quadrants.dev'}/sitemap.xml`,
     }
 }

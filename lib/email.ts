@@ -59,7 +59,7 @@ export async function sendWelcomeEmail({
  * 生成欢迎邮件 HTML
  */
 function getWelcomeEmailHTML(userName: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quadrants.ch'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quadrants.dev'
 
   return `
 <!DOCTYPE html>

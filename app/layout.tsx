@@ -21,8 +21,10 @@ const libreBaskerville = Libre_Baskerville({
   variable: '--font-libre-baskerville',
 })
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://quadrants.dev"
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://quadrants.ch"),
+  metadataBase: new URL(APP_URL),
   title: {
     default: "Quadrants | AI Task Manager",
     template: "%s | Quadrants"
@@ -40,7 +42,7 @@ export const metadata: Metadata = {
     "todo list AI",
     "smart task scheduling"
   ],
-  authors: [{ name: "Quadrants Team", url: "https://quadrants.ch" }],
+  authors: [{ name: "Quadrants Team", url: APP_URL }],
   creator: "Quadrants",
   publisher: "Quadrants",
   alternates: {
@@ -58,7 +60,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://quadrants.ch",
+    url: APP_URL,
     title: "Quadrants: AI-Powered Task Management",
     description: "The simplest way to manage tasks with AI. Organize your life using the Eisenhower Matrix automatically.",
     siteName: "Quadrants",
@@ -104,11 +106,18 @@ export default function RootLayout({
     // @ts-expect-error - routerPush/routerReplace are optional in Next.js App Router but types require them
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      {...(process.env.NODE_ENV === 'production' && {
-        proxyUrl: "https://clerk.quadrants.ch",
-        domain: "clerk.quadrants.ch",
-        isSatellite: false,
-      })}
+      // Clerk domain/proxy are env-driven so the app isn't hardwired to one host.
+      // Leave the env vars unset to use standard Clerk (works on any allowed origin,
+      // e.g. quadrants.dev). Only set them if you run a Clerk proxy / custom domain.
+      {...(process.env.NEXT_PUBLIC_CLERK_PROXY_URL
+        ? { proxyUrl: process.env.NEXT_PUBLIC_CLERK_PROXY_URL }
+        : {})}
+      {...(process.env.NEXT_PUBLIC_CLERK_DOMAIN
+        ? {
+            domain: process.env.NEXT_PUBLIC_CLERK_DOMAIN,
+            isSatellite: process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE === 'true',
+          }
+        : {})}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
       afterSignInUrl="/projects"

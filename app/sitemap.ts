@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://quadrants.ch'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quadrants.dev'
 
     // List of public routes
     const routes = [

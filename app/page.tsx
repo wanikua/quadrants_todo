@@ -19,7 +19,7 @@ export default function HomePage() {
     "@type": "WebApplication",
     "name": "Quadrants",
     "description": "AI-powered task management using the Eisenhower Matrix. Minimal effort, maximum productivity.",
-    "url": "https://quadrants.ch",
+    "url": "https://quadrants.dev",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web, macOS, Windows",
     "offers": [
@@ -34,8 +34,8 @@ export default function HomePage() {
       "Desktop app (macOS/Windows)",
       "Chatbot integration"
     ],
-    "logo": "https://quadrants.ch/logo.png",
-    "creator": { "@type": "Organization", "name": "Quadrants", "url": "https://quadrants.ch" }
+    "logo": "https://quadrants.dev/logo.png",
+    "creator": { "@type": "Organization", "name": "Quadrants", "url": "https://quadrants.dev" }
   }
 
   return (
