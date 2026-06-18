@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Libre_Baskerville } from "next/font/google"
+import { Inter, Inter_Tight, JetBrains_Mono, Libre_Baskerville } from "next/font/google"
 import { Toaster } from "sonner"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
@@ -19,6 +19,21 @@ const libreBaskerville = Libre_Baskerville({
   weight: ["400", "700"],
   display: 'swap',
   variable: '--font-libre-baskerville',
+})
+
+// Swiss/editorial brand — tight grotesk display + mono utility face
+const interTight = Inter_Tight({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: 'swap',
+  variable: '--font-display',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: 'swap',
+  variable: '--font-mono',
 })
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://quadrants.dev"
@@ -162,7 +177,7 @@ export default function RootLayout({
       }}
     >
       <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.variable} ${libreBaskerville.variable} antialiased`} suppressHydrationWarning>
+        <body className={`${inter.variable} ${interTight.variable} ${jetbrainsMono.variable} ${libreBaskerville.variable} antialiased`} suppressHydrationWarning>
           {children}
           <Toaster />
           <Analytics />

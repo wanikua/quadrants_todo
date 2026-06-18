@@ -40,6 +40,17 @@
     --highlight-blue: #60A5FA;
     --highlight-pink: #F472B6;
     --highlight-green: #4ADE80;
+
+    /* ── Swiss / editorial brand kit ── */
+    --paper: #ffffff;          /* card surface */
+    --field: #ececed;          /* gray frame field behind the card */
+    --ink: #0a0a0a;            /* near-black text */
+    --ink-soft: #525257;       /* secondary text */
+    --hair: #e4e4e7;           /* hairline rules */
+    --acc-yellow: #ffe600;
+    --acc-magenta: #ff2d78;
+    --acc-green: #16d07a;
+    --acc-blue: #0a33ff;
   }
 }
 
@@ -173,4 +184,52 @@
     }
   }
   .animate-scale-in { animation: scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+}
+
+/* ── Swiss / editorial brand utilities ── */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), "Helvetica Neue", Helvetica, Arial, sans-serif;
+    letter-spacing: -0.03em;
+  }
+  .font-mono {
+    font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  /* tiny uppercase technical label */
+  .eyebrow {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+
+  /* the soft gray field the white card floats on */
+  .brand-field { background-color: var(--field); }
+  .brand-paper { background-color: var(--paper); }
+
+  /* black pill button — the one CTA shape */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    background: var(--ink);
+    color: #fff;
+    font-weight: 500;
+    padding: 0.7rem 1.4rem;
+    transition: transform 0.18s ease, background 0.18s ease;
+  }
+  .pill:hover { transform: translateY(-1px); background: #1c1c1f; }
+  .pill-ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--hair);
+  }
+  .pill-ghost:hover { background: #f4f4f5; transform: translateY(-1px); }
+
+  .hairline { border-color: var(--hair); }
 }
