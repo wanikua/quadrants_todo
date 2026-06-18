@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { BulkTaskInput } from "@/components/BulkTaskInput"
+import { useTranslation } from "@/lib/i18n"
 import { toast } from "sonner"
 
 interface QuadrantTodoClientProps {
@@ -68,6 +69,7 @@ export default function QuadrantTodoClient({
   onEditProject,
 }: QuadrantTodoClientProps) {
   const router = useRouter()
+  const { t } = useTranslation()
 
   // Local state for optimistic updates
   const [tasks, setTasks] = useState<TaskWithAssignees[]>(initialTasks)
@@ -1028,12 +1030,12 @@ export default function QuadrantTodoClient({
     // Prevent organizing if already in organize mode or in progress
     if (isOrganizing || isOrganizingInProgress) {
       logger.component('QuadrantTodo', 'Already in organize mode, ignoring')
-      toast.warning("Please accept or revert current changes first")
+      toast.warning(t("reprioritizeBusy"))
       return
     }
 
     if (tasks.length === 0) {
-      toast.warning("No tasks to organize")
+      toast.warning(t("reprioritizeEmpty"))
       return
     }
 
@@ -1056,9 +1058,9 @@ export default function QuadrantTodoClient({
 
       if (!lockResult.success) {
         if (lockResult.locked) {
-          toast.warning(`${lockResult.lockedBy} is currently organizing tasks. Please wait.`)
+          toast.warning(`${lockResult.lockedBy} ${t("reprioritizeLockedSuffix")}`)
         } else {
-          toast.error('Failed to start organize operation')
+          toast.error(t("reprioritizeStart"))
         }
         setIsOrganizingInProgress(false) // Reset on lock failure
         setIsOrganizingLoading(false) // Hide loading overlay
@@ -1066,7 +1068,7 @@ export default function QuadrantTodoClient({
       }
     } catch (error) {
       debug.error('Lock acquire error:', error)
-      toast.error('Failed to start organize operation')
+      toast.error(t("reprioritizeStart"))
       setIsOrganizingInProgress(false) // Reset on error
       setIsOrganizingLoading(false) // Hide loading overlay
       return
@@ -1132,10 +1134,10 @@ export default function QuadrantTodoClient({
       setIsOrganizing(true)
       setIsOrganizingLoading(false) // Hide loading overlay after success
       // Keep isOrganizingInProgress true until user accepts/reverts
-      toast.success("Tasks organized! Review changes and Accept or Revert.")
+      toast.success(t("reprioritizeDone"))
     } catch (error) {
       debug.error('Organization error:', error)
-      toast.error('Failed to organize tasks. Please try again.')
+      toast.error(t("reprioritizeFail"))
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
       setIsOrganizingInProgress(false) // Reset on error
@@ -1169,7 +1171,7 @@ export default function QuadrantTodoClient({
       setOriginalTaskPositions(new Map())
       setIsOrganizing(false)
       setIsOrganizingInProgress(false) // Reset on completion
-      toast.info("No changes to save")
+      toast.info(t("reprioritizeNoChanges"))
 
       // Release lock
       try {
@@ -1317,7 +1319,7 @@ export default function QuadrantTodoClient({
                           if (!original) return false
                           return original.urgency !== task.urgency || original.importance !== task.importance
                         }).length
-                        return movedCount > 0 ? `${movedCount} tasks moved` : 'Preview mode'
+                        return movedCount > 0 ? `${movedCount} ${t("reprioritizeMovedSuffix")}` : t("reprioritizePreview")
                       })()}
                     </span>
                   </div>
@@ -1326,13 +1328,13 @@ export default function QuadrantTodoClient({
                       onClick={handleRevertOrganize}
                       className="px-3 py-1 text-xs font-bold text-black bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
                     >
-                      ✕ Revert
+                      ✕ {t("reprioritizeRevert")}
                     </button>
                     <button
                       onClick={handleAcceptOrganize}
                       className="px-3 py-1 text-xs font-bold text-white bg-green-500 border-2 border-black rounded-lg hover:bg-green-600 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
                     >
-                      ✓ Accept
+                      ✓ {t("reprioritizeAccept")}
                     </button>
                   </div>
                 </div>
@@ -2011,7 +2013,7 @@ export default function QuadrantTodoClient({
             onClick={() => { handleOrganizeTasks(); resetToolbarTimeout(); }}
             disabled={isOrganizing || isOrganizingInProgress || tasks.length === 0}
             className="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-            title="AI Organize"
+            title={t("reprioritizeTitle")}
           >
             <Wand2 className="w-4 h-4 text-white" />
           </button>

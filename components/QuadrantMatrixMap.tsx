@@ -1,9 +1,6 @@
 "use client"
-// Task visualization with Eisenhower Matrix
-import React, { useState, useCallback, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+// Eisenhower Matrix — Cute Bold quadrant card grid
+import React, { useState, useCallback } from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +14,10 @@ import {
 import TaskSegment from "@/components/TaskSegment"
 import type { TaskWithAssignees, Player, Line } from "@/app/types"
 import { updateTask, deleteTask, completeTask } from "@/app/db/actions"
-import { useRouter } from "next/navigation"
-import { Trash2, Maximize2, CheckCircle2, Check, X, Sparkles, Wand2 } from "lucide-react"
+import { Trash2, CheckCircle2, Flame, CalendarClock, Users, Ban, Plus, Inbox, X } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "@/lib/i18n"
+import type { TranslationKey } from "@/lib/i18n/locales"
 
 interface QuadrantMatrixMapProps {
   tasks: TaskWithAssignees[]
@@ -52,21 +49,86 @@ interface QuadrantMatrixMapProps {
   onFocusClick?: () => void
 }
 
+// ── Quadrant definitions (ported from the Swift CuteBoldStyle reference) ──
+type QuadKey = "urgentImportant" | "notUrgentImportant" | "urgentNotImportant" | "notUrgentNotImportant"
+
+interface QuadConfig {
+  key: QuadKey
+  labelKey: TranslationKey
+  subKey: TranslationKey
+  bg: string
+  accent: string
+  text: string
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>
+  values: { urgency: number; importance: number }
+}
+
+const QUADRANTS: QuadConfig[] = [
+  {
+    key: "urgentImportant",
+    labelKey: "doFirst",
+    subKey: "urgentImportant",
+    bg: "#FEF2F2",
+    accent: "#EF4444",
+    text: "#991B1B",
+    icon: Flame,
+    values: { urgency: 75, importance: 75 },
+  },
+  {
+    key: "notUrgentImportant",
+    labelKey: "schedule",
+    subKey: "notUrgentImportant",
+    bg: "#EFF6FF",
+    accent: "#3B82F6",
+    text: "#1E3A8A",
+    icon: CalendarClock,
+    values: { urgency: 25, importance: 75 },
+  },
+  {
+    key: "urgentNotImportant",
+    labelKey: "delegate",
+    subKey: "urgentNotImportant",
+    bg: "#FFFBEB",
+    accent: "#F59E0B",
+    text: "#92400E",
+    icon: Users,
+    values: { urgency: 75, importance: 25 },
+  },
+  {
+    key: "notUrgentNotImportant",
+    labelKey: "eliminate",
+    subKey: "notUrgentNotImportant",
+    bg: "#F9FAFB",
+    accent: "#6B7280",
+    text: "#374151",
+    icon: Ban,
+    values: { urgency: 25, importance: 25 },
+  },
+]
+
+function quadrantOf(task: { urgency: number; importance: number }): QuadKey {
+  const isUrgent = task.urgency >= 50
+  const isImportant = task.importance >= 50
+  if (isUrgent && isImportant) return "urgentImportant"
+  if (!isUrgent && isImportant) return "notUrgentImportant"
+  if (isUrgent && !isImportant) return "urgentNotImportant"
+  return "notUrgentNotImportant"
+}
+
+function priorityScore(task: { urgency: number; importance: number }) {
+  return task.importance * 0.6 + task.urgency * 0.4
+}
+
 const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   tasks,
-  players,
-  lines,
-  projectId,
+  projectType,
   isMobile,
   onTaskDetailClick,
   onLongPress,
   userName,
-  projectType,
   highestPriorityTaskId,
   setTasks,
-  onOrganizeTasks,
   isOrganizing,
-  originalTaskPositions,
   onAcceptOrganize,
   onRevertOrganize,
   isFullscreen = false,
@@ -81,293 +143,97 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
   totalFocusTasks,
   onFocusClick,
 }: QuadrantMatrixMapProps) {
-  const router = useRouter()
   const { t } = useTranslation()
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | number | null>(null)
-  const [isLongPress, setIsLongPress] = useState(false)
   const [draggedTask, setDraggedTask] = useState<TaskWithAssignees | null>(null)
-
-  const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null)
-  const [isOverTrash, setIsOverTrash] = useState(false)
-  const [isOverComplete, setIsOverComplete] = useState(false)
+  const [dragOverQuad, setDragOverQuad] = useState<QuadKey | null>(null)
   const [taskToDelete, setTaskToDelete] = useState<TaskWithAssignees | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  const handleTaskClick = useCallback((task: TaskWithAssignees, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!draggedTask && !isLongPress) {
-      onTaskDetailClick(task)
-    }
-  }, [draggedTask, isLongPress, onTaskDetailClick])
-
-
-
+  // ── Drag a task card between quadrants ──
   const handleTaskDragStart = (task: TaskWithAssignees, e: React.DragEvent) => {
-    onDragStart?.(task.id) // Mark task as pending and pause sync
+    onDragStart?.(task.id)
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = "move"
     e.dataTransfer.setData("text/plain", task.id.toString())
   }
 
-  const handleTaskDragEnd = (e: React.DragEvent) => {
-    // Only clear dragged task state here
-    // Don't call onDragEnd yet - wait for drop to complete
-    // This prevents duplicate onDragEnd calls (dragEnd fires before drop)
+  const handleTaskDragEnd = () => {
     setDraggedTask(null)
+    setDragOverQuad(null)
   }
 
-  const handleMatrixDragOver = (e: React.DragEvent) => {
+  const handleQuadDrop = async (quad: QuadConfig, e: React.DragEvent) => {
     e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-  }
-
-  const handleMatrixDrop = async (e: React.DragEvent) => {
-    e.preventDefault()
-
+    setDragOverQuad(null)
     if (!draggedTask) return
 
-    const rect = e.currentTarget.getBoundingClientRect()
-    const taskSize = isMobile ? 40 : 60
-    const offset = taskSize / 2
-    const marginX = offset + (isMobile ? 25 : 40)
-    const marginY = offset + (isMobile ? 35 : 50)
-
-    const effectiveWidth = rect.width - (marginX * 2)
-    const effectiveHeight = rect.height - (marginY * 2)
-
-    const x = ((e.clientX - rect.left - marginX) / effectiveWidth) * 100
-    const y = ((e.clientY - rect.top - marginY) / effectiveHeight) * 100
-
-    // Allow full range 0-100 for urgency and importance
-    const urgency = Math.max(0, Math.min(100, Math.round(x)))
-    const importance = Math.max(0, Math.min(100, Math.round(100 - y)))
-
-    // Save old position for rollback
-    const oldUrgency = draggedTask.urgency
-    const oldImportance = draggedTask.importance
-    const taskId = draggedTask.id
-
-    // Clear dragged task state immediately
+    const task = draggedTask
     setDraggedTask(null)
 
-    // Optimistic update - update UI immediately
-    if (setTasks) {
-      setTasks(prev => prev.map(t =>
-        t.id === taskId
-          ? { ...t, urgency, importance }
-          : t
-      ))
+    // No-op if dropped into the quadrant it already belongs to
+    if (quadrantOf(task) === quad.key) {
+      onDragEnd?.(task.id)
+      return
     }
 
-    // Save to database (with pending protection)
-    const result = await updateTask(taskId, urgency, importance)
+    const { urgency, importance } = quad.values
+    const oldUrgency = task.urgency
+    const oldImportance = task.importance
 
-    // Call onDragEnd after DB completes (triggers pending cleanup)
-    onDragEnd?.(taskId)
+    if (setTasks) {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, urgency, importance } : t)))
+    }
+
+    const result = await updateTask(task.id, urgency, importance)
+    onDragEnd?.(task.id)
 
     if (!result.success) {
-      // Rollback on failure
       if (setTasks) {
-        setTasks(prev => prev.map(t =>
-          t.id === taskId
-            ? { ...t, urgency: oldUrgency, importance: oldImportance }
-            : t
-        ))
+        setTasks((prev) =>
+          prev.map((t) => (t.id === task.id ? { ...t, urgency: oldUrgency, importance: oldImportance } : t))
+        )
       }
       toast.error(result.error || "Failed to move task")
     }
-    // Don't call router.refresh() - rely on optimistic update and sync polling
   }
 
-  const handleMatrixMouseDown = (e: React.MouseEvent) => {
-
-    const target = e.target as HTMLElement
-    // Only ignore clicks on tasks
-    if (target.closest('[data-task-id]')) {
-      return
-    }
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const taskSize = isMobile ? 40 : 60
-    const offset = taskSize / 2
-    const marginX = offset + (isMobile ? 25 : 40)
-    const marginY = offset + (isMobile ? 35 : 50)
-
-    const effectiveWidth = rect.width - (marginX * 2)
-    const effectiveHeight = rect.height - (marginY * 2)
-
-    const x = ((e.clientX - rect.left - marginX) / effectiveWidth) * 100
-    const y = ((e.clientY - rect.top - marginY) / effectiveHeight) * 100
-
-    // Allow full range 0-100 for urgency and importance
-    const urgency = Math.max(0, Math.min(100, x))
-    const importance = Math.max(0, Math.min(100, 100 - y))
-
-    setMouseDownPos({ x: e.clientX, y: e.clientY })
-    setIsLongPress(false)
-
-    const timer = setTimeout(() => {
-      setIsLongPress(true)
-      onLongPress(Math.round(urgency), Math.round(importance))
-    }, 800)
-
-    setLongPressTimer(timer)
-  }
-
-  const handleMatrixMouseUp = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-    setMouseDownPos(null)
-    setTimeout(() => setIsLongPress(false), 100)
-  }
-
-  const handleMatrixMouseMove = (e: React.MouseEvent) => {
-    if (longPressTimer && mouseDownPos) {
-      const deltaX = Math.abs(e.clientX - mouseDownPos.x)
-      const deltaY = Math.abs(e.clientY - mouseDownPos.y)
-
-      if (deltaX > 15 || deltaY > 15) {
-        clearTimeout(longPressTimer)
-        setLongPressTimer(null)
-        setMouseDownPos(null)
+  // ── Complete a task ──
+  const handleComplete = useCallback(
+    async (task: TaskWithAssignees, e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (setTasks) {
+        setTasks((prev) => prev.filter((t) => t.id !== task.id))
       }
-    }
-  }
-
-  const handleMatrixMouseLeave = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-    setMouseDownPos(null)
-  }
-
-  // Touch event handlers for mobile support
-  const handleMatrixTouchStart = (e: React.TouchEvent) => {
-
-    const target = e.target as HTMLElement
-    // Only ignore touches on tasks
-    if (target.closest('[data-task-id]')) {
-      return
-    }
-
-    // CRITICAL: Prevent default touch behavior to avoid interference
-    e.preventDefault()
-
-    const touch = e.touches[0]
-    if (!touch) return
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const taskSize = isMobile ? 40 : 60
-    const offset = taskSize / 2
-    const marginX = offset + (isMobile ? 25 : 40)
-    const marginY = offset + (isMobile ? 35 : 50)
-
-    const effectiveWidth = rect.width - (marginX * 2)
-    const effectiveHeight = rect.height - (marginY * 2)
-
-    const x = ((touch.clientX - rect.left - marginX) / effectiveWidth) * 100
-    const y = ((touch.clientY - rect.top - marginY) / effectiveHeight) * 100
-
-    // Allow full range 0-100 for urgency and importance
-    const urgency = Math.max(0, Math.min(100, x))
-    const importance = Math.max(0, Math.min(100, 100 - y))
-
-    setMouseDownPos({ x: touch.clientX, y: touch.clientY })
-    setIsLongPress(false)
-
-    const timer = setTimeout(() => {
-      setIsLongPress(true)
-      onLongPress(Math.round(urgency), Math.round(importance))
-    }, 800)
-
-    setLongPressTimer(timer)
-  }
-
-  const handleMatrixTouchEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-    setMouseDownPos(null)
-    setTimeout(() => setIsLongPress(false), 100)
-  }
-
-  const handleMatrixTouchMove = (e: React.TouchEvent) => {
-    if (longPressTimer && mouseDownPos) {
-      // Prevent default to avoid scrolling/zooming during long press
-      e.preventDefault()
-
-      const touch = e.touches[0]
-      if (!touch) return
-
-      const deltaX = Math.abs(touch.clientX - mouseDownPos.x)
-      const deltaY = Math.abs(touch.clientY - mouseDownPos.y)
-
-      if (deltaX > 15 || deltaY > 15) {
-        clearTimeout(longPressTimer)
-        setLongPressTimer(null)
-        setMouseDownPos(null)
+      const result = await completeTask(task.id)
+      if (!result.success) {
+        toast.error(result.error || "Failed to complete task")
+        if (setTasks) {
+          setTasks((prev) => [...prev, task])
+        }
+      } else {
+        toast.success(t("taskCompleted"))
       }
-    }
-  }
+    },
+    [setTasks, t]
+  )
 
-  const handleMatrixTouchCancel = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-    setMouseDownPos(null)
-  }
-
-  // Trash zone handlers
-  const handleTrashDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
+  // ── Delete a task (with confirmation) ──
+  const requestDelete = useCallback((task: TaskWithAssignees, e: React.MouseEvent) => {
     e.stopPropagation()
-    setIsOverTrash(true)
-  }
-
-  const handleTrashDragLeave = () => {
-    setIsOverTrash(false)
-  }
-
-  const handleTrashDrop = async (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsOverTrash(false)
-
-    if (!draggedTask) return
-
-    const taskId = draggedTask.id
-
-    // Show confirmation dialog instead of deleting directly
-    setTaskToDelete(draggedTask)
+    setTaskToDelete(task)
     setShowDeleteConfirm(true)
-    setDraggedTask(null)
-
-    // Call onDragEnd immediately since we're not doing DB operation yet
-    // The actual delete will happen after user confirms
-    onDragEnd?.(taskId)
-  }
+  }, [])
 
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return
-
-    // Optimistic update - remove task immediately
+    const target = taskToDelete
     if (setTasks) {
-      setTasks(prev => prev.filter(t => t.id !== taskToDelete.id))
+      setTasks((prev) => prev.filter((t) => t.id !== target.id))
     }
-
-    const result = await deleteTask(taskToDelete.id)
+    const result = await deleteTask(target.id)
     if (!result.success) {
-      // Rollback on failure - will be restored by next sync
       toast.error(result.error || "Failed to delete task")
     }
-    // Rely on sync polling to update after delete
-
     setTaskToDelete(null)
     setShowDeleteConfirm(false)
   }
@@ -377,414 +243,319 @@ const QuadrantMatrixMap = React.memo(function QuadrantMatrixMap({
     setShowDeleteConfirm(false)
   }
 
-  // Complete zone handlers
-  const handleCompleteDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsOverComplete(true)
-  }
-
-  const handleCompleteDragLeave = () => {
-    setIsOverComplete(false)
-  }
-
-  const handleCompleteDrop = async (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsOverComplete(false)
-
-    if (!draggedTask) return
-
-    const taskId = draggedTask.id
-    const completedTask = draggedTask
-
-    // Clear dragged task state immediately
-    setDraggedTask(null)
-
-    // Optimistic update - remove completed task immediately
-    if (setTasks) {
-      setTasks(prev => prev.filter(t => t.id !== taskId))
-    }
-
-    // Execute complete operation
-    const result = await completeTask(taskId)
-
-    // Call onDragEnd after DB completes
-    onDragEnd?.(taskId)
-
-    if (!result.success) {
-      toast.error(result.error || "Failed to complete task")
-      // Restore task on failure
-      if (setTasks) {
-        setTasks(prev => [...prev, completedTask])
-      }
-    } else {
-      toast.success(t('taskCompleted'))
-    }
-    // Rely on sync polling to update after complete
-  }
-
-  // Fullscreen handlers - Use CSS instead of Fullscreen API to avoid Dialog hiding
-  const toggleFullscreen = useCallback(() => {
-    onFullscreenChange?.(!isFullscreen)
-  }, [isFullscreen, onFullscreenChange])
-
-  React.useEffect(() => {
-    return () => {
-      if (longPressTimer) {
-        clearTimeout(longPressTimer)
-      }
-    }
-  }, [longPressTimer])
-
-  // Listen for ESC key to exit fullscreen
+  // ESC exits fullscreen
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        onFullscreenChange?.(false)
-      }
+      if (e.key === "Escape" && isFullscreen) onFullscreenChange?.(false)
     }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
   }, [isFullscreen, onFullscreenChange])
 
+  const tasksByQuad = (key: QuadKey) =>
+    tasks.filter((t) => quadrantOf(t) === key).sort((a, b) => priorityScore(b) - priorityScore(a))
+
   return (
-    <Card
-      ref={cardRef}
-      className={`transition-all duration-300 flex-1 flex flex-col ${isFullscreen
-        ? "fixed inset-0 w-screen h-screen rounded-none p-0 bg-background z-40"
-        : "m-2 p-2 bg-yellow-300"
-        }`}
+    <div
+      className={`flex flex-col bg-[#F9FAFB] ${
+        isFullscreen ? "fixed inset-0 z-40 p-4 sm:p-6" : "flex-1 m-2 rounded-2xl border-3 border-black shadow-bold p-3 sm:p-4"
+      }`}
     >
-
-
-
-      {/* Mobile hint - only show when not in organize mode */}
-      {!isFullscreen && isMobile && !isOrganizing && (
-        <CardHeader className="pb-2 px-2 pt-0">
-          <div className="text-center text-sm text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
-            {t('longPressHint')}
-          </div>
-        </CardHeader>
-      )}
-      <CardContent className={`flex flex-col ${isFullscreen ? "h-screen p-0 relative" : "h-full p-0"}`}>
-        <div
-          className={`relative w-full bg-white overflow-hidden cursor-crosshair flex-1 ${isFullscreen ? "border-0 rounded-none" : "border-2 border-border rounded-xl shadow-inner"
-            }`}
-          style={{
-            minHeight: isFullscreen ? "100vh" : "400px",
-            // Remove touchAction: "none" to allow proper event handling
-            // We handle preventDefault() in event handlers instead
-          }}
-          onMouseDown={handleMatrixMouseDown}
-          onMouseUp={handleMatrixMouseUp}
-          onMouseMove={handleMatrixMouseMove}
-          onMouseLeave={handleMatrixMouseLeave}
-          onTouchStart={handleMatrixTouchStart}
-          onTouchEnd={handleMatrixTouchEnd}
-          onTouchMove={handleMatrixTouchMove}
-          onTouchCancel={handleMatrixTouchCancel}
-          onDragOver={handleMatrixDragOver}
-          onDrop={handleMatrixDrop}
-        >
-
-          {/* Quadrant Background Colors - matching Swift version */}
-          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 pointer-events-none" style={{ zIndex: 0 }}>
-            {/* Top-left: Not Urgent & Important (Schedule) - Blue */}
-            <div className="bg-[#EFF6FF]/50" />
-            {/* Top-right: Urgent & Important (Do First) - Red */}
-            <div className="bg-[#FEF2F2]/50" />
-            {/* Bottom-left: Not Urgent & Not Important (Eliminate) - Gray */}
-            <div className="bg-[#F3F4F6]/50" />
-            {/* Bottom-right: Urgent & Not Important (Delegate) - Orange */}
-            <div className="bg-[#FFF7ED]/50" />
-          </div>
-
-          {/* Grid Lines and Axes */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ zIndex: 1 }}>
-            {/* Subtle grid lines at quadrant boundaries */}
-            {[250, 750].map((x) => (
-              <line
-                key={`v-${x}`}
-                x1={x}
-                y1="0"
-                x2={x}
-                y2="1000"
-                stroke="currentColor"
-                className="text-muted/30"
-                strokeWidth="2"
-                strokeDasharray="20,20"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-            {[250, 750].map((y) => (
-              <line
-                key={`h-${y}`}
-                x1="0"
-                y1={y}
-                x2="1000"
-                y2={y}
-                stroke="currentColor"
-                className="text-muted/30"
-                strokeWidth="2"
-                vectorEffect="non-scaling-stroke"
-                strokeDasharray="20,20"
-              />
-            ))}
-
-            {/* Main axes - perfectly centered */}
-            {/* Horizontal axis (URGENCY) - left to right */}
-            <line
-              x1="0"
-              y1="500"
-              x2="985"
-              y2="500"
-              stroke="currentColor"
-              className="text-foreground"
-              strokeWidth="3"
-              vectorEffect="non-scaling-stroke"
-            />
-            {/* Right arrow for horizontal axis - clean triangle */}
-            <polygon
-              points="985,490 1000,500 985,510"
-              fill="currentColor"
-              className="text-foreground"
-            />
-
-            {/* Vertical axis (IMPORTANCE) - bottom to top */}
-            <line
-              x1="500"
-              y1="1000"
-              x2="500"
-              y2="15"
-              stroke="currentColor"
-              className="text-foreground"
-              strokeWidth="3"
-              vectorEffect="non-scaling-stroke"
-            />
-            {/* Up arrow for vertical axis - clean triangle */}
-            <polygon
-              points="490,15 500,0 510,15"
-              fill="currentColor"
-              className="text-foreground"
-            />
-
-            {/* Origin point indicator */}
-            <circle
-              cx="500"
-              cy="500"
-              r="6"
-              fill="currentColor"
-              className="text-foreground"
-            />
-          </svg>
-
-
-
-          {/* Tasks - positioned within safe area to prevent edge clipping */}
-          <div className="absolute inset-0" style={{ zIndex: 15 }}>
-            {/* Focus Mode Overlay */}
-            {isFocusMode && (
-              <div
-                className="absolute inset-0 bg-black/50 transition-opacity duration-300 cursor-pointer"
-                style={{ zIndex: 40 }}
-                onClick={onFocusClick}
-              />
-            )}
-
-            {tasks.map((task) => {
-              const x = task.urgency
-              const y = 100 - task.importance
-              const taskSize = projectType === 'personal' 
-                ? (isMobile ? 16 : 20) 
-                : (isMobile ? 40 : 60)
-              const offset = taskSize / 2
-              // Add larger margin to prevent clipping and ensure draggability in corners
-              const marginX = offset + (isMobile ? 25 : 40)
-              const marginY = offset + (isMobile ? 35 : 50) // Extra margin at bottom for action zones
-
-              const isFocused = isFocusMode && task.id === focusedTaskId
-              const isDimmed = isFocusMode && !isFocused
-
-              return (
-                <div
-                  key={task.id}
-                  data-task-id={task.id}
-                  className={`absolute group transition-all duration-500 ${draggedTask?.id === task.id
-                    ? "opacity-50 cursor-grabbing"
-                    : isFocusMode
-                      ? isFocused
-                        ? "cursor-default scale-110"
-                        : "pointer-events-none"
-                      : "hover:ring-2 hover:ring-primary hover:scale-105 cursor-grab"
-                    }`}
-                  style={{
-                    left: `calc(${marginX}px + (100% - ${marginX * 2}px) * ${x / 100} - ${offset}px)`,
-                    top: `calc(${marginY}px + (100% - ${marginY * 2}px) * ${y / 100} - ${offset}px)`,
-                    transform: "translate(0, 0)",
-                    zIndex: isFocused ? 50 : undefined
-                  }}
-                  draggable={!isMobile && !isOrganizing && !isFocusMode}
-                  onDragStart={(e) => handleTaskDragStart(task, e)}
-                  onDragEnd={handleTaskDragEnd}
-                  onClick={(e) => {
-                    if (isFocusMode) {
-                      e.stopPropagation() // Prevent triggering map click (if any)
-                      if (onFocusClick) onFocusClick()
-                    } else {
-                      handleTaskClick(task, e)
-                    }
-                  }}
-                >
-                  <div className="relative">
-                    <TaskSegment
-                      task={task}
-                      size={taskSize}
-                      userName={userName}
-                      projectType={projectType}
-                      isHighestPriority={task.id === highestPriorityTaskId}
-                      isFocused={isFocused}
-                      isDimmed={isDimmed}
-                    />
-
-                    {/* Task Description Tooltip - switches side based on position */}
-                    {!isMobile && (
-                      <div className={`absolute top-0 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border shadow-lg ${task.urgency > 70 ? "right-full mr-2" : "left-full ml-2"
-                        }`}>
-                        <div className="font-medium">{task.description}</div>
-                        {task.assignees && task.assignees.length > 0 && (
-                          <div className="text-muted-foreground">{task.assignees.map((p) => p.name).join(", ")}</div>
-                        )}
-                        <div className="text-muted-foreground text-xs mt-1">
-                          Click for details • Drag to move
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Task Description Label - adjusts position for edges */}
-                  <div className={`absolute top-full mt-1 bg-card border border-border rounded px-2 py-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity ${task.urgency > 70
-                    ? "right-0"
-                    : task.urgency < 30
-                      ? "left-0"
-                      : "left-1/2 transform -translate-x-1/2"
-                    }`}>
-                    <div className={`text-xs font-medium text-center truncate ${isMobile ? "max-w-16" : "max-w-24"}`}>
-                      {task.description}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-
-            {/* Focus Mode Floating Card */}
-            {isFocusMode && focusedTaskDescription && (
-              <div
-                className="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-none"
-                style={{ zIndex: 60 }}
-              >
-                <div className="bg-white/95 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border border-gray-200">
-                  <div className="text-sm text-gray-500 mb-1">
-                    Priority {(focusIndex || 0) + 1} of {totalFocusTasks || 0}
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {focusedTaskDescription}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {(focusIndex || 0) < (totalFocusTasks || 0) - 1 ? "Click to continue" : "Click to finish"}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action Zones - Only visible when dragging a task */}
-          {draggedTask && (
-            <>
-              {/* Complete Zone - Left bottom corner */}
-              <div
-                className={`absolute bottom-4 left-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${isOverComplete
-                  ? "bg-green-500 border-green-600 scale-110 shadow-green-500/50"
-                  : "bg-green-50/90 border-green-300 hover:bg-green-100/90 hover:scale-105"
-                  }`}
-                style={{ zIndex: 20, pointerEvents: "auto" }}
-                onDragOver={handleCompleteDragOver}
-                onDragLeave={handleCompleteDragLeave}
-                onDrop={handleCompleteDrop}
-              >
-                <CheckCircle2 className={`w-6 h-6 sm:w-8 sm:h-8 transition-all ${isOverComplete ? "text-white animate-bounce" : "text-green-500"}`} />
-                <span className={`text-xs font-bold ${isOverComplete ? "text-white" : "text-green-500"}`}>
-                  {t('done')}
-                </span>
-              </div>
-
-              {/* Trash Zone - Right bottom corner */}
-              <div
-                className={`absolute bottom-4 right-4 w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-300 shadow-lg backdrop-blur-sm ${isOverTrash
-                  ? "bg-red-500 border-red-600 scale-110 shadow-red-500/50"
-                  : "bg-red-50/90 border-red-300 hover:bg-red-100/90 hover:scale-105"
-                  }`}
-                style={{ zIndex: 20, pointerEvents: "auto" }}
-                onDragOver={handleTrashDragOver}
-                onDragLeave={handleTrashDragLeave}
-                onDrop={handleTrashDrop}
-              >
-                <Trash2 className={`w-6 h-6 sm:w-8 sm:h-8 transition-all ${isOverTrash ? "text-white animate-bounce" : "text-red-500"}`} />
-                <span className={`text-xs font-bold ${isOverTrash ? "text-white" : "text-red-500"}`}>
-                  {t('delete')}
-                </span>
-              </div>
-            </>
-          )}
-
-          {/* Axis Labels - positioned correctly */}
-          {/* Bottom center - IMPORTANCE label for horizontal axis */}
-          <div
-            className="absolute bottom-3 left-1/2 transform -translate-x-1/2 pointer-events-none"
-            style={{ zIndex: 4 }}
-          >
-            <div className="bg-background/95 backdrop-blur-sm px-4 py-1.5 rounded-full border border-border shadow-sm">
-              <span className="text-xs sm:text-sm font-semibold text-foreground tracking-wide">{t('importance')}</span>
-            </div>
-          </div>
-
-          {/* Left center - URGENCY label for vertical axis (horizontal text) */}
-          <div
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-            style={{ zIndex: 4 }}
-          >
-            <div className="bg-background/95 backdrop-blur-sm px-4 py-1.5 rounded-full border border-border shadow-sm">
-              <span className="text-xs sm:text-sm font-semibold text-foreground tracking-wide whitespace-nowrap">{t('urgency')}</span>
-            </div>
+      {/* Re-prioritize preview banner */}
+      {isOrganizing && (onAcceptOrganize || onRevertOrganize) && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border-3 border-black bg-purple-100 px-4 py-2 shadow-bold-sm">
+          <span className="text-sm font-bold text-purple-900">{t("reprioritizeDone")}</span>
+          <div className="flex gap-2">
+            <button
+              onClick={onRevertOrganize}
+              className="rounded-lg border-2 border-black bg-white px-3 py-1 text-sm font-bold text-black hover-lift-shadow-sm"
+            >
+              {t("reprioritizeRevert")}
+            </button>
+            <button
+              onClick={onAcceptOrganize}
+              className="rounded-lg border-2 border-black bg-black px-3 py-1 text-sm font-bold text-white hover-lift-shadow-sm"
+            >
+              {t("reprioritizeAccept")}
+            </button>
           </div>
         </div>
-      </CardContent>
+      )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Fullscreen close */}
+      {isFullscreen && (
+        <button
+          onClick={() => onFullscreenChange?.(false)}
+          className="absolute right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border-3 border-black bg-white shadow-bold-sm hover-lift-shadow-sm"
+          aria-label={t("close")}
+        >
+          <X className="h-5 w-5" strokeWidth={2.5} />
+        </button>
+      )}
+
+      {/* Axis: IMPORTANT (top) */}
+      <div className="flex items-center justify-center gap-1.5 pb-2 text-[11px] font-black tracking-widest text-gray-400">
+        <span>↑</span>
+        <span>{t("axisImportant")}</span>
+      </div>
+
+      <div className="flex flex-1 items-stretch gap-1.5">
+        {/* Axis: URGENT (left) */}
+        <div className="flex items-center">
+          <span className="-rotate-90 whitespace-nowrap text-[11px] font-black tracking-widest text-gray-400">{t("axisUrgent")}</span>
+        </div>
+
+        {/* 2×2 grid */}
+        <div className="grid flex-1 grid-cols-1 grid-rows-4 gap-2.5 sm:grid-cols-2 sm:grid-rows-2">
+          {QUADRANTS.map((quad) => {
+            const quadTasks = tasksByQuad(quad.key)
+            const isOver = dragOverQuad === quad.key
+            return (
+              <div
+                key={quad.key}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = "move"
+                  if (draggedTask) setDragOverQuad(quad.key)
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverQuad((prev) => (prev === quad.key ? null : prev))
+                }}
+                onDrop={(e) => handleQuadDrop(quad, e)}
+                className={`flex min-h-[140px] flex-col overflow-hidden rounded-2xl border-3 shadow-bold transition-all duration-150 ${
+                  isOver ? "scale-[1.02]" : ""
+                }`}
+                style={{
+                  backgroundColor: quad.bg,
+                  borderColor: isOver ? quad.accent : "#000",
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2 px-3 pt-3">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-2.5 py-1 text-xs font-bold"
+                    style={{
+                      color: quad.text,
+                      backgroundColor: `${quad.accent}26`,
+                      borderColor: `${quad.accent}66`,
+                    }}
+                  >
+                    <quad.icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    {t(quad.labelKey)}
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    {quadTasks.length > 0 && (
+                      <span
+                        className="flex h-5 min-w-[20px] items-center justify-center rounded-full border-[1.5px] border-black px-1 text-[10px] font-black text-white"
+                        style={{ backgroundColor: quad.accent }}
+                      >
+                        {quadTasks.length}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => onLongPress(quad.values.urgency, quad.values.importance)}
+                      className="flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] border-black bg-white text-black transition-transform hover:scale-110"
+                      aria-label={`${t("addTask")} · ${t(quad.labelKey)}`}
+                      title={`${t("addTask")} · ${t(quad.labelKey)}`}
+                    >
+                      <Plus className="h-3 w-3" strokeWidth={3} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Subtitle */}
+                <div className="px-3 pb-2 pt-0.5 text-[10px] font-medium" style={{ color: `${quad.text}73` }}>
+                  {t(quad.subKey)}
+                </div>
+
+                {/* Divider */}
+                <div className="h-[1.5px]" style={{ backgroundColor: `${quad.accent}33` }} />
+
+                {/* Task list */}
+                <div className="flex-1 overflow-y-auto px-2 py-2">
+                  {quadTasks.length === 0 ? (
+                    <div className="flex h-full min-h-[80px] flex-col items-center justify-center gap-1 text-center">
+                      <Inbox className="h-5 w-5" style={{ color: `${quad.accent}40` }} strokeWidth={2} />
+                      <span className="text-xs font-medium text-gray-400">{t("noTasks")}</span>
+                      <span className="text-[10px] text-gray-300">{t("dragHere")}</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {quadTasks.map((task) => {
+                        const isFocused = isFocusMode && task.id === focusedTaskId
+                        const isDimmed = isFocusMode && !isFocused
+                        return (
+                          <TaskRow
+                            key={task.id}
+                            task={task}
+                            accent={quad.accent}
+                            userName={userName}
+                            projectType={projectType}
+                            isMobile={isMobile}
+                            isHighestPriority={task.id === highestPriorityTaskId}
+                            isFocused={!!isFocused}
+                            isDimmed={!!isDimmed}
+                            isDragging={draggedTask?.id === task.id}
+                            onDragStart={(e) => handleTaskDragStart(task, e)}
+                            onDragEnd={handleTaskDragEnd}
+                            onClick={() => {
+                              if (isFocusMode) onFocusClick?.()
+                              else onTaskDetailClick(task)
+                            }}
+                            onComplete={(e) => handleComplete(task, e)}
+                            onDelete={(e) => requestDelete(task, e)}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Axis: NOT URGENT (right) */}
+        <div className="flex items-center">
+          <span className="rotate-90 whitespace-nowrap text-[11px] font-black tracking-widest text-gray-400">
+            {t("axisNotUrgent")}
+          </span>
+        </div>
+      </div>
+
+      {/* Axis: NOT IMPORTANT (bottom) */}
+      <div className="flex items-center justify-center gap-1.5 pt-2 text-[11px] font-black tracking-widest text-gray-400">
+        <span>{t("axisNotImportant")}</span>
+        <span>↓</span>
+      </div>
+
+      {/* Focus mode floating card */}
+      {isFocusMode && focusedTaskDescription && (
+        <div
+          className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 cursor-pointer"
+          onClick={() => onFocusClick?.()}
+        >
+          <div className="rounded-2xl border-3 border-black bg-white px-6 py-4 shadow-bold-lg">
+            <div className="mb-1 text-xs font-bold text-gray-500">
+              {t("priority")} {(focusIndex || 0) + 1} / {totalFocusTasks || 0}
+            </div>
+            <h3 className="mb-1 text-xl font-black text-black">{focusedTaskDescription}</h3>
+            <p className="text-sm text-gray-600">
+              {(focusIndex || 0) < (totalFocusTasks || 0) - 1 ? t("clickToContinue") : t("clickToFinish")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('confirmDelete')}</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {taskToDelete && (
-                <>
-                  {t('confirmDeleteDescription')} <strong>&quot;{taskToDelete.description}&quot;</strong>？{t('cannotBeUndone')}
-                </>
-              )}
+              {taskToDelete && <strong>&quot;{taskToDelete.description}&quot;</strong>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
-              {t('delete')}
+              {t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </div>
+  )
+})
+
+// ── Single task row ──
+interface TaskRowProps {
+  task: TaskWithAssignees
+  accent: string
+  userName?: string
+  projectType?: "personal" | "team"
+  isMobile: boolean
+  isHighestPriority: boolean
+  isFocused: boolean
+  isDimmed: boolean
+  isDragging: boolean
+  onDragStart: (e: React.DragEvent) => void
+  onDragEnd: () => void
+  onClick: () => void
+  onComplete: (e: React.MouseEvent) => void
+  onDelete: (e: React.MouseEvent) => void
+}
+
+const TaskRow = React.memo(function TaskRow({
+  task,
+  accent,
+  userName,
+  projectType,
+  isMobile,
+  isHighestPriority,
+  isFocused,
+  isDimmed,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onClick,
+  onComplete,
+  onDelete,
+}: TaskRowProps) {
+  const { t } = useTranslation()
+  return (
+    <div
+      draggable={!isMobile}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={onClick}
+      className={`group relative flex cursor-pointer items-center gap-2 rounded-lg border bg-white/60 px-2.5 py-2 transition-all duration-150 hover:bg-white ${
+        isDragging ? "opacity-40" : ""
+      } ${isDimmed ? "opacity-30 blur-[1px]" : ""} ${isFocused ? "ring-2 ring-yellow-400" : ""}`}
+      style={{
+        borderColor: isHighestPriority ? accent : "rgba(0,0,0,0.08)",
+        borderWidth: isHighestPriority ? 2 : 1,
+      }}
+    >
+      {/* Assignee / status dot */}
+      <div className="shrink-0">
+        <TaskSegment
+          task={task}
+          size={24}
+          userName={userName}
+          projectType={projectType}
+          isHighestPriority={isHighestPriority}
+        />
+      </div>
+
+      {/* Description */}
+      <span className="line-clamp-2 flex-1 text-[13px] font-medium leading-tight text-black">{task.description}</span>
+
+      {/* Actions */}
+      <div
+        className={`flex shrink-0 items-center gap-1 transition-opacity ${
+          isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        }`}
+      >
+        <button
+          onClick={onComplete}
+          className="flex h-6 w-6 items-center justify-center rounded-full text-green-600 transition-colors hover:bg-green-100"
+          aria-label={t("completeTask")}
+          title={t("completeTask")}
+        >
+          <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} />
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex h-6 w-6 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-100"
+          aria-label={t("deleteTask")}
+          title={t("deleteTask")}
+        >
+          <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
   )
 })
 

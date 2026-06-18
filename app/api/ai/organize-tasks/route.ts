@@ -17,344 +17,199 @@ interface OrganizedTask {
 }
 
 /**
- * AI-powered task organization
- * Uses AI to analyze tasks and suggest optimal positions to avoid overlaps
- * and improve visual clarity on the Eisenhower Matrix
+ * AI Re-prioritize
+ * Re-reads every task's description and re-predicts its urgency & importance,
+ * so the whole board re-sorts into the correct Eisenhower quadrants.
+ * Provider order: Qwen (preferred) → Claude (fallback) → keyword heuristics.
+ * The client keeps the same { organizedTasks } contract and shows a preview
+ * (Accept / Revert) before persisting.
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('📥 Organize API called')
-
     const user = await requireAuth()
     if (!user) {
-      console.error('❌ User not authenticated')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    console.log('✅ User authenticated:', user.id)
 
     const body = await request.json()
     const { tasks } = body as { tasks: Task[] }
 
     if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
-      console.error('❌ Invalid tasks array')
       return NextResponse.json({ error: 'Tasks array is required' }, { status: 400 })
     }
 
-    console.log(`📋 Processing ${tasks.length} tasks`)
-
-    // Call heuristic algorithm to organize tasks
-    const organizedTasks = await organizeTasks(tasks)
-
-    console.log(`✅ Organized ${organizedTasks.length} tasks`)
+    const organizedTasks = await reprioritizeTasks(tasks)
 
     return NextResponse.json({ organizedTasks })
   } catch (error) {
-    console.error('❌ Task organization error:', error)
-
-    // Check if it's an auth error
+    console.error('❌ Task re-prioritization error:', error)
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json(
         { error: 'Authentication failed. Please refresh the page and try again.' },
         { status: 401 }
       )
     }
-
     return NextResponse.json(
-      { error: 'Failed to organize tasks. Please try again.' },
+      { error: 'Failed to re-prioritize tasks. Please try again.' },
       { status: 500 }
     )
   }
 }
 
-/**
- * Use Qwen API to intelligently organize tasks on the Eisenhower Matrix
- */
-async function organizeTasks(tasks: Task[]): Promise<OrganizedTask[]> {
-  // Directly use heuristic algorithm for fast and reliable normalization
-  console.log('⚙️ Using heuristic algorithm for task organization (normalization + spreading)')
-  return organizeWithHeuristics(tasks)
+async function reprioritizeTasks(tasks: Task[]): Promise<OrganizedTask[]> {
+  const QWEN_API_KEY = process.env.QWEN_API_KEY
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
+
+  if (QWEN_API_KEY) {
+    try {
+      return await reprioritizeWithQwen(tasks, QWEN_API_KEY)
+    } catch (error) {
+      console.log('❌ Qwen re-prioritize failed, falling back', error)
+    }
+  }
+
+  if (ANTHROPIC_API_KEY) {
+    try {
+      return await reprioritizeWithClaude(tasks, ANTHROPIC_API_KEY)
+    } catch (error) {
+      console.log('❌ Claude re-prioritize failed, falling back to heuristics', error)
+    }
+  }
+
+  return tasks.map(reprioritizeWithHeuristics)
 }
 
-/**
- * Organize tasks using Qwen API
- */
-async function organizeWithQwen(tasks: Task[], apiKey: string): Promise<OrganizedTask[]> {
-  const prompt = `你是一个专业的任务管理助手。我有一个艾森豪威尔矩阵（Eisenhower Matrix）的任务管理系统，需要你帮助智能重组任务位置。
+const SCORING_RUBRIC_ZH = `评分标准：
+- 紧急度（0-100）：时间敏感性。90-100 立即处理/有紧迫截止日期；70-89 短期内需完成；50-69 中等；30-49 可稍后；0-29 无明确时间限制。
+- 重要度（0-100）：战略价值与长期影响。90-100 核心目标；70-89 重要；50-69 有价值但非关键；30-49 次要；0-29 可选/低价值。
+关键词：紧急/立即/今天/ASAP/bug/故障→高紧急；关键/核心/必须/发布/上线→高重要；考虑/未来/有空/someday→低紧急；优化/美化/微调→低重要。`
 
-当前任务列表（每个任务有描述、紧急度0-100、重要度0-100）：
-${tasks.map((t, i) => `${i + 1}. "${t.description}" - 当前位置: 紧急度${t.urgency}, 重要度${t.importance}`).join('\n')}
+/** Re-predict urgency/importance for each task, returning results keyed by id. */
+async function reprioritizeWithQwen(tasks: Task[], apiKey: string): Promise<OrganizedTask[]> {
+  const prompt = `你是一个任务优先级分析助手，基于艾森豪威尔矩阵重新评估下列任务的紧急度和重要度。仅根据任务描述本身判断，不要被它当前的数值影响。
 
-请分析这些任务并给出优化后的位置建议，要求：
-1. **归一化（Normalization）- 核心要求**：将任务分布的中心点设为矩阵原点(50, 50)
-   - 计算当前所有任务的平均位置（中心点）
-   - 计算偏移量 = (50, 50) - 当前中心点
-   - 将所有任务平移这个偏移量，使分布中心正好在(50, 50)
-   - 保持任务之间的相对距离和位置关系完全不变
-2. 避免任务重叠或过于密集（相近位置的任务应该分散开，保持至少8-12个单位的距离）
-3. 保持任务的相对优先级关系（重要且紧急的任务在右上象限，不重要不紧急的在左下象限）
-4. 让任务在四个象限内均匀分布，更容易区分
-5. 帮助用户更好地逐个完成任务，优先级高的任务应该在视觉上更突出
+${SCORING_RUBRIC_ZH}
 
-只返回严格的JSON数组格式，每个任务包含id、优化后的urgency、importance和reasoning：
-[{"id": 1, "urgency": 85, "importance": 90, "reasoning": "简短说明调整原因"}, ...]
+任务列表（含 id）：
+${tasks.map((t) => `id=${t.id}: "${t.description}"`).join('\n')}
 
-注意：
-- urgency和importance必须在0-100之间
-- 相同或相近位置的任务必须分散开
-- 整体分布要以(50, 50)为中心点
-- 保持每个任务的相对优先级（相对于其他任务的位置关系）`
+只返回严格的 JSON 数组，每项包含 id、urgency、importance 和简短 reasoning，不要输出其它文字：
+[{"id": 1, "urgency": 80, "importance": 90, "reasoning": "简短说明"}, ...]`
 
   const response = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: 'qwen-plus',
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
+      messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      top_p: 0.8
-    })
+      top_p: 0.8,
+    }),
   })
 
-  if (!response.ok) {
-    throw new Error(`Qwen API error: ${response.status}`)
-  }
+  if (!response.ok) throw new Error(`Qwen API error: ${response.status}`)
 
   const data = await response.json()
-  const content = data.choices[0].message.content
-
-  // Parse JSON response
-  let organized: OrganizedTask[]
-  try {
-    const jsonMatch = content.match(/\[[\s\S]*\]/)
-    const jsonStr = jsonMatch ? jsonMatch[0] : content
-    organized = JSON.parse(jsonStr)
-  } catch (parseError) {
-    throw new Error('Invalid AI response format')
-  }
-
-  // Validate response
-  if (organized.length !== tasks.length) {
-    throw new Error(`Expected ${tasks.length} tasks, got ${organized.length}`)
-  }
-
-  return organized
+  if (data.error) throw new Error('Qwen API error')
+  return parseAndReconcile(data.choices[0].message.content, tasks)
 }
 
-/**
- * Organize tasks using Claude API
- */
-async function organizeWithClaude(tasks: Task[], apiKey: string): Promise<OrganizedTask[]> {
-  const prompt = `Analyze these tasks on an Eisenhower Matrix (urgency 0-100, importance 0-100) and suggest optimal positions to avoid overlaps and improve visual clarity.
+async function reprioritizeWithClaude(tasks: Task[], apiKey: string): Promise<OrganizedTask[]> {
+  const prompt = `Re-assess these tasks on an Eisenhower Matrix. Judge urgency (0-100) and importance (0-100) from each task's description alone — ignore its current values.
 
-Current tasks:
-${tasks.map((t, i) => `${i + 1}. "${t.description}" - Current position: urgency ${t.urgency}, importance ${t.importance}`).join('\n')}
+Urgency: how time-sensitive / deadline-driven the task is.
+Importance: how critical it is to goals and long-term impact.
 
-Requirements:
-1. **Normalization - CORE REQUIREMENT**: Set the distribution center to the matrix origin (50, 50)
-   - Calculate the average position (center point) of all current tasks
-   - Calculate offset = (50, 50) - current center point
-   - Shift all tasks by this offset so the distribution center is exactly at (50, 50)
-   - Maintain the relative distances and positions between tasks unchanged
-2. Avoid overlapping or densely packed tasks (maintain 8-12 units distance)
-3. Preserve relative priority relationships (high priority in top-right, low priority in bottom-left)
-4. Distribute tasks evenly across the four quadrants for better clarity
-5. Help users complete tasks one by one - high priority tasks should be visually prominent
+Tasks (with id):
+${tasks.map((t) => `id=${t.id}: "${t.description}"`).join('\n')}
 
-Respond ONLY with a valid JSON array:
-[{"id": 1, "urgency": 85, "importance": 90, "reasoning": "brief explanation"}, ...]
-
-Do not include any other text, markdown, or formatting. Just the raw JSON array.`
+Respond ONLY with a raw JSON array, no markdown:
+[{"id": 1, "urgency": 80, "importance": 90, "reasoning": "brief"}, ...]`
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
+      'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    })
+      messages: [{ role: 'user', content: prompt }],
+    }),
   })
 
-  if (!response.ok) {
-    throw new Error(`Claude API error: ${response.status}`)
-  }
+  if (!response.ok) throw new Error(`Claude API error: ${response.status}`)
 
   const data = await response.json()
-  const content = data.content[0].text
+  return parseAndReconcile(data.content[0].text, tasks)
+}
 
-  let organized: OrganizedTask[]
+/** Parse the model's JSON and guarantee one clamped result per input task. */
+function parseAndReconcile(content: string, tasks: Task[]): OrganizedTask[] {
+  let parsed: OrganizedTask[]
   try {
-    organized = JSON.parse(content)
-  } catch (parseError) {
+    const jsonMatch = content.match(/\[[\s\S]*\]/)
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : content)
+  } catch {
     throw new Error('Invalid AI response format')
   }
 
-  if (organized.length !== tasks.length) {
-    throw new Error(`Expected ${tasks.length} tasks, got ${organized.length}`)
+  const byId = new Map<number, OrganizedTask>()
+  for (const p of parsed) {
+    if (typeof p?.id === 'number') byId.set(p.id, p)
   }
 
-  return organized
-}
-
-/**
- * Organize tasks with two key principles:
- * 1. Center point should be at origin (50, 50) - NORMALIZATION
- * 2. Relative priority order must be preserved - NO REORDERING
- */
-function organizeWithHeuristics(tasks: Task[]): OrganizedTask[] {
-  if (tasks.length === 0) return []
-
-  console.log(`🔧 Starting organization for ${tasks.length} tasks`)
-
-  // Clean corrupted data
-  const cleanedTasks = tasks.map(task => {
-    const cleanedUrgency = Math.max(0, Math.min(100, task.urgency))
-    const cleanedImportance = Math.max(0, Math.min(100, task.importance))
-
-    if (task.urgency !== cleanedUrgency || task.importance !== cleanedImportance) {
-      console.log(`🧹 Cleaned Task ${task.id}: (${task.urgency}, ${task.importance}) → (${cleanedUrgency}, ${cleanedImportance})`)
+  // Always return exactly one entry per task; fall back to heuristics if the
+  // model skipped one.
+  return tasks.map((task) => {
+    const p = byId.get(task.id)
+    if (!p || typeof p.urgency !== 'number' || typeof p.importance !== 'number') {
+      return reprioritizeWithHeuristics(task)
     }
-
     return {
       id: task.id,
-      urgency: cleanedUrgency,
-      importance: cleanedImportance,
-      // Calculate original priority score (used to preserve ordering)
-      priorityScore: cleanedUrgency + cleanedImportance
+      urgency: clamp(p.urgency),
+      importance: clamp(p.importance),
+      reasoning: p.reasoning,
     }
   })
+}
 
-  // STEP 1: NORMALIZATION - Move center point to origin (50, 50)
-  const avgUrgency = cleanedTasks.reduce((sum, t) => sum + t.urgency, 0) / cleanedTasks.length
-  const avgImportance = cleanedTasks.reduce((sum, t) => sum + t.importance, 0) / cleanedTasks.length
+function clamp(n: number) {
+  return Math.max(0, Math.min(100, Math.round(n)))
+}
 
-  console.log(`📍 Current center: (${avgUrgency.toFixed(1)}, ${avgImportance.toFixed(1)})`)
+/** Keyword-based fallback when no AI provider is configured/available. */
+function reprioritizeWithHeuristics(task: Task): OrganizedTask {
+  const lower = task.description.toLowerCase()
+  let urgency = 50
+  let importance = 50
 
-  const urgencyOffset = 50 - avgUrgency
-  const importanceOffset = 50 - avgImportance
+  const urgent = ['urgent', 'asap', 'immediately', 'today', 'now', 'emergency', 'critical', 'deadline', 'tomorrow', '紧急', '立即', '今天', '马上']
+  const highUrgency = ['bug', 'fix', 'broken', 'error', 'issue', 'crash', 'down', '故障', '修复', '宕机']
+  const lowUrgency = ['someday', 'eventually', 'consider', 'maybe', 'nice to have', '考虑', '未来', '有空']
 
-  console.log(`📐 Normalization offset: (${urgencyOffset.toFixed(1)}, ${importanceOffset.toFixed(1)})`)
+  const highImportance = ['important', 'critical', 'essential', 'must', 'required', 'key', 'vital', 'crucial', 'deploy', 'release', 'launch', '关键', '核心', '必须', '发布', '上线']
+  const mediumImportance = ['review', 'update', 'improve', 'optimize', 'refactor', '审查', '更新', '优化']
+  const lowImportance = ['minor', 'trivial', 'cosmetic', 'cleanup', 'typo', '微调', '美化', '清理']
 
-  // Apply normalization offset
-  let positions = cleanedTasks.map(task => ({
+  if (urgent.some((k) => lower.includes(k))) urgency = 85
+  else if (highUrgency.some((k) => lower.includes(k))) urgency = 70
+  else if (lowUrgency.some((k) => lower.includes(k))) urgency = 25
+
+  if (highImportance.some((k) => lower.includes(k))) importance = 85
+  else if (mediumImportance.some((k) => lower.includes(k))) importance = 60
+  else if (lowImportance.some((k) => lower.includes(k))) importance = 30
+
+  return {
     id: task.id,
-    x: Math.max(0, Math.min(100, task.urgency + urgencyOffset)),
-    y: Math.max(0, Math.min(100, task.importance + importanceOffset)),
-    originalPriorityScore: task.priorityScore
-  }))
-
-  // STEP 2: SPREAD OVERLAPPING TASKS while preserving priority order
-  const minDistance = 18 // Increased from 12 for more spacing
-  const repulsionStrength = 0.7 // Increased from 0.5 for stronger push
-  const iterations = 8 // Increased from 5 for more spreading
-
-  console.log(`⚙️ Running ${iterations} repulsion iterations with minDistance=${minDistance}`)
-
-  for (let iter = 0; iter < iterations; iter++) {
-    const forces: { x: number, y: number }[] = positions.map(() => ({ x: 0, y: 0 }))
-    let overlapsFound = 0
-
-    // Calculate repulsion forces
-    for (let i = 0; i < positions.length; i++) {
-      for (let j = i + 1; j < positions.length; j++) {
-        const dx = positions[j].x - positions[i].x
-        const dy = positions[j].y - positions[i].y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-
-        if (distance < minDistance && distance > 0) {
-          overlapsFound++
-          const overlap = minDistance - distance
-          const forceX = (dx / distance) * overlap * repulsionStrength
-          const forceY = (dy / distance) * overlap * repulsionStrength
-
-          forces[i].x -= forceX
-          forces[i].y -= forceY
-          forces[j].x += forceX
-          forces[j].y += forceY
-        }
-      }
-    }
-
-    console.log(`🔄 Iteration ${iter + 1}: ${overlapsFound} overlaps`)
-
-    // Apply forces
-    positions = positions.map((pos, i) => ({
-      ...pos,
-      x: Math.max(0, Math.min(100, pos.x + forces[i].x)),
-      y: Math.max(0, Math.min(100, pos.y + forces[i].y))
-    }))
+    urgency,
+    importance,
+    reasoning: 'Re-prioritized using keyword heuristics',
   }
-
-  // STEP 3: RE-NORMALIZE to ensure center is still at (50, 50)
-  const newAvgX = positions.reduce((sum, p) => sum + p.x, 0) / positions.length
-  const newAvgY = positions.reduce((sum, p) => sum + p.y, 0) / positions.length
-  const finalOffsetX = 50 - newAvgX
-  const finalOffsetY = 50 - newAvgY
-
-  if (Math.abs(finalOffsetX) > 1 || Math.abs(finalOffsetY) > 1) {
-    console.log(`🎯 Re-centering: offset (${finalOffsetX.toFixed(1)}, ${finalOffsetY.toFixed(1)})`)
-    positions = positions.map(pos => ({
-      ...pos,
-      x: Math.max(0, Math.min(100, pos.x + finalOffsetX)),
-      y: Math.max(0, Math.min(100, pos.y + finalOffsetY))
-    }))
-  }
-
-  // STEP 4: VERIFY PRIORITY ORDER IS PRESERVED
-  // Calculate new priority scores
-  const newScores = positions.map(pos => ({
-    id: pos.id,
-    oldScore: pos.originalPriorityScore,
-    newScore: pos.x + pos.y
-  }))
-
-  // Check if any priority order violations occurred
-  let violations = 0
-  for (let i = 0; i < newScores.length; i++) {
-    for (let j = i + 1; j < newScores.length; j++) {
-      const oldOrder = newScores[i].oldScore > newScores[j].oldScore
-      const newOrder = newScores[i].newScore > newScores[j].newScore
-      if (oldOrder !== newOrder) {
-        violations++
-      }
-    }
-  }
-
-  if (violations > 0) {
-    console.log(`⚠️ WARNING: ${violations} priority order violations detected`)
-  } else {
-    console.log(`✅ Priority order preserved`)
-  }
-
-  // Build result
-  const result = positions.map(pos => ({
-    id: pos.id,
-    urgency: Math.round(pos.x),
-    importance: Math.round(pos.y),
-    reasoning: 'Normalized to center + spread overlaps while preserving priority order'
-  }))
-
-  const finalAvgX = result.reduce((sum, t) => sum + t.urgency, 0) / result.length
-  const finalAvgY = result.reduce((sum, t) => sum + t.importance, 0) / result.length
-  console.log(`📊 Final center: (${finalAvgX.toFixed(1)}, ${finalAvgY.toFixed(1)})`)
-
-  return result
 }

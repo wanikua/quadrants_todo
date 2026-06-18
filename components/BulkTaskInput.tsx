@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Sparkles, X, GripVertical } from "lucide-react"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useTranslation } from "@/lib/i18n"
+import type { TranslationKey } from "@/lib/i18n/locales"
 
 interface ParsedTask {
   description: string
@@ -37,6 +39,7 @@ export function BulkTaskInput({
   projectType,
   userName
 }: BulkTaskInputProps) {
+  const { t } = useTranslation()
   const [inputText, setInputText] = useState("")
   const [parsedTasks, setParsedTasks] = useState<ParsedTask[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -166,7 +169,7 @@ export function BulkTaskInput({
   // Call AI API to predict priorities
   const analyzeTasks = async () => {
     if (!inputText.trim()) {
-      toast.error("Please enter at least one task")
+      toast.error(t("captureEmptyError"))
       return
     }
 
@@ -200,10 +203,10 @@ export function BulkTaskInput({
       }))
 
       setParsedTasks(tasksWithPredictions)
-      toast.success(`Analyzed ${tasksWithPredictions.length} tasks with AI`)
+      toast.success(`${tasksWithPredictions.length} ${t("captureSortedSuffix")}`)
     } catch (error) {
       console.error('Analysis error:', error)
-      toast.error('Failed to analyze tasks')
+      toast.error(t("captureSortError"))
     } finally {
       setIsAnalyzing(false)
     }
@@ -276,7 +279,7 @@ export function BulkTaskInput({
       }
 
       const result = await response.json()
-      toast.success(`Created ${result.created} tasks successfully!`)
+      toast.success(`${result.created} ${t("captureCreatedSuffix")}`)
 
       // 任务创建成功后才关闭对话框并重置状态
       setInputText("")
@@ -285,18 +288,18 @@ export function BulkTaskInput({
       onTasksCreated()
     } catch (error) {
       console.error('Create tasks error:', error)
-      toast.error('Failed to create tasks')
+      toast.error(t("captureCreateError"))
     } finally {
       setIsCreating(false)
     }
   }
 
-  // Get quadrant label
-  const getQuadrantLabel = (urgency: number, importance: number) => {
-    if (urgency >= 50 && importance >= 50) return { label: "Urgent & Important", color: "bg-red-500" }
-    if (urgency < 50 && importance >= 50) return { label: "Important, Not Urgent", color: "bg-yellow-500" }
-    if (urgency >= 50 && importance < 50) return { label: "Urgent, Not Important", color: "bg-blue-500" }
-    return { label: "Neither Urgent nor Important", color: "bg-gray-500" }
+  // Map a priority to its quadrant identity (matches the card-grid colors)
+  const getQuadrant = (urgency: number, importance: number): { labelKey: TranslationKey; color: string } => {
+    if (urgency >= 50 && importance >= 50) return { labelKey: "doFirst", color: "#EF4444" }
+    if (urgency < 50 && importance >= 50) return { labelKey: "schedule", color: "#3B82F6" }
+    if (urgency >= 50 && importance < 50) return { labelKey: "delegate", color: "#F59E0B" }
+    return { labelKey: "eliminate", color: "#6B7280" }
   }
 
   return (
@@ -305,7 +308,7 @@ export function BulkTaskInput({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-600" />
-            AI-Powered Bulk Task Creation
+            {t("captureTitle")}
           </DialogTitle>
         </DialogHeader>
 
@@ -315,23 +318,17 @@ export function BulkTaskInput({
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">
-                  Enter your tasks
+                  {t("captureEnter")}
                 </label>
                 <Textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={`Smart input - paste any format:
-
-• One task per line
-• Or use commas, periods, semicolons to separate
-${projectType === 'team' ? '• Mention players: @alice @bob' : ''}
-
-Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${projectType === 'team' ? ' @bob' : ''}, Update docs${projectType === 'team' ? ' @all' : ''}, Reply emails`}
+                  placeholder={t("capturePlaceholder")}
                   className="min-h-[200px] font-mono text-sm"
                 />
                 {projectType === 'team' && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    💡 Tip: Use @playerName to assign tasks. Use @all for everyone. Tasks without @ will be assigned to yourself.
+                    💡 {t("captureTeamTip")}
                   </p>
                 )}
               </div>
@@ -344,12 +341,12 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing Tasks...
+                    {t("captureSorting")}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Analyze Tasks
+                    {t("captureSort")}
                   </>
                 )}
               </Button>
@@ -360,20 +357,20 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
           {parsedTasks.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Review & Adjust ({parsedTasks.length} tasks)</h3>
+                <h3 className="font-semibold">{t("captureReview")} · {parsedTasks.length} {t("captureTasksSuffix")}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setParsedTasks([])}
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Start Over
+                  {t("captureStartOver")}
                 </Button>
               </div>
 
               <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                 {parsedTasks.map((task, index) => {
-                  const quadrant = getQuadrantLabel(task.finalUrgency!, task.finalImportance!)
+                  const quadrant = getQuadrant(task.finalUrgency!, task.finalImportance!)
 
                   return (
                     <Card key={index} className="relative">
@@ -395,8 +392,8 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
                             </div>
 
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Badge className={`${quadrant.color} text-white text-xs`}>
-                                {quadrant.label}
+                              <Badge className="text-white text-xs" style={{ backgroundColor: quadrant.color }}>
+                                {t(quadrant.labelKey)}
                               </Badge>
 
                               {task.assignees.length > 0 ? (
@@ -420,7 +417,7 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
                                 })
                               ) : (
                                 <Badge variant="outline" className="text-xs text-muted-foreground">
-                                  Unassigned
+                                  {t("captureUnassigned")}
                                 </Badge>
                               )}
                             </div>
@@ -428,7 +425,7 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
                             <div className="grid grid-cols-2 gap-3 text-xs">
                               <div>
                                 <label className="text-muted-foreground block mb-1">
-                                  Urgency: {task.finalUrgency}%
+                                  {t("urgency")}: {task.finalUrgency}%
                                 </label>
                                 <input
                                   type="range"
@@ -441,7 +438,7 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
                               </div>
                               <div>
                                 <label className="text-muted-foreground block mb-1">
-                                  Importance: {task.finalImportance}%
+                                  {t("importance")}: {task.finalImportance}%
                                 </label>
                                 <input
                                   type="range"
@@ -467,7 +464,7 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
                   onClick={() => setParsedTasks([])}
                   className="flex-1"
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button
                   onClick={createTasks}
@@ -477,10 +474,10 @@ Example: Fix login bug${projectType === 'team' ? ' @alice' : ''}, Review PR${pro
                   {isCreating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating...
+                      {t("captureCreating")}
                     </>
                   ) : (
-                    `Create ${parsedTasks.length} Tasks`
+                    `${t("captureCreatePrefix")} ${parsedTasks.length} ${t("captureCreateSuffix")}`
                   )}
                 </Button>
               </div>

@@ -1,130 +1,160 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
+import { Flame, CalendarClock, Users, Ban, CheckCircle2, Plus } from "lucide-react"
+import { useTranslation } from "@/lib/i18n"
 
-interface Task {
+interface DemoTask {
   id: number
   description: string
-  urgency: number
-  importance: number
+  quad: QuadKey
   color: string
   assignee: string
 }
 
-const DEMO_TASKS: Task[] = [
-  { id: 1, description: "Fix API bug", urgency: 90, importance: 85, color: "#ef4444", assignee: "Alice" },
-  { id: 2, description: "Code review", urgency: 75, importance: 70, color: "#3b82f6", assignee: "Bob" },
-  { id: 3, description: "Team meeting", urgency: 45, importance: 60, color: "#ef4444", assignee: "Alice" },
-  { id: 4, description: "Update docs", urgency: 70, importance: 30, color: "#10b981", assignee: "Charlie" },
-  { id: 5, description: "Buy groceries", urgency: 30, importance: 40, color: "#3b82f6", assignee: "Bob" },
+type QuadKey = "urgentImportant" | "notUrgentImportant" | "urgentNotImportant" | "notUrgentNotImportant"
+
+interface QuadConfig {
+  key: QuadKey
+  labelKey: "doFirst" | "schedule" | "delegate" | "eliminate"
+  bg: string
+  accent: string
+  text: string
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>
+}
+
+const QUADRANTS: QuadConfig[] = [
+  { key: "urgentImportant", labelKey: "doFirst", bg: "#FEF2F2", accent: "#EF4444", text: "#991B1B", icon: Flame },
+  { key: "notUrgentImportant", labelKey: "schedule", bg: "#EFF6FF", accent: "#3B82F6", text: "#1E3A8A", icon: CalendarClock },
+  { key: "urgentNotImportant", labelKey: "delegate", bg: "#FFFBEB", accent: "#F59E0B", text: "#92400E", icon: Users },
+  { key: "notUrgentNotImportant", labelKey: "eliminate", bg: "#F9FAFB", accent: "#6B7280", text: "#374151", icon: Ban },
+]
+
+const DEMO_TASKS: DemoTask[] = [
+  { id: 1, description: "Fix API bug", quad: "urgentImportant", color: "#ef4444", assignee: "Alice" },
+  { id: 2, description: "Code review", quad: "urgentImportant", color: "#3b82f6", assignee: "Bob" },
+  { id: 3, description: "Plan Q3 roadmap", quad: "notUrgentImportant", color: "#ef4444", assignee: "Alice" },
+  { id: 4, description: "Reply to emails", quad: "urgentNotImportant", color: "#10b981", assignee: "Charlie" },
+  { id: 5, description: "Browse newsletters", quad: "notUrgentNotImportant", color: "#3b82f6", assignee: "Bob" },
 ]
 
 export default function QuadrantPlayground() {
-  const [tasks, setTasks] = useState<Task[]>(DEMO_TASKS)
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null)
-  const [hoveredTask, setHoveredTask] = useState<Task | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const { t } = useTranslation()
+  const [tasks, setTasks] = useState<DemoTask[]>(DEMO_TASKS)
+  const [draggedId, setDraggedId] = useState<number | null>(null)
+  const [overQuad, setOverQuad] = useState<QuadKey | null>(null)
+  const [done, setDone] = useState<Set<number>>(new Set())
 
-  const handleMouseDown = (task: Task) => {
-    setDraggedTask(task)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!draggedTask || !containerRef.current) return
-
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-
-    // Convert pixel position to 0-100 scale
-    const importance = Math.max(0, Math.min(100, (x / rect.width) * 100))
-    const urgency = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100))
-
-    setTasks(prev =>
-      prev.map(t =>
-        t.id === draggedTask.id
-          ? { ...t, urgency: Math.round(urgency), importance: Math.round(importance) }
-          : t
-      )
-    )
-  }
-
-  const handleMouseUp = () => {
-    setDraggedTask(null)
+  const moveTask = (id: number, quad: QuadKey) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, quad } : t)))
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-full bg-white border-3 border-black rounded-2xl overflow-hidden select-none"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-    >
-      {/* Grid background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-0 left-1/2 w-px h-full bg-black"></div>
-        <div className="absolute top-1/2 left-0 w-full h-px bg-black"></div>
-      </div>
-
-      {/* Axis labels */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded-full border border-gray-300 flex items-center justify-center">
-        <span className="text-[9px] font-bold text-gray-600 leading-none">IMPORTANCE</span>
-      </div>
-      <div className="absolute left-0.5 top-1/2 -translate-y-1/2 bg-white px-2 py-1 rounded-full border border-gray-300 -rotate-90 origin-center flex items-center justify-center">
-        <span className="text-[9px] font-bold text-gray-600 leading-none">URGENCY</span>
-      </div>
-
-      {/* Tasks */}
-      {tasks.map(task => {
-        const x = (task.importance / 100) * 100
-        const y = 100 - (task.urgency / 100) * 100
-        const isHovered = hoveredTask?.id === task.id
-        const isDragging = draggedTask?.id === task.id
-        const isHighestPriority = task.urgency >= 70 && task.importance >= 70
-
-        return (
-          <div
-            key={task.id}
-            className="absolute cursor-grab active:cursor-grabbing transition-transform"
-            style={{
-              left: `${x}%`,
-              top: `${y}%`,
-              transform: `translate(-50%, -50%) scale(${isDragging ? 1.2 : isHovered ? 1.1 : 1})`,
-              zIndex: isDragging ? 50 : isHovered ? 40 : 10,
-            }}
-            onMouseDown={() => handleMouseDown(task)}
-            onMouseEnter={() => setHoveredTask(task)}
-            onMouseLeave={() => setHoveredTask(null)}
-          >
+    <div className="flex h-full w-full flex-col bg-[#F9FAFB] p-1.5 select-none">
+      <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-1.5">
+        {QUADRANTS.map((quad) => {
+          const quadTasks = tasks.filter((t) => t.quad === quad.key)
+          const isOver = overQuad === quad.key
+          return (
             <div
-              className={`w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[10px] font-bold ${
-                isHighestPriority ? 'animate-pulse shadow-[0_0_20px_rgba(234,179,8,0.6)]' : ''
+              key={quad.key}
+              onDragOver={(e) => {
+                e.preventDefault()
+                if (draggedId != null) setOverQuad(quad.key)
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverQuad((p) => (p === quad.key ? null : p))
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (draggedId != null) moveTask(draggedId, quad.key)
+                setDraggedId(null)
+                setOverQuad(null)
+              }}
+              className={`flex flex-col overflow-hidden rounded-xl border-2 transition-transform duration-150 ${
+                isOver ? "scale-[1.03]" : ""
               }`}
-              style={{ backgroundColor: task.color }}
+              style={{ backgroundColor: quad.bg, borderColor: isOver ? quad.accent : "#000" }}
             >
-              {task.assignee.charAt(0).toUpperCase()}
-            </div>
-
-            {/* Tooltip on hover */}
-            {isHovered && (
-              <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap shadow-lg z-50 pointer-events-none">
-                <div className="font-bold">{task.description}</div>
-                <div className="text-gray-300 text-[9px] mt-0.5">Assigned to: {task.assignee}</div>
-                {isHighestPriority && (
-                  <div className="text-yellow-400 text-[9px] mt-0.5 font-bold">Highest Priority</div>
+              {/* Header */}
+              <div className="flex items-center justify-between px-1.5 pt-1.5">
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold"
+                  style={{ color: quad.text, backgroundColor: `${quad.accent}26`, borderColor: `${quad.accent}66` }}
+                >
+                  <quad.icon className="h-2.5 w-2.5" strokeWidth={2.5} />
+                  {t(quad.labelKey)}
+                </span>
+                {quadTasks.length > 0 && (
+                  <span
+                    className="flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-black px-0.5 text-[8px] font-black text-white"
+                    style={{ backgroundColor: quad.accent }}
+                  >
+                    {quadTasks.length}
+                  </span>
                 )}
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
               </div>
-            )}
-          </div>
-        )
-      })}
 
-      {/* Hint text */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-40">
-        <p className="text-sm font-bold text-gray-600">Drag to move</p>
+              {/* Tasks */}
+              <div className="flex flex-1 flex-col gap-1 overflow-hidden p-1">
+                {quadTasks.length === 0 ? (
+                  <div className="flex flex-1 items-center justify-center">
+                    <Plus className="h-3 w-3" style={{ color: `${quad.accent}55` }} strokeWidth={3} />
+                  </div>
+                ) : (
+                  quadTasks.map((task) => {
+                    const isDone = done.has(task.id)
+                    return (
+                      <div
+                        key={task.id}
+                        draggable
+                        onDragStart={() => setDraggedId(task.id)}
+                        onDragEnd={() => {
+                          setDraggedId(null)
+                          setOverQuad(null)
+                        }}
+                        className={`group flex cursor-grab items-center gap-1 rounded-md border border-black/10 bg-white/70 px-1.5 py-1 transition-all active:cursor-grabbing hover:bg-white ${
+                          draggedId === task.id ? "opacity-40" : ""
+                        }`}
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDone((prev) => {
+                              const next = new Set(prev)
+                              next.has(task.id) ? next.delete(task.id) : next.add(task.id)
+                              return next
+                            })
+                          }}
+                          className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border"
+                          style={{ borderColor: quad.accent, backgroundColor: isDone ? quad.accent : "transparent" }}
+                          aria-label="Toggle complete"
+                        >
+                          {isDone && <CheckCircle2 className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
+                        </button>
+                        <span
+                          className={`flex-1 truncate text-[10px] font-medium leading-tight ${
+                            isDone ? "text-gray-400 line-through" : "text-black"
+                          }`}
+                        >
+                          {task.description}
+                        </span>
+                        <span
+                          className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-white text-[7px] font-bold text-white"
+                          style={{ backgroundColor: task.color }}
+                        >
+                          {task.assignee.charAt(0)}
+                        </span>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
+      <p className="pt-1 text-center text-[10px] font-bold text-gray-400">{t("dragBetween")}</p>
     </div>
   )
 }
