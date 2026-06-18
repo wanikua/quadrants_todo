@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Wand2, Sparkles, LogOut, HelpCircle, Share2, Archive } from "lucide-react"
+import { Map as MapIcon, List, Trash2, Filter, X, Users, Plus, Settings, ChevronDown, Check, Edit, Wand2, Sparkles, LogOut, HelpCircle, Share2, Archive, BookOpen } from "lucide-react"
 import TaskDetailDialog from "@/components/TaskDetailDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { BulkTaskInput } from "@/components/BulkTaskInput"
+import { KnowledgeBaseDialog } from "@/components/KnowledgeBaseDialog"
 import { useTranslation } from "@/lib/i18n"
 import { toast } from "sonner"
 
@@ -70,6 +71,7 @@ export default function QuadrantTodoClient({
 }: QuadrantTodoClientProps) {
   const router = useRouter()
   const { t } = useTranslation()
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false)
 
   // Local state for optimistic updates
   const [tasks, setTasks] = useState<TaskWithAssignees[]>(initialTasks)
@@ -1860,6 +1862,12 @@ export default function QuadrantTodoClient({
         userName={userName}
       />
 
+      <KnowledgeBaseDialog
+        projectId={projectId}
+        open={showKnowledgeBase}
+        onOpenChange={setShowKnowledgeBase}
+      />
+
       {/* Help Dialog */}
       <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
         <DialogContent className="max-w-md mx-auto">
@@ -2016,6 +2024,15 @@ export default function QuadrantTodoClient({
             title={t("reprioritizeTitle")}
           >
             <Wand2 className="w-4 h-4 text-white" />
+          </button>
+
+          {/* Knowledge Base Button */}
+          <button
+            onClick={() => { setShowKnowledgeBase(true); resetToolbarTimeout(); }}
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all flex items-center justify-center flex-shrink-0"
+            title={t("kbTitle")}
+          >
+            <BookOpen className="w-4 h-4 text-gray-700" />
           </button>
 
           {/* Archive Button */}

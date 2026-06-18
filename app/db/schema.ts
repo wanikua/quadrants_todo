@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, serial, varchar, boolean, jsonb, real, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, serial, varchar, boolean, jsonb, real, index, vector } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Projects table
@@ -170,6 +170,55 @@ export const commentsRelations = relations(comments, ({ one }: { one: any }) => 
   task: one(tasks, {
     fields: [comments.task_id],
     references: [tasks.id],
+  }),
+}))
+
+// ── Project Knowledge Base (RAG) ──
+// A document = one ingested source (pasted note or uploaded .txt/.md). Its text
+// is split into chunks, each embedded into a pgvector column for semantic search.
+export const knowledgeDocuments = pgTable('knowledge_documents', {
+  id: serial('id').primaryKey(),
+  project_id: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  source_type: text('source_type').notNull().default('text'), // 'text' | 'file'
+  filename: text('filename'),
+  status: text('status').notNull().default('ready'), // 'processing' | 'ready' | 'error'
+  char_count: integer('char_count').notNull().default(0),
+  chunk_count: integer('chunk_count').notNull().default(0),
+  created_by: text('created_by'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  projectIdIdx: index('knowledge_documents_project_id_idx').on(table.project_id),
+}))
+
+export const knowledgeChunks = pgTable('knowledge_chunks', {
+  id: serial('id').primaryKey(),
+  document_id: integer('document_id').notNull().references(() => knowledgeDocuments.id, { onDelete: 'cascade' }),
+  project_id: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  chunk_index: integer('chunk_index').notNull(),
+  content: text('content').notNull(),
+  // 1024-dim embedding (DashScope text-embedding-v3 / OpenAI text-embedding-3-* reduced to 1024)
+  embedding: vector('embedding', { dimensions: 1024 }),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  projectIdIdx: index('knowledge_chunks_project_id_idx').on(table.project_id),
+  documentIdIdx: index('knowledge_chunks_document_id_idx').on(table.document_id),
+  embeddingIdx: index('knowledge_chunks_embedding_idx').using('hnsw', table.embedding.op('vector_cosine_ops')),
+}))
+
+export const knowledgeDocumentsRelations = relations(knowledgeDocuments, ({ one, many }: { one: any; many: any }) => ({
+  project: one(projects, {
+    fields: [knowledgeDocuments.project_id],
+    references: [projects.id],
+  }),
+  chunks: many(knowledgeChunks),
+}))
+
+export const knowledgeChunksRelations = relations(knowledgeChunks, ({ one }: { one: any }) => ({
+  document: one(knowledgeDocuments, {
+    fields: [knowledgeChunks.document_id],
+    references: [knowledgeDocuments.id],
   }),
 }))
 
