@@ -94,7 +94,7 @@ export function ProjectsPage({ user }: { user: User }) {
 
   const handleSignOut = async () => {
     await signOut()
-    router.push("/auth/signin")
+    router.push("/sign-in")
     router.refresh()
   }
 

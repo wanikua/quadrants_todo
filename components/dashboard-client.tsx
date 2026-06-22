@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
+import { AppHeader } from "@/components/app-header"
+import { PageBackground } from "@/components/page-background"
 import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut, Sparkles, Check, Home } from "lucide-react"
 import { useStripe } from "@/hooks/use-stripe"
 import { STRIPE_CONFIG } from "@/lib/stripe-config"
@@ -98,45 +98,27 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="relative bg-white z-50 border-b-3 border-black">
-        <div className="w-full px-[4%] md:px-[10%]">
-          <div className="h-24 flex items-center justify-between">
-            <Link href="/" className="group relative flex items-center">
-              <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
-                <Image
-                  src="/logo.png"
-                  alt="Quadrants"
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
-                />
-              </div>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/projects")}
-                className="text-black hover:text-gray-600 hover:bg-gray-100 font-bold text-base px-4 rounded-xl border-2 border-transparent hover:border-black"
-              >
-                My Projects
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleSignOut}
-                className="text-black hover:text-gray-600 hover:bg-gray-100 font-bold text-base px-4 rounded-xl border-2 border-transparent hover:border-black"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-white relative">
+      <PageBackground />
+      <AppHeader>
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/projects")}
+          className="text-black font-bold text-base px-4 rounded-xl border-2 border-transparent hover:border-black hover:shadow-bold-sm transition-all"
+        >
+          My Projects
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className="text-black font-bold text-base px-4 rounded-xl border-2 border-transparent hover:border-black hover:shadow-bold-sm transition-all"
+        >
+          Sign Out
+        </Button>
+      </AppHeader>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-[4%] md:px-[10%] py-16">
+      <div className="relative z-10 max-w-4xl mx-auto px-[4%] md:px-[10%] py-16">
         <h1 className="text-5xl md:text-6xl font-black text-black mb-12 leading-[1.1]">
           <span className="text-black inline-block border-b-4 border-yellow-300">Settings</span>
         </h1>
@@ -240,7 +222,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
             </CardHeader>
             <CardContent className="space-y-8 p-8">
               {/* Current Plan */}
-              <div className="p-8 bg-gray-50 rounded-[20px] border-3 border-gray-200">
+              <div className="p-8 bg-gray-50 rounded-[20px] border-3 border-black">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-bold text-xl flex items-center gap-2">
                     {isProUser ? (

@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { isPro as hasProEntitlement } from "@/lib/entitlements"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,7 +24,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { joinProject } from "@/app/db/actions"
 import QuickLookTodos from "@/components/quick-look-todos"
-import { useDesktop } from "@/hooks/use-desktop"
+import { AppHeader } from "@/components/app-header"
+import { PageBackground } from "@/components/page-background"
 import { useTranslation } from "@/lib/i18n"
 import { LanguageToggle } from "@/components/language-toggle"
 
@@ -41,7 +41,6 @@ interface Project {
 
 export default function ProjectsPageClient({ initialProjects, user }: { initialProjects: Project[]; user: any }) {
   const router = useRouter()
-  const { isDesktop } = useDesktop()
   const { t } = useTranslation()
   const [projects, setProjects] = useState<Project[]>(initialProjects)
 
@@ -206,44 +205,28 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
 
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header - sticky top */}
-      <header className={`sticky top-0 bg-white border-b-3 border-black z-40 ${isDesktop ? 'tauri-drag-region' : ''}`}
-        style={isDesktop ? { paddingTop: '28px' } : undefined}>
-        <div className="w-full px-[4%] md:px-[10%] h-24 flex items-center justify-between">
-          <Link href="/" className="group relative flex items-center">
-            <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-black/10">
-              <Image
-                src="/logo.png"
-                alt="Quadrants"
-                width={40}
-                height={40}
-                className="w-10 h-10 object-contain rounded-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
-              />
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <LanguageToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/dashboard")}
-              title={t('settings')}
-              className="text-black hover:text-gray-600 p-2 hover:bg-gray-100 rounded-xl"
-            >
-              <User className="w-6 h-6" />
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white relative">
+      <PageBackground />
+      <AppHeader>
+        <LanguageToggle />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/dashboard")}
+          title={t('settings')}
+          className="text-black p-2 rounded-xl border-2 border-transparent hover:border-black hover:shadow-bold-sm transition-all"
+        >
+          <User className="w-6 h-6" />
+        </Button>
+      </AppHeader>
 
-      <div className="max-w-7xl mx-auto px-[4%] md:px-[10%] py-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-[4%] md:px-[10%] py-16">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
             <h1 className="text-5xl md:text-6xl font-black text-black mb-4 flex items-center gap-4 leading-[1.1]">
               <span className="text-black inline-block border-b-4 border-yellow-300">{t('myProjects')}</span>
               {isPro && (
-                <Badge className="bg-black text-white text-lg px-4 py-2 rounded-xl font-bold border-2 border-black">
+                <Badge className="bg-black text-white text-lg px-4 py-2 rounded-xl font-bold border-3 border-black shadow-bold-sm">
                   <Crown className="w-4 h-4 mr-2 text-yellow-500 fill-current" />
                   Pro
                 </Badge>

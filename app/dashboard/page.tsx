@@ -6,7 +6,7 @@ export default async function DashboardPage() {
   const user = await requireAuth()
 
   if (!user) {
-    redirect("/auth/signin")
+    redirect("/sign-in")
   }
 
   return <DashboardClient user={user} />

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import { AppHeader } from '@/components/app-header';
 import QuadrantMatrixMap from '@/components/QuadrantMatrixMap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -212,35 +212,29 @@ export default function LocalModePage() {
 
   return (
     <div className="h-screen flex flex-col bg-white">
-      {/* Header */}
-      <header className="bg-white border-b-3 border-black px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm">
-            <Image
-              src="/logo.png"
-              alt="Quadrants"
-              width={32}
-              height={32}
-              className="w-8 h-8 object-contain rounded-lg"
-            />
-          </div>
-          <h1 className="text-lg font-black text-black">My Tasks</h1>
-          <span className="bg-yellow-100 text-black border-2 border-black rounded-full px-2.5 py-0.5 text-xs font-bold">
-            Local Mode
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">{tasks.length} tasks</span>
-          <Button
-            onClick={() => setIsAddTaskOpen(true)}
-            size="sm"
-            className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-bold-sm hover-lift-shadow rounded-xl font-bold"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Task
-          </Button>
-        </div>
-      </header>
+      {/* Header — shared app-shell chrome (compact) */}
+      <AppHeader
+        compact
+        homeHref="/"
+        left={
+          <>
+            <h1 className="text-lg font-black text-black">My Tasks</h1>
+            <span className="bg-yellow-100 text-black border-2 border-black rounded-full px-2.5 py-0.5 text-xs font-bold">
+              Local Mode
+            </span>
+          </>
+        }
+      >
+        <span className="text-sm text-gray-500">{tasks.length} tasks</span>
+        <Button
+          onClick={() => setIsAddTaskOpen(true)}
+          size="sm"
+          className="bg-black text-white hover:bg-black/90 border-3 border-black shadow-bold-sm hover-lift-shadow rounded-xl font-bold"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Add Task
+        </Button>
+      </AppHeader>
 
       {/* Main Content - Quadrant Matrix */}
       <div className="flex-1 overflow-hidden">
@@ -323,7 +317,7 @@ export default function LocalModePage() {
               </Button>
               <Button
                 onClick={handleAddTask}
-                className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-bold-sm hover-lift-shadow rounded-xl font-bold"
+                className="bg-black text-white hover:bg-black/90 border-3 border-black shadow-bold-sm hover-lift-shadow rounded-xl font-bold"
               >
                 Add Task
               </Button>
@@ -405,7 +399,7 @@ export default function LocalModePage() {
                 </Button>
                 <Button
                   onClick={() => handleCompleteTask(selectedTask.id)}
-                  className="bg-green-600 hover:bg-green-700 border-2 border-black rounded-xl font-bold text-white"
+                  className="bg-green-500 hover:bg-green-600 border-3 border-black shadow-bold-sm hover-lift-shadow rounded-xl font-bold text-white"
                 >
                   Mark Complete
                 </Button>

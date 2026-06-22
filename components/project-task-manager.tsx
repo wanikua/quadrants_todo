@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, ArrowLeft, Share2 } from "lucide-react"
+import { Copy, Check, Share2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import QuadrantTodoClient from "@/app/client"
 import { toast } from "sonner"
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SyncStatusIndicator, OfflineBanner } from "@/components/SyncStatusIndicator"
 import { getSyncService } from "@/app/lib/offline"
-import { useDesktop } from "@/hooks/use-desktop"
+import { AppHeader } from "@/components/app-header"
 
 interface Project {
   id: string
@@ -38,7 +38,6 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  const { isDesktop } = useDesktop()
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isEditingProject, setIsEditingProject] = useState(false)
   const [editedProjectName, setEditedProjectName] = useState(project.name)
@@ -115,34 +114,24 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
       {/* Offline Banner */}
       <OfflineBanner />
 
-      {/* Breadcrumb Header — matches projects page style */}
-      <header className={`bg-white border-b-3 border-black ${isDesktop ? 'tauri-drag-region' : ''}`}
-        style={isDesktop ? { paddingTop: '28px' } : undefined}>
-        <div className="px-4 py-2.5 flex items-center gap-2">
-          <button
-            onClick={() => router.push("/projects")}
-            title="Back to My Projects"
-            className="group flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-black transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>All Projects</span>
-          </button>
-          <span className="text-gray-300 font-bold">/</span>
+      {/* Project header — shared app-shell chrome (compact) */}
+      <AppHeader
+        compact
+        left={
           <span
-            className="text-sm font-bold text-black flex items-center gap-1.5 group cursor-pointer hover:text-primary transition-colors"
+            className="text-sm font-bold text-black flex items-center gap-1.5 group cursor-pointer hover:text-primary transition-colors truncate"
             title="Click to edit project"
             onClick={() => setIsEditingProject(true)}
           >
-            {projectName}
-            <svg className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <span className="truncate">{projectName}</span>
+            <svg className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
           </span>
-          <div className="ml-auto">
-            <SyncStatusIndicator />
-          </div>
-        </div>
-      </header>
+        }
+      >
+        <SyncStatusIndicator />
+      </AppHeader>
 
       <div className="flex-1 overflow-auto">
         <QuadrantTodoClient

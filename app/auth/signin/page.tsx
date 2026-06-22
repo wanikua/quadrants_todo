@@ -1,5 +1,9 @@
 "use client"
 
+// LEGACY / DEAD ROUTE — the app uses Clerk at /sign-in. All redirects now point
+// to /sign-in, so this custom email/password page is no longer reachable in the
+// normal flow. Kept (not deleted) pending removal of the custom auth backend.
+
 import type React from "react"
 
 import { useState } from "react"
