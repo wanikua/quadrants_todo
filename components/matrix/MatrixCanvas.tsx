@@ -106,9 +106,21 @@ export function MatrixCanvas({
             </div>
           )}
 
-          {/* center cross */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[2px] h-full bg-black/15 pointer-events-none" />
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] w-full bg-black/15 pointer-events-none" />
+          {/* axes — original map style: bold black center cross with arrowheads + dashed quadrant gridlines */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            {[250, 750].map((v) => (
+              <g key={v}>
+                <line x1={v} y1="0" x2={v} y2="1000" stroke="black" strokeOpacity="0.12" strokeWidth="2" strokeDasharray="16,16" vectorEffect="non-scaling-stroke" />
+                <line x1="0" y1={v} x2="1000" y2={v} stroke="black" strokeOpacity="0.12" strokeWidth="2" strokeDasharray="16,16" vectorEffect="non-scaling-stroke" />
+              </g>
+            ))}
+            {/* horizontal axis + right arrow */}
+            <line x1="0" y1="500" x2="980" y2="500" stroke="black" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+            <polygon points="980,484 1000,500 980,516" fill="black" />
+            {/* vertical axis + up arrow */}
+            <line x1="500" y1="1000" x2="500" y2="20" stroke="black" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+            <polygon points="484,20 500,0 516,20" fill="black" />
+          </svg>
 
           {/* connections */}
           {connections.length > 0 && (
@@ -134,9 +146,6 @@ export function MatrixCanvas({
             </svg>
           )}
 
-          {/* axis-end arrows */}
-          <div className="absolute top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-x-[5px] border-x-transparent border-b-[8px] border-b-black/40 pointer-events-none" />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[5px] border-y-transparent border-l-[8px] border-l-black/40 pointer-events-none" />
 
           {/* quadrant labels OR axis-end labels */}
           {q ? (

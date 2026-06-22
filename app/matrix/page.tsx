@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { Plus, Trash2, RotateCcw, SlidersHorizontal, Link2, FileUp, ImageDown, X } from "lucide-react"
+import { Plus, Trash2, RotateCcw, SlidersHorizontal, Link2, FileUp, ImageDown, X, Map as MapIcon, List as ListIcon } from "lucide-react"
 import { PageBackground } from "@/components/page-background"
 import { SiteHeader } from "@/components/site-header"
 import { MatrixCanvas } from "@/components/matrix/MatrixCanvas"
@@ -116,6 +116,27 @@ export default function MatrixPage() {
   const template = useMemo(() => TEMPLATES.find((t) => t.id === activeId) ?? TEMPLATES[0], [activeId])
   const state = states[activeId]
   const byId = useMemo(() => new Map(state.points.map((p) => [p.id, p])), [state.points])
+
+  // Map ⇄ List view. List view groups points into the four quadrants (split at 50).
+  const [viewMode, setViewMode] = useState<"map" | "list">("map")
+  const grouped = useMemo(() => {
+    const g: Record<"tl" | "tr" | "bl" | "br", typeof state.points> = { tl: [], tr: [], bl: [], br: [] }
+    for (const p of state.points) {
+      const right = p.x >= 50
+      const top = p.y >= 50
+      g[top ? (right ? "tr" : "tl") : right ? "br" : "bl"].push(p)
+    }
+    return g
+  }, [state.points])
+  const quadLabel = useCallback(
+    (key: "tl" | "tr" | "bl" | "br") => {
+      if (template.quadrants) return template.quadrants[key].label
+      const x = key === "tr" || key === "br" ? state.xAxis.highLabel : state.xAxis.lowLabel
+      const y = key === "tl" || key === "tr" ? state.yAxis.highLabel : state.yAxis.lowLabel
+      return `${y} · ${x}`
+    },
+    [template.quadrants, state.xAxis, state.yAxis],
+  )
   const selectedPoint = selectedId ? state.points.find((p) => p.id === selectedId) ?? null : null
 
   const patchState = useCallback(
@@ -290,28 +311,81 @@ export default function MatrixPage() {
                   <h2 className="text-3xl md:text-4xl font-black text-black leading-none tracking-tight">{template.title}</h2>
                   <p className="text-sm text-gray-500 font-medium mt-2">{template.subtitle}</p>
                 </div>
-                <span className="hidden sm:inline-flex items-center bg-white border-2 border-black rounded-full px-3 py-1 text-xs font-black text-black shadow-bold-sm whitespace-nowrap">
-                  {state.points.length} {nounPlural.toLowerCase()}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="inline-flex items-center gap-1 bg-gray-100 border-2 border-black rounded-full p-1">
+                    <button
+                      onClick={() => setViewMode("map")}
+                      title="Map view"
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${viewMode === "map" ? "bg-white shadow-bold-sm" : "hover:bg-gray-200"}`}
+                    >
+                      <MapIcon className={`w-4 h-4 ${viewMode === "map" ? "text-black" : "text-gray-500"}`} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      title="List view"
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${viewMode === "list" ? "bg-white shadow-bold-sm" : "hover:bg-gray-200"}`}
+                    >
+                      <ListIcon className={`w-4 h-4 ${viewMode === "list" ? "text-black" : "text-gray-500"}`} />
+                    </button>
+                  </div>
+                  <span className="hidden sm:inline-flex items-center bg-white border-2 border-black rounded-full px-3 py-1 text-xs font-black text-black shadow-bold-sm whitespace-nowrap">
+                    {state.points.length} {nounPlural.toLowerCase()}
+                  </span>
+                </div>
               </div>
 
-              <MatrixCanvas
-                template={template}
-                xAxis={state.xAxis}
-                yAxis={state.yAxis}
-                points={state.points}
-                connections={state.connections}
-                onMove={movePoint}
-                onAdd={addPoint}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                connectMode={connectMode}
-                connectFrom={connectFrom}
-                onConnectPick={handleConnectPick}
-              />
+              {viewMode === "map" ? (
+                <MatrixCanvas
+                  template={template}
+                  xAxis={state.xAxis}
+                  yAxis={state.yAxis}
+                  points={state.points}
+                  connections={state.connections}
+                  onMove={movePoint}
+                  onAdd={addPoint}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                  connectMode={connectMode}
+                  connectFrom={connectFrom}
+                  onConnectPick={handleConnectPick}
+                />
+              ) : (
+                <div className="grid grid-cols-2 grid-rows-2 gap-3 aspect-square">
+                  {(["tl", "tr", "bl", "br"] as const).map((key) => (
+                    <div
+                      key={key}
+                      className={`rounded-2xl border-3 border-black ${template.quadrants ? template.quadrants[key].tint : "bg-gray-50"} p-3 flex flex-col min-h-0 overflow-hidden`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="font-black text-xs sm:text-sm text-black leading-tight">{quadLabel(key)}</span>
+                        <span className="text-[11px] font-black text-black/40 shrink-0">{grouped[key].length}</span>
+                      </div>
+                      <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5">
+                        {grouped[key].map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => setSelectedId(p.id)}
+                            className={`w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg border-2 transition-all ${selectedId === p.id ? "border-black bg-white shadow-bold-sm" : "border-transparent hover:border-black/30 hover:bg-white/70"}`}
+                          >
+                            <span className="w-3 h-3 rounded-full border border-black shrink-0" style={{ background: p.color }} />
+                            <span className="text-sm font-bold text-black truncate">{p.label}</span>
+                          </button>
+                        ))}
+                        {grouped[key].length === 0 && (
+                          <p className="text-[11px] text-black/30 font-semibold italic px-1">empty</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <p className="text-xs text-gray-400 font-medium mt-3 text-center">
-                {connectMode ? "连线模式:依次点两个圆点连线" : "拖动圆点移动 · 双击空白处添加 · 在右侧重命名 / 删除"}
+                {viewMode === "list"
+                  ? "按象限分组 · 点击项目可在右侧编辑"
+                  : connectMode
+                    ? "连线模式:依次点两个圆点连线"
+                    : "拖动圆点移动 · 双击空白处添加 · 在右侧重命名 / 删除"}
               </p>
             </div>
 
