@@ -12,6 +12,7 @@ import Link from "next/link"
 import { ArrowLeft, Save, User, Mail, CreditCard, Crown, LogOut, Sparkles, Check, Home } from "lucide-react"
 import { useStripe } from "@/hooks/use-stripe"
 import { STRIPE_CONFIG } from "@/lib/stripe-config"
+import { isPro } from "@/lib/entitlements"
 import { useClerk } from "@clerk/nextjs"
 import { toast } from "sonner"
 
@@ -42,8 +43,7 @@ export function DashboardClient({ user: initialUser }: DashboardClientProps) {
   const [success, setSuccess] = useState(false)
   const { createCheckoutSession, manageBilling, loading: stripeLoading, error: stripeError } = useStripe()
 
-  const isProUser = initialUser.subscription_plan === 'pro' &&
-    initialUser.subscription_status === 'active'
+  const isProUser = isPro(initialUser)
   const isFreeUser = !isProUser
 
   async function handleSignOut() {

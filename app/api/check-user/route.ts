@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
+import { isPro } from "@/lib/entitlements"
 
 export async function GET() {
   try {
@@ -20,7 +21,7 @@ export async function GET() {
         stripe_subscription_id: user.stripe_subscription_id,
         subscription_period_end: user.subscription_period_end,
       },
-      isPro: user.subscription_plan === 'pro' && user.subscription_status === 'active'
+      isPro: isPro(user)
     })
   } catch (error) {
     console.error("Check user error:", error)

@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { isPro as hasProEntitlement } from "@/lib/entitlements"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -45,7 +46,7 @@ export default function ProjectsPageClient({ initialProjects, user }: { initialP
   const [projects, setProjects] = useState<Project[]>(initialProjects)
 
   // Check if user is Pro
-  const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active'
+  const isPro = hasProEntitlement(user)
 
   // Format relative time (e.g., "2h ago", "3d ago")
   const getRelativeTime = (dateString: string) => {
