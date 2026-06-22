@@ -16,6 +16,13 @@ const QUICK_ACTIONS = [
   { icon: Sparkles, label: 'AI Advice', prompt: 'What should I focus on right now and why?' },
 ]
 
+const QUICK_ACTIONS = [
+  { icon: ListTodo, label: '今日任务', prompt: '看看我今天最优先的任务' },
+  { icon: Plus, label: '加任务', prompt: '帮我加个任务：' },
+  { icon: Target, label: '项目概览', prompt: '项目概览' },
+  { icon: Sparkles, label: 'AI整理', prompt: '帮我分析一下任务优先级' },
+]
+
 /**
  * Quadrants AI Chat Widget
  * Uses internal /api/chat endpoint (Clerk auth, no gateway needed)
