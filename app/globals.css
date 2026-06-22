@@ -78,6 +78,11 @@
     box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
   }
 
+  /* Grown hard shadow used on hover/focus-visible states */
+  .shadow-bold-hover {
+    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  }
+
   /* Interactive Hover States */
   .hover-lift-shadow {
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -173,4 +178,11 @@
     }
   }
   .animate-scale-in { animation: scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+  @keyframes pop-in {
+    0% { opacity: 0; transform: scale(0.3); }
+    70% { transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .animate-pop { opacity: 0; animation: pop-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 }

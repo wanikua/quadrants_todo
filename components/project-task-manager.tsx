@@ -269,10 +269,10 @@ export function ProjectTaskManager({ project, initialTasks, initialPlayers, init
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsEditingProject(false)} disabled={isSaving}>
+            <Button variant="outline" onClick={() => setIsEditingProject(false)} disabled={isSaving} className="border-3 border-black rounded-xl font-bold hover:bg-black hover:text-white">
               Cancel
             </Button>
-            <Button onClick={handleSaveProjectEdit} disabled={isSaving}>
+            <Button onClick={handleSaveProjectEdit} disabled={isSaving} className="bg-black text-white border-3 border-black rounded-xl font-bold shadow-bold hover-lift-shadow">
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </div>

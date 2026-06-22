@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import QuadrantMatrixMap from '@/components/QuadrantMatrixMap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -200,10 +201,10 @@ export default function LocalModePage() {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+      <div className="h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -212,15 +213,19 @@ export default function LocalModePage() {
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <header className="bg-white border-b-3 border-black px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+          <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm">
+            <Image
+              src="/logo.png"
+              alt="Quadrants"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain rounded-lg"
+            />
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">My Tasks</h1>
-          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+          <h1 className="text-lg font-black text-black">My Tasks</h1>
+          <span className="bg-yellow-100 text-black border-2 border-black rounded-full px-2.5 py-0.5 text-xs font-bold">
             Local Mode
           </span>
         </div>
@@ -229,7 +234,7 @@ export default function LocalModePage() {
           <Button
             onClick={() => setIsAddTaskOpen(true)}
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-bold-sm hover-lift-shadow rounded-xl font-bold"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Task
@@ -269,7 +274,7 @@ export default function LocalModePage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700">Description</label>
+              <label className="text-sm font-bold text-gray-700">Description</label>
               <Input
                 value={newTaskDescription}
                 onChange={(e) => setNewTaskDescription(e.target.value)}
@@ -286,7 +291,7 @@ export default function LocalModePage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-bold text-gray-700">
                   Urgency: {newTaskUrgency}%
                 </label>
                 <input
@@ -299,7 +304,7 @@ export default function LocalModePage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-bold text-gray-700">
                   Importance: {newTaskImportance}%
                 </label>
                 <input
@@ -316,7 +321,10 @@ export default function LocalModePage() {
               <Button variant="outline" onClick={() => setIsAddTaskOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleAddTask} className="bg-purple-600 hover:bg-purple-700">
+              <Button
+                onClick={handleAddTask}
+                className="bg-black text-white hover:bg-black/90 border-2 border-black shadow-bold-sm hover-lift-shadow rounded-xl font-bold"
+              >
                 Add Task
               </Button>
             </div>
@@ -333,7 +341,7 @@ export default function LocalModePage() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Description</label>
+                <label className="text-sm font-bold text-gray-700">Description</label>
                 <Input
                   value={selectedTask.description}
                   onChange={(e) => {
@@ -348,7 +356,7 @@ export default function LocalModePage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-bold text-gray-700">
                     Urgency: {selectedTask.urgency}%
                   </label>
                   <input
@@ -367,7 +375,7 @@ export default function LocalModePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-bold text-gray-700">
                     Importance: {selectedTask.importance}%
                   </label>
                   <input
@@ -397,7 +405,7 @@ export default function LocalModePage() {
                 </Button>
                 <Button
                   onClick={() => handleCompleteTask(selectedTask.id)}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 border-2 border-black rounded-xl font-bold text-white"
                 >
                   Mark Complete
                 </Button>

@@ -2,9 +2,11 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, XCircle, Database, Key, ExternalLink } from "lucide-react"
+import { PageBackground } from "@/components/page-background"
+import { SiteHeader } from "@/components/site-header"
+import { Footer } from "@/components/footer"
 
 export default function SetupPage() {
   const [dbStatus, setDbStatus] = useState<"checking" | "connected" | "error" | null>(null)
@@ -48,140 +50,154 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Setup Configuration</h1>
-          <p className="text-gray-600">Configure your database and authentication settings</p>
-        </div>
+    <div className="min-h-screen bg-white relative overflow-hidden font-sans selection:bg-yellow-200">
+      <PageBackground />
+      <SiteHeader />
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Database Setup */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+      <main className="pt-16 pb-20 px-6 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          {/* Hero */}
+          <div className="text-center mb-12 md:mb-16">
+            <h1 className="text-5xl md:text-7xl font-black tracking-tight text-gray-900 mb-4">
+              Setup <span className="text-highlight-yellow">Configuration</span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 font-medium max-w-2xl mx-auto">
+              Configure your database and authentication settings
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Database Setup */}
+            <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 md:p-10 shadow-bold-lg">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900 mb-6">
                 <Database className="w-5 h-5" />
                 Database Setup
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <AlertDescription>
-                  <strong>Step 1:</strong> Create a free account at{" "}
-                  <a
-                    href="https://neon.tech"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline inline-flex items-center gap-1"
+              </h2>
+              <div className="space-y-4">
+                <Alert className="border-2 border-black/10 rounded-xl bg-white">
+                  <AlertDescription>
+                    <strong>Step 1:</strong> Create a free account at{" "}
+                    <a
+                      href="https://neon.tech"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline inline-flex items-center gap-1 font-medium"
+                    >
+                      neon.tech <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </AlertDescription>
+                </Alert>
+
+                <Alert className="border-2 border-black/10 rounded-xl bg-white">
+                  <AlertDescription>
+                    <strong>Step 2:</strong> Create a new project and copy your connection string
+                  </AlertDescription>
+                </Alert>
+
+                <Alert className="border-2 border-black/10 rounded-xl bg-white">
+                  <AlertDescription>
+                    <strong>Step 3:</strong> Add your DATABASE_URL to .env.local file
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={testDatabase}
+                    disabled={dbStatus === "checking"}
+                    className="bg-white text-black border-3 border-black rounded-xl font-bold shadow-bold hover-lift-shadow hover:bg-black hover:text-white transition-all"
                   >
-                    neon.tech <ExternalLink className="w-3 h-3" />
-                  </a>
-                </AlertDescription>
-              </Alert>
-
-              <Alert>
-                <AlertDescription>
-                  <strong>Step 2:</strong> Create a new project and copy your connection string
-                </AlertDescription>
-              </Alert>
-
-              <Alert>
-                <AlertDescription>
-                  <strong>Step 3:</strong> Add your DATABASE_URL to .env.local file
-                </AlertDescription>
-              </Alert>
-
-              <div className="flex gap-2">
-                <Button onClick={testDatabase} variant="outline" disabled={dbStatus === "checking"}>
-                  {dbStatus === "checking" ? "Testing..." : "Test Connection"}
-                </Button>
-                <Button onClick={runDatabaseSetup} disabled={dbStatus !== "connected"}>
-                  Setup Tables
-                </Button>
-              </div>
-
-              {dbStatus && (
-                <div className="flex items-center gap-2">
-                  {dbStatus === "connected" ? (
-                    <>
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <span className="text-green-700">Database connected successfully!</span>
-                    </>
-                  ) : dbStatus === "error" ? (
-                    <>
-                      <XCircle className="w-5 h-5 text-red-500" />
-                      <span className="text-red-700">Database connection failed</span>
-                    </>
-                  ) : null}
+                    {dbStatus === "checking" ? "Testing..." : "Test Connection"}
+                  </Button>
+                  <Button
+                    onClick={runDatabaseSetup}
+                    disabled={dbStatus !== "connected"}
+                    className="bg-black text-white border-3 border-black rounded-xl font-bold shadow-bold hover-lift-shadow transition-all"
+                  >
+                    Setup Tables
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Clerk Setup */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+                {dbStatus && (
+                  <div className="flex items-center gap-2">
+                    {dbStatus === "connected" ? (
+                      <div className="flex items-center gap-2 w-full bg-green-50 border-2 border-green-500 rounded-xl px-4 py-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span className="text-green-700 font-bold">Database connected successfully!</span>
+                      </div>
+                    ) : dbStatus === "error" ? (
+                      <div className="flex items-center gap-2 w-full bg-red-50 border-2 border-red-500 rounded-xl px-4 py-3">
+                        <XCircle className="w-5 h-5 text-red-500" />
+                        <span className="text-red-700 font-bold">Database connection failed</span>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Clerk Setup */}
+            <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 md:p-10 shadow-bold-lg">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900 mb-6">
                 <Key className="w-5 h-5" />
                 Authentication Setup
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <AlertDescription>
-                  <strong>Step 1:</strong> Create a free account at{" "}
-                  <a
-                    href="https://clerk.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline inline-flex items-center gap-1"
-                  >
-                    clerk.com <ExternalLink className="w-3 h-3" />
-                  </a>
-                </AlertDescription>
-              </Alert>
+              </h2>
+              <div className="space-y-4">
+                <Alert className="border-2 border-black/10 rounded-xl bg-white">
+                  <AlertDescription>
+                    <strong>Step 1:</strong> Create a free account at{" "}
+                    <a
+                      href="https://clerk.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline inline-flex items-center gap-1 font-medium"
+                    >
+                      clerk.com <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </AlertDescription>
+                </Alert>
 
-              <Alert>
-                <AlertDescription>
-                  <strong>Step 2:</strong> Create a new application
-                </AlertDescription>
-              </Alert>
+                <Alert className="border-2 border-black/10 rounded-xl bg-white">
+                  <AlertDescription>
+                    <strong>Step 2:</strong> Create a new application
+                  </AlertDescription>
+                </Alert>
 
-              <Alert>
-                <AlertDescription>
-                  <strong>Step 3:</strong> Copy your publishable key and secret key to .env.local
-                </AlertDescription>
-              </Alert>
+                <Alert className="border-2 border-black/10 rounded-xl bg-white">
+                  <AlertDescription>
+                    <strong>Step 3:</strong> Copy your publishable key and secret key to .env.local
+                  </AlertDescription>
+                </Alert>
 
-              <Button onClick={testClerk} variant="outline" disabled={clerkStatus === "checking"}>
-                {clerkStatus === "checking" ? "Testing..." : "Test Clerk Config"}
-              </Button>
+                <Button
+                  onClick={testClerk}
+                  disabled={clerkStatus === "checking"}
+                  className="bg-white text-black border-3 border-black rounded-xl font-bold shadow-bold hover-lift-shadow hover:bg-black hover:text-white transition-all"
+                >
+                  {clerkStatus === "checking" ? "Testing..." : "Test Clerk Config"}
+                </Button>
 
-              {clerkStatus && (
-                <div className="flex items-center gap-2">
-                  {clerkStatus === "configured" ? (
-                    <>
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <span className="text-green-700">Clerk configured successfully!</span>
-                    </>
-                  ) : clerkStatus === "error" ? (
-                    <>
-                      <XCircle className="w-5 h-5 text-red-500" />
-                      <span className="text-red-700">Clerk configuration failed</span>
-                    </>
-                  ) : null}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                {clerkStatus && (
+                  <div className="flex items-center gap-2">
+                    {clerkStatus === "configured" ? (
+                      <div className="flex items-center gap-2 w-full bg-green-50 border-2 border-green-500 rounded-xl px-4 py-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span className="text-green-700 font-bold">Clerk configured successfully!</span>
+                      </div>
+                    ) : clerkStatus === "error" ? (
+                      <div className="flex items-center gap-2 w-full bg-red-50 border-2 border-red-500 rounded-xl px-4 py-3">
+                        <XCircle className="w-5 h-5 text-red-500" />
+                        <span className="text-red-700 font-bold">Clerk configuration failed</span>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Environment Variables Template</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
+          <div className="bg-white border-3 border-black rounded-[2.5rem] p-8 md:p-10 shadow-bold-lg mt-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Environment Variables Template</h2>
+            <pre className="bg-gray-100 border-2 border-black/10 p-4 rounded-xl text-sm overflow-x-auto">
               {`# Database Configuration
 DATABASE_URL=postgresql://username:password@ep-example.us-east-2.aws.neon.tech/neondb?sslmode=require
 
@@ -195,15 +211,20 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/`}
             </pre>
-          </CardContent>
-        </Card>
+          </div>
 
-        <div className="mt-6 text-center">
-          <Button asChild>
-            <a href="/">Return to App</a>
-          </Button>
+          <div className="mt-10 text-center">
+            <Button
+              asChild
+              className="bg-black text-white border-3 border-black rounded-xl font-bold shadow-bold hover-lift-shadow transition-all"
+            >
+              <a href="/">Return to App</a>
+            </Button>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   )
 }

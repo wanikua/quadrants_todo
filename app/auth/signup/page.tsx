@@ -8,8 +8,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { PageBackground } from "@/components/page-background"
+import { SiteHeader } from "@/components/site-header"
 import { signUp } from "@/app/auth/actions"
 
 export default function SignUpPage() {
@@ -43,21 +43,27 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-          <CardDescription className="text-center">Enter your information to create your account</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+    <div className="min-h-screen bg-white relative overflow-hidden font-sans selection:bg-yellow-200">
+      <PageBackground />
+      <SiteHeader showNav={false} />
+      <main className="relative z-10 flex items-center justify-center px-6 py-12 min-h-[calc(100vh-80px)]">
+        <div className="bg-white border-3 border-black rounded-[2.5rem] shadow-bold-lg p-8 md:p-10 w-full max-w-md">
+          <div className="space-y-2 mb-8">
+            <h1 className="text-3xl font-black text-black text-center">Create Account</h1>
+            <p className="text-gray-600 text-center font-medium">
+              Enter your information to create your account
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="text-sm text-red-900 bg-red-100 p-4 rounded-xl border-3 border-red-900 font-bold">
+                {error}
+              </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
+              <Label htmlFor="displayName" className="font-bold text-black">
+                Display Name
+              </Label>
               <Input
                 id="displayName"
                 type="text"
@@ -65,10 +71,13 @@ export default function SignUpPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 disabled={loading}
+                className="border-3 border-black rounded-xl h-12 text-lg bg-white focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="font-bold text-black">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -77,10 +86,13 @@ export default function SignUpPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                className="border-3 border-black rounded-xl h-12 text-lg bg-white focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="font-bold text-black">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -89,22 +101,27 @@ export default function SignUpPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
+                className="border-3 border-black rounded-xl h-12 text-lg bg-white focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-black transition-all"
               />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Sign Up"}
-            </Button>
-            <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/auth/signin" className="text-primary hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+            <div className="flex flex-col space-y-4 pt-2">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 text-lg bg-black text-white border-3 border-black rounded-xl font-bold shadow-bold hover-lift-shadow transition-all"
+              >
+                {loading ? "Creating account..." : "Sign Up"}
+              </Button>
+              <p className="text-sm text-center text-gray-600 font-medium">
+                Already have an account?{" "}
+                <Link href="/auth/signin" className="font-bold underline text-black">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
+      </main>
     </div>
   )
 }
