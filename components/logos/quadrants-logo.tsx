@@ -3,7 +3,7 @@ import React from 'react'
 interface LogoProps {
   size?: number
   className?: string
-  variant?: 'v1' | 'v2' | 'v3' | 'v4'
+  variant?: 'v1' | 'v2' | 'v3' | 'v4' | 'v5'
 }
 
 // Variant 1: Four Quadrants Grid forming Q
@@ -74,12 +74,63 @@ const LogoV4 = ({ size = 40 }: { size: number }) => (
   </svg>
 )
 
+// Variant 5: Dot-grid "Q" — a continuous rounded ribbon traced through a grid of
+// outlined circles (reference numeral style). Octagonal "O" bowl + a tail that
+// crosses the lower-right ring and pokes outward, reading unmistakably as a Q.
+const LogoV5 = ({ size = 40 }: { size: number }) => {
+  const COLS = 5
+  const ROWS = 5
+  const PAD = 16
+  const step = (100 - PAD * 2) / (Math.max(COLS, ROWS) - 1) // grid spacing = 17
+  const ox = (100 - (COLS - 1) * step) / 2
+  const oy = (100 - (ROWS - 1) * step) / 2
+  const X = (c: number) => ox + c * step
+  const Y = (r: number) => oy + r * step
+  const R = step * 0.56 // circle radius (slight overlap → bulgy blob)
+  const W = step * 1.06 // ribbon width so linked cells merge into one shape
+
+  // Octagonal bowl (the "O") + crossing tail (the "Q" stroke).
+  const on: Array<[number, number]> = [
+    [1, 0], [2, 0], [3, 0], [0, 1], [4, 1], [0, 2], [4, 2], [0, 3], [4, 3], [1, 4], [2, 4], [3, 4],
+    [2, 2], [3, 3], [4, 4],
+  ]
+  const links: Array<[[number, number], [number, number]]> = [
+    [[1, 0], [2, 0]], [[2, 0], [3, 0]],
+    [[1, 0], [0, 1]], [[3, 0], [4, 1]],
+    [[0, 1], [0, 2]], [[0, 2], [0, 3]],
+    [[4, 1], [4, 2]], [[4, 2], [4, 3]],
+    [[0, 3], [1, 4]], [[4, 3], [3, 4]],
+    [[1, 4], [2, 4]], [[2, 4], [3, 4]],
+    [[2, 2], [3, 3]], [[3, 3], [4, 4]],
+  ]
+  const grid: Array<[number, number]> = []
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) grid.push([c, r])
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* faint construction grid */}
+      {grid.map(([c, r], i) => (
+        <circle key={`g${i}`} cx={X(c)} cy={Y(r)} r={R} fill="none" stroke="#d4d4d8" strokeWidth="1.3" />
+      ))}
+      {/* blob connectors */}
+      {links.map(([[ac, ar], [bc, br]], i) => (
+        <line key={`l${i}`} x1={X(ac)} y1={Y(ar)} x2={X(bc)} y2={Y(br)} stroke="#000000" strokeWidth={W} strokeLinecap="round" />
+      ))}
+      {/* filled cells */}
+      {on.map(([c, r], i) => (
+        <circle key={`o${i}`} cx={X(c)} cy={Y(r)} r={R} fill="#000000" />
+      ))}
+    </svg>
+  )
+}
+
 export const QuadrantsLogo = ({ size = 40, className = '', variant = 'v1' }: LogoProps) => {
   const variants = {
     v1: <LogoV1 size={size} />,
     v2: <LogoV2 size={size} />,
     v3: <LogoV3 size={size} />,
-    v4: <LogoV4 size={size} />
+    v4: <LogoV4 size={size} />,
+    v5: <LogoV5 size={size} />
   }
 
   return (
@@ -90,4 +141,4 @@ export const QuadrantsLogo = ({ size = 40, className = '', variant = 'v1' }: Log
 }
 
 // Export individual variants for direct use
-export { LogoV1, LogoV2, LogoV3, LogoV4 }
+export { LogoV1, LogoV2, LogoV3, LogoV4, LogoV5 }

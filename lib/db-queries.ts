@@ -11,6 +11,7 @@
  */
 
 import { sql } from './db';
+import { isPro } from '@/lib/entitlements';
 
 // ========================================
 // Projects查询
@@ -28,9 +29,9 @@ export async function getUserProjects(userId: string) {
   `;
 
   const user = userResult[0];
-  const isPro = user?.subscription_plan === 'pro' && user?.subscription_status === 'active';
+  const userIsPro = isPro(user);
 
-  if (isPro) {
+  if (userIsPro) {
     // Pro users can see all projects
     return await sql`
       SELECT DISTINCT

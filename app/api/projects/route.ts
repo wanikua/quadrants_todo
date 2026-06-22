@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { createProject } from "@/app/db/actions"
+import { isPro, canCreateProject } from "@/lib/entitlements"
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,10 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check project limits for free users
-    const isPro = user.subscription_plan === 'pro' && user.subscription_status === 'active'
-
-    if (!isPro) {
-      // Count total existing projects for free users (max 2)
+    if (!isPro(user)) {
+      // Count existing projects to enforce the Free-tier limit
       const projectCounts = await sql`
         SELECT COUNT(*) as total_count
         FROM projects
@@ -30,7 +29,7 @@ export async function POST(request: NextRequest) {
 
       const { total_count } = projectCounts[0]
 
-      if (parseInt(total_count) >= 2) {
+      if (!canCreateProject(user, parseInt(total_count))) {
         return NextResponse.json({
           error: "Free users can create up to 2 projects. Upgrade to Pro for unlimited projects.",
           requiresUpgrade: true

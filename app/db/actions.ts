@@ -6,6 +6,7 @@ import { eq, and, desc, gte, sql as sqlOperator, or, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getUserId } from '@/lib/auth'
 import { sql } from '@/lib/database'
+import { isPro as isProEntitled, FREE_PROJECT_LIMIT } from '@/lib/entitlements'
 
 // Fallback data for when database is not available
 const fallbackProject = {
@@ -670,9 +671,7 @@ async function getUserSubscriptionStatus(userId: string): Promise<boolean> {
       LIMIT 1
     `
 
-    const isPro = result.length > 0 &&
-                  result[0].subscription_plan === 'pro' &&
-                  result[0].subscription_status === 'active'
+    const isPro = result.length > 0 && isProEntitled(result[0])
 
     // Cache the result
     userSubscriptionCache.set(userId, { isPro, timestamp: Date.now() })
@@ -710,7 +709,7 @@ export async function getUserProjectAccess(userId: string, projectId: string): P
           .from(projects)
           .where(eq(projects.owner_id, userId))
           .orderBy(desc(projects.updated_at), desc(projects.created_at))
-          .limit(2)
+          .limit(FREE_PROJECT_LIMIT)
 
         const accessibleProjectIds = userProjects.map((p: { id: string }) => p.id)
         return accessibleProjectIds.includes(projectId)

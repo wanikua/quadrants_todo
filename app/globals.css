@@ -89,6 +89,11 @@
     box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
   }
 
+  /* Grown hard shadow used on hover/focus-visible states */
+  .shadow-bold-hover {
+    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  }
+
   /* Interactive Hover States */
   .hover-lift-shadow {
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);

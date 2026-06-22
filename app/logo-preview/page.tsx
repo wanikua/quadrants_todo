@@ -65,6 +65,21 @@ export default function LogoPreviewPage() {
               <QuadrantsLogo variant="v4" size={24} />
             </div>
           </div>
+
+          {/* Variant 5 — NEW (reference style) */}
+          <div className="border-3 border-black rounded-2xl p-8 shadow-bold bg-white relative md:col-span-2">
+            <span className="absolute -top-3 -right-3 bg-yellow-300 border-3 border-black rounded-full px-3 py-1 text-xs font-black -rotate-3">NEW</span>
+            <div className="flex justify-center mb-6 bg-gray-50 p-10 rounded-xl">
+              <QuadrantsLogo variant="v5" size={140} />
+            </div>
+            <h3 className="text-2xl font-bold mb-2">V5: 圆点网格 Q（参考风格）</h3>
+            <p className="text-gray-600 mb-4">按你给的数字参考——用一条连续的圆头"圆点带"在网格上搭出一个 Q：八边形碗身 + 一条穿过右下角、向外探出的尾巴，明确读作 Q。点阵语言和 Matrix 的圆点背景一脉相承。</p>
+            <div className="flex gap-6 items-center">
+              <QuadrantsLogo variant="v5" size={60} />
+              <QuadrantsLogo variant="v5" size={40} />
+              <QuadrantsLogo variant="v5" size={24} />
+            </div>
+          </div>
         </div>
 
         {/* 使用场景预览 */}
@@ -86,7 +101,7 @@ export default function LogoPreviewPage() {
 
           {/* 所有变体在Header中的效果 */}
           <div className="grid md:grid-cols-2 gap-6">
-            {(['v1', 'v2', 'v3', 'v4'] as const).map((variant) => (
+            {(['v1', 'v2', 'v3', 'v4', 'v5'] as const).map((variant) => (
               <div key={variant} className="bg-white border-2 border-gray-200 p-4 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="bg-white p-1.5 rounded-xl border-2 border-black/5 shadow-sm">
@@ -104,7 +119,7 @@ export default function LogoPreviewPage() {
             💡 提示：访问 <code className="bg-white px-2 py-1 rounded border-2 border-black">/logo-preview</code> 查看这个页面
           </p>
           <p className="text-gray-600 mt-2">
-            选好后告诉我使用哪个版本(v1/v2/v3/v4)，我会帮你替换到整个网站！
+            选好后告诉我使用哪个版本(v1/v2/v3/v4/v5)，我会帮你替换到整个网站！v5 是这次按参考做的圆点网格新提案。
           </p>
         </div>
       </div>

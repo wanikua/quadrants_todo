@@ -16,7 +16,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = await params
 
   if (!user) {
-    redirect("/auth/signin")
+    redirect("/sign-in")
   }
 
   // Check if database is configured
