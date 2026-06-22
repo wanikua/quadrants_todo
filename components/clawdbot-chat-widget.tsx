@@ -17,10 +17,10 @@ const QUICK_ACTIONS = [
 ]
 
 const QUICK_ACTIONS = [
-  { icon: ListTodo, label: '今日任务', prompt: '看看我今天最优先的任务' },
-  { icon: Plus, label: '加任务', prompt: '帮我加个任务：' },
-  { icon: Target, label: '项目概览', prompt: '项目概览' },
-  { icon: Sparkles, label: 'AI整理', prompt: '帮我分析一下任务优先级' },
+  { icon: ListTodo, label: '今日任务', prompt: 'What are my top priority tasks today?' },
+  { icon: Plus, label: 'Add Task', prompt: 'Add task: ' },
+  { icon: Target, label: 'Overview', prompt: 'Give me a quick overview of my tasks by quadrant' },
+  { icon: Sparkles, label: 'AI Advice', prompt: 'What should I focus on right now and why?' },
 ]
 
 /**
